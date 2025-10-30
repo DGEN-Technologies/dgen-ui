@@ -883,7 +883,7 @@
                   <h3 class="font-bold text-white text-lg">Liquid Network</h3>
                   <span class="badge badge-sm bg-blue-400/20 text-blue-400 border-blue-400/30 whitespace-nowrap">L-BTC • USDT</span>
                 </div>
-                <p class="text-sm text-white/70 leading-relaxed">Fast, confidential. Receive Bitcoin or USDT stablecoins.</p>
+                <p class="text-sm text-white/70 leading-relaxed">Fast. Receive Bitcoin or USDT stablecoins.</p>
                 <div class="flex items-center gap-3 mt-2 text-xs">
                   <span class="text-blue-400 flex items-center gap-1">
                     <iconify-icon icon="ph:eye-slash-bold" width="14"></iconify-icon>

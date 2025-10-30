@@ -139,29 +139,27 @@
   <!-- Bitcoin On-Chain Limits Warning -->
   <div class="mx-auto max-w-md mt-4 mb-4">
     <div class="rounded-2xl p-4 bg-yellow-500/10 border-2 border-yellow-500/30">
-      <div class="flex items-start gap-3">
+      <div class="text-center">
         <iconify-icon
           noobserver
           icon="ph:warning-bold"
           width="24"
-          class="text-yellow-400 flex-shrink-0 mt-1"
+          class="text-yellow-400 mb-2"
         ></iconify-icon>
-        <div class="flex-1">
-          <p class="text-yellow-200 font-semibold text-center leading-relaxed">
-            {#if onchainLimits.receive?.minSat && onchainLimits.receive?.maxSat}
-              Amount must be between <span class="font-bold text-yellow-100">{btc(onchainLimits.receive.minSat)} BTC</span> and <span class="font-bold text-yellow-100">{btc(onchainLimits.receive.maxSat)} BTC</span>
-            {:else if onchainLimits.receive?.minSat}
-              Minimum amount: <span class="font-bold text-yellow-100">{btc(onchainLimits.receive.minSat)} BTC</span>
-            {:else if onchainLimits.receive?.maxSat}
-              Maximum amount: <span class="font-bold text-yellow-100">{btc(onchainLimits.receive.maxSat)} BTC</span>
-            {:else}
-              Bitcoin on-chain payments require network fees
-            {/if}
-          </p>
-          <p class="text-yellow-300/70 text-sm text-center mt-2">
-            Amounts outside this range will not work
-          </p>
-        </div>
+        <p class="text-yellow-200 font-semibold leading-relaxed">
+          {#if onchainLimits.receive?.minSat && onchainLimits.receive?.maxSat}
+            Amount must be between <span class="font-bold text-yellow-100">{btc(onchainLimits.receive.minSat)} BTC</span> and <span class="font-bold text-yellow-100">{btc(onchainLimits.receive.maxSat)} BTC</span>
+          {:else if onchainLimits.receive?.minSat}
+            Minimum amount: <span class="font-bold text-yellow-100">{btc(onchainLimits.receive.minSat)} BTC</span>
+          {:else if onchainLimits.receive?.maxSat}
+            Maximum amount: <span class="font-bold text-yellow-100">{btc(onchainLimits.receive.maxSat)} BTC</span>
+          {:else}
+            Bitcoin on-chain payments require network fees
+          {/if}
+        </p>
+        <p class="text-yellow-300/70 text-sm mt-2">
+          Amounts outside this range will not work
+        </p>
       </div>
     </div>
   </div>
@@ -169,35 +167,31 @@
 
 {#if invoice.type === types.liquid}
   {#if invoice.selectedAsset === 'usdt'}
-    <div class="flex justify-center p-4 shadow items-center gap-2">
+    <div class="p-4 shadow text-center">
       <iconify-icon
         noobserver
         icon="ph:warning-bold"
         width="48"
-        class="text-warning"
+        class="text-warning mb-2"
       ></iconify-icon>
-      <div>
-        <div class="my-auto text-xl text-center text-secondary">
-          Only send <span class="text-green-500 font-bold">Tether (USDT)</span> to this address
-          <br />
-          <span class="text-sm">If you want to send L-BTC to this wallet, select the Bitcoin option on the previous screen</span>
-        </div>
+      <div class="text-xl text-secondary">
+        Only send <span class="text-green-500 font-bold">Tether (USDT)</span> to this address
+        <br />
+        <span class="text-sm">If you want to send L-BTC to this wallet, select the Bitcoin option on the previous screen</span>
       </div>
     </div>
   {:else}
-    <div class="flex justify-center p-4 shadow items-center gap-2">
+    <div class="p-4 shadow text-center">
       <iconify-icon
         noobserver
         icon="ph:warning-bold"
         width="48"
-        class="text-warning"
+        class="text-warning mb-2"
       ></iconify-icon>
-      <div>
-        <div class="my-auto text-xl text-center text-secondary">
-          Only send <span class="text-teal-500 font-bold">L-BTC</span>, NOT Tether (USDT) to this address
-          <br />
-          <span class="text-sm">If you want to send Tether (USDT) to this wallet, select the Tether option on the previous screen</span>
-        </div>
+      <div class="text-xl text-secondary">
+        Only send <span class="text-teal-500 font-bold">L-BTC</span>, NOT Tether (USDT) to this address
+        <br />
+        <span class="text-sm">If you want to send Tether (USDT) to this wallet, select the Tether option on the previous screen</span>
       </div>
     </div>
   {/if}
