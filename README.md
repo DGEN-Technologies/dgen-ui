@@ -14,5 +14,5 @@ To get started, clone or download the repo, then:
    bun run dev
    ```
 
-You'll need to run [`dgen-server`](https://github.com/dgentech/dgen-server) as well
+You'll need to run [`dgen-server`](https://github.com/DGEN-Technologies/dgen-server) as well
 
