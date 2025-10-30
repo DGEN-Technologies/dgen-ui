@@ -45,7 +45,7 @@
 </script>
 
 <label
-  class="input input-bordered border-primary input-lg rounded-2xl flex items-center gap-2"
+  class="input input-bordered border-primary input-lg rounded-2xl flex items-center gap-2 w-full max-w-md mx-auto"
 >
   {#if hide}
     <input
@@ -53,7 +53,7 @@
       use:focus
       bind:value={v}
       type="password"
-      class="clean text-center !text-5xl !w-96 block"
+      class="clean text-center !text-3xl sm:!text-4xl md:!text-5xl w-full block"
       pattern="[0-9]+"
       placeholder="_ _ _ _ _ _"
     />
@@ -62,29 +62,30 @@
       onkeydown={validate}
       use:focus
       bind:value={v}
-      class="clean text-center !text-5xl !w-96 block"
+      class="clean text-center !text-3xl sm:!text-4xl md:!text-5xl w-full block"
       type="text"
       pattern="[0-9]+"
       placeholder="_ _ _ _ _ _"
     />
   {/if}
-  <button type="button" class="contents" onclick={toggle}>
+  <button type="button" class="contents flex-shrink-0" onclick={toggle}>
     <iconify-icon
       noobserver
       icon={hide ? "ph:eye-slash-bold" : "ph:eye-bold"}
-      width="32"
+      width="28"
+      class="sm:w-8"
     ></iconify-icon></button
   >
 </label>
 
-<div class="grid grid-cols-3 gap-2 w-[300px] mx-auto grayscale">
+<div class="grid grid-cols-3 gap-2 sm:gap-3 w-full max-w-[280px] sm:max-w-[300px] mx-auto grayscale">
   {#each numPad as value}
     {#if value === arrow}
-      <button type="button" class="btn" onclick={(e) => handleInput(e, value)}>
+      <button type="button" class="btn min-h-[3rem] sm:min-h-[3.5rem]" onclick={(e) => handleInput(e, value)}>
         <Left />
       </button>
     {:else}
-      <button type="button" class="btn" onclick={(e) => handleInput(e, value)}
+      <button type="button" class="btn min-h-[3rem] sm:min-h-[3.5rem]" onclick={(e) => handleInput(e, value)}
         >{value}</button
       >
     {/if}

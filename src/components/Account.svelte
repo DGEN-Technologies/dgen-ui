@@ -164,47 +164,47 @@
         </div>
         
         <!-- Beautiful Toggle for Fiat/BTC/Sats (3 options) -->
-        <div class="flex items-center justify-center mt-4 mx-4 sm:mx-0">
-          <div class="relative bg-black/30 backdrop-blur-xl rounded-full p-1 border border-white/10 max-w-full">
+        <div class="flex items-center justify-center mt-4">
+          <div class="relative bg-black/30 backdrop-blur-xl rounded-full p-1.5 border border-white/10">
             <div
-              class="absolute top-1 bottom-1 bg-gradient-to-r {unit === currency ? 'from-green-400 to-emerald-500' : unit === 'btc' ? 'from-orange-400 to-yellow-500' : 'from-dgen-aqua to-dgen-cyan'} rounded-full transition-all duration-300"
-              style="width: calc(33.333% - 4px); left: {unit === currency ? '4px' : unit === 'btc' ? 'calc(33.333% + 0px)' : 'calc(66.666% - 4px)'};"
+              class="absolute top-1.5 bottom-1.5 bg-gradient-to-r {unit === currency ? 'from-green-400 to-emerald-500' : unit === 'btc' ? 'from-orange-400 to-yellow-500' : 'from-dgen-aqua to-dgen-cyan'} rounded-full transition-all duration-300"
+              style="width: calc(33.333% - 4px); left: {unit === currency ? '6px' : unit === 'btc' ? 'calc(33.333% + 2px)' : 'calc(66.666% - 2px)'};"
             ></div>
-            <div class="relative flex">
+            <div class="relative flex gap-1">
               <button
-                class="px-2 sm:px-4 py-2 rounded-full font-semibold transition-all duration-300 relative z-10 {unit === currency ? 'text-white' : 'text-white/60 hover:text-white/80'} min-w-0 flex-1"
+                class="w-14 h-12 sm:px-5 sm:w-auto rounded-full font-semibold transition-all duration-300 relative z-10 {unit === currency ? 'text-white' : 'text-white/60 hover:text-white/80'} flex items-center justify-center"
                 onclick={(e) => {
                   e.stopPropagation();
                   unit = currency;
                 }}
               >
-                <div class="flex items-center justify-center gap-1">
-                  <span class="text-base sm:text-lg">$</span>
-                  <span class="text-xs sm:text-sm">{currency}</span>
+                <div class="flex items-center justify-center gap-1.5">
+                  <span class="text-lg sm:text-xl">$</span>
+                  <span class="hidden sm:inline text-sm whitespace-nowrap">{currency}</span>
                 </div>
               </button>
               <button
-                class="px-2 sm:px-4 py-2 rounded-full font-semibold transition-all duration-300 relative z-10 {unit === 'btc' ? 'text-white' : 'text-white/60 hover:text-white/80'} min-w-0 flex-1"
+                class="w-14 h-12 sm:px-5 sm:w-auto rounded-full font-semibold transition-all duration-300 relative z-10 {unit === 'btc' ? 'text-white' : 'text-white/60 hover:text-white/80'} flex items-center justify-center"
                 onclick={(e) => {
                   e.stopPropagation();
                   unit = 'btc';
                 }}
               >
-                <div class="flex items-center justify-center gap-1">
-                  <iconify-icon icon="cryptocurrency:btc" class="text-orange-400" width="14" height="14" style="min-width: 14px;"></iconify-icon>
-                  <span class="text-xs sm:text-sm">BTC</span>
+                <div class="flex items-center justify-center gap-1.5">
+                  <iconify-icon icon="cryptocurrency:btc" class="{unit === 'btc' ? 'text-white' : 'text-orange-400'}" width="18" height="18" style="min-width: 18px;"></iconify-icon>
+                  <span class="hidden sm:inline text-sm whitespace-nowrap">BTC</span>
                 </div>
               </button>
               <button
-                class="px-2 sm:px-4 py-2 rounded-full font-semibold transition-all duration-300 relative z-10 {unit === 'sats' ? 'text-white' : 'text-white/60 hover:text-white/80'} min-w-0 flex-1"
+                class="w-14 h-12 sm:px-5 sm:w-auto rounded-full font-semibold transition-all duration-300 relative z-10 {unit === 'sats' ? 'text-white' : 'text-white/60 hover:text-white/80'} flex items-center justify-center"
                 onclick={(e) => {
                   e.stopPropagation();
                   unit = 'sats';
                 }}
               >
-                <div class="flex items-center justify-center gap-1">
-                  <iconify-icon icon="ph:lightning-fill" class="{unit === 'sats' ? 'text-yellow-400' : 'text-dgen-aqua'}" width="14" height="14" style="min-width: 14px;"></iconify-icon>
-                  <span class="text-xs sm:text-sm">sats</span>
+                <div class="flex items-center justify-center gap-1.5">
+                  <iconify-icon icon="ph:lightning-fill" class="{unit === 'sats' ? 'text-white' : 'text-dgen-aqua'}" width="18" height="18" style="min-width: 18px;"></iconify-icon>
+                  <span class="hidden sm:inline text-sm whitespace-nowrap">sats</span>
                 </div>
               </button>
             </div>
@@ -213,53 +213,53 @@
       </div>
 
       <!-- Quick Actions with liquid effect -->
-      <div class="grid grid-cols-4 gap-2 sm:gap-3 mt-6 pt-6 border-t border-white/10">
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-white/10">
         <button
-          class="glass rounded-xl py-2 sm:py-3 px-1 sm:px-2 font-bold hover:bg-white/10 transition-all duration-300 hover:scale-105 border border-white/20 hover:border-white/40 min-w-0"
+          class="glass rounded-xl py-4 sm:py-3 px-3 sm:px-2 font-bold hover:bg-white/10 transition-all duration-300 hover:scale-105 border border-white/20 hover:border-white/40 min-w-0"
           onclick={(e) => {
             e.stopPropagation();
             goto(`/${user.username}/receive`);
           }}
         >
-          <span class="flex flex-col items-center justify-center gap-0.5 sm:gap-1">
-            <iconify-icon icon="ph:arrow-down-bold" width="18" class="flex-shrink-0"></iconify-icon>
-            <span class="text-[10px] sm:text-xs truncate w-full">Receive</span>
+          <span class="flex flex-col items-center justify-center gap-1.5 sm:gap-1">
+            <iconify-icon icon="ph:arrow-down-bold" width="22" class="flex-shrink-0"></iconify-icon>
+            <span class="text-xs sm:text-xs truncate w-full">Receive</span>
           </span>
         </button>
         <button
-          class="glass rounded-xl py-2 sm:py-3 px-1 sm:px-2 font-bold hover:bg-white/10 transition-all duration-300 hover:scale-105 border border-white/20 hover:border-white/40 min-w-0"
+          class="glass rounded-xl py-4 sm:py-3 px-3 sm:px-2 font-bold hover:bg-white/10 transition-all duration-300 hover:scale-105 border border-white/20 hover:border-white/40 min-w-0"
           onclick={(e) => {
             e.stopPropagation();
             goto("/send");
           }}
         >
-          <span class="flex flex-col items-center justify-center gap-0.5 sm:gap-1">
-            <iconify-icon icon="ph:paper-plane-bold" width="18" class="flex-shrink-0"></iconify-icon>
-            <span class="text-[10px] sm:text-xs truncate w-full">Send</span>
+          <span class="flex flex-col items-center justify-center gap-1.5 sm:gap-1">
+            <iconify-icon icon="ph:paper-plane-bold" width="22" class="flex-shrink-0"></iconify-icon>
+            <span class="text-xs sm:text-xs truncate w-full">Send</span>
           </span>
         </button>
         <button
-          class="glass rounded-xl py-2 sm:py-3 px-1 sm:px-2 font-bold hover:bg-white/10 transition-all duration-300 hover:scale-105 border border-white/20 hover:border-white/40 min-w-0"
+          class="glass rounded-xl py-4 sm:py-3 px-3 sm:px-2 font-bold hover:bg-white/10 transition-all duration-300 hover:scale-105 border border-white/20 hover:border-white/40 min-w-0"
           onclick={(e) => {
             e.stopPropagation();
             showBuyBitcoin = true;
           }}
         >
-          <span class="flex flex-col items-center justify-center gap-0.5 sm:gap-1">
-            <iconify-icon icon="cryptocurrency:btc" width="18" class="flex-shrink-0"></iconify-icon>
-            <span class="text-[10px] sm:text-xs truncate w-full">Buy</span>
+          <span class="flex flex-col items-center justify-center gap-1.5 sm:gap-1">
+            <iconify-icon icon="cryptocurrency:btc" width="22" class="flex-shrink-0"></iconify-icon>
+            <span class="text-xs sm:text-xs truncate w-full">Buy</span>
           </span>
         </button>
         <button
-          class="glass rounded-xl py-2 sm:py-3 px-1 sm:px-2 font-bold hover:bg-white/10 transition-all duration-300 hover:scale-105 border border-white/20 hover:border-white/40 min-w-0"
+          class="glass rounded-xl py-4 sm:py-3 px-3 sm:px-2 font-bold hover:bg-white/10 transition-all duration-300 hover:scale-105 border border-white/20 hover:border-white/40 min-w-0"
           onclick={(e) => {
             e.stopPropagation();
             goto("/scan");
           }}
         >
-          <span class="flex flex-col items-center justify-center gap-0.5 sm:gap-1">
-            <iconify-icon icon="ph:scan-bold" width="18" class="flex-shrink-0"></iconify-icon>
-            <span class="text-[10px] sm:text-xs truncate w-full">Scan</span>
+          <span class="flex flex-col items-center justify-center gap-1.5 sm:gap-1">
+            <iconify-icon icon="ph:scan-bold" width="22" class="flex-shrink-0"></iconify-icon>
+            <span class="text-xs sm:text-xs truncate w-full">Scan</span>
           </span>
         </button>
       </div>

@@ -14,7 +14,7 @@
   import { upload } from "$lib/upload";
   import { page } from "$app/stores";
   // import { sign, send, getPrivateKey } from "$lib/nostr"; // NOSTR DISABLED
-  import { invalidateAll } from "$app/navigation";
+  import { invalidateAll, goto } from "$app/navigation";
   // import { getPublicKey } from "nostr-tools"; // NOSTR DISABLED
   import { bytesToHex } from "@noble/hashes/utils";
 
@@ -46,6 +46,7 @@
 
   let { about, id, username } = $derived(user);
   let submitting = $state();
+  let cancel = () => goto(`/${username}`);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -206,7 +207,7 @@
 </script>
 
 {#if user?.haspin && $pin?.length !== 6}
-  <Pin />
+  <Pin bind:value={$pin} {cancel} />
 {/if}
 
 <div class="min-h-screen relative">
@@ -223,11 +224,10 @@
       <div class="header animate-fadeInUp">
         <!-- Title with epic glow effect -->
         <h1 class="text-center text-4xl md:text-5xl font-bold mb-2">
-          <span class="bg-gradient-to-r from-dgen-aqua to-dgen-cyan bg-clip-text text-transparent">Settings</span>
-          <span class="text-dgen-aqua mx-2">⚙️</span>
+          <span class="bg-gradient-to-r from-dgen-aqua to-dgen-cyan bg-clip-text text-transparent">Settings </span>
           <span class="bg-gradient-to-r from-dgen-cyan to-dgen-purple bg-clip-text text-transparent">Center</span>
         </h1>
-        <p class="text-center text-xl text-white/60 mb-8">
+        <p class="text-center text-lg sm:text-xl text-white/60 mb-8">
           Manage Your Preferences
         </p>
 

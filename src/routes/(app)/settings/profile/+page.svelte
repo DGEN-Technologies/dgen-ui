@@ -312,7 +312,7 @@
   </div>
 
   <!-- Profile QR Code Section -->
-  <div
+  <!-- <div
     class="premium-card backdrop-blur-xl bg-white/5 border-2 border-white/10 hover:border-indigo-500/40 transition-all duration-500 animate-scaleIn space-y-4"
     style="animation-delay: 0.7s;"
   >
@@ -353,5 +353,5 @@
       <p class="text-sm text-white/60 mb-3">Or scan this QR code:</p>
       <Qr text={full} />
     </div>
-  </div>
+  </div> -->
 </div>

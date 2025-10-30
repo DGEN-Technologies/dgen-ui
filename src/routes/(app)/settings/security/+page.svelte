@@ -615,38 +615,38 @@
     class="premium-card backdrop-blur-xl bg-white/5 border-2 border-white/10 hover:border-purple-500/40 transition-all duration-500 animate-scaleIn"
     style="animation-delay: 0.1s;"
   >
-    <div class="flex items-start gap-4">
+    <div class="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
       <div
-        class="p-3 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-600 shadow-lg shadow-purple-500/30 flex-shrink-0"
+        class="p-2.5 sm:p-3 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-600 shadow-lg shadow-purple-500/30 flex-shrink-0"
       >
-        <iconify-icon icon="ph:device-mobile" class="text-white flex-shrink-0" width="32" height="32" style="min-width: 32px; min-height: 32px;"
+        <iconify-icon icon="ph:device-mobile" class="text-white flex-shrink-0" width="28" height="28" style="min-width: 28px; min-height: 28px;"
         ></iconify-icon>
       </div>
-      <div class="flex-1">
-        <h3 class="text-xl font-bold gradient-text mb-2">
+      <div class="flex-1 min-w-0 w-full">
+        <h3 class="text-lg sm:text-xl font-bold gradient-text mb-2">
           {$t("user.settings.twofa")}
         </h3>
-        <p class="text-white/60 mb-4">
+        <p class="text-white/60 mb-4 text-sm sm:text-base">
           {$t("user.settings.twofaDescription")}
         </p>
 
         {#if setting2fa}
-          <a href={otp.uri}>
+          <a href={otp.uri} class="block max-w-xs mx-auto sm:max-w-none">
             <Qr text={otp.uri} />
           </a>
 
           <div
-            class="text-center my-4 glass rounded-2xl p-4 border border-purple-500/30"
+            class="text-center my-4 glass rounded-2xl p-3 sm:p-4 border border-purple-500/30"
           >
-            <div class="text-white/60 mb-2">
+            <div class="text-white/60 mb-2 text-xs sm:text-sm">
               {$t("user.settings.accountId")}
             </div>
-            <b class="text-dgen-aqua text-xl font-mono">{otp.secret}</b>
+            <b class="text-dgen-aqua text-base sm:text-xl font-mono break-all">{otp.secret}</b>
           </div>
 
           <button
             type="button"
-            class="px-6 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center gap-2"
+            class="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 rounded-2xl font-semibold text-sm sm:text-base transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center justify-center gap-2"
             style="background: linear-gradient(135deg, #74EBD5 0%, #9688DD 100%); color: white;"
             onclick={startConfirming2fa}
           >
@@ -655,15 +655,15 @@
             <iconify-icon
               noobserver
               icon="ph:check-circle-bold"
-              width="24"
-              class="relative z-10 group-hover:rotate-12 transition-transform duration-300"
+              width="20"
+              class="relative z-10 group-hover:rotate-12 transition-transform duration-300 flex-shrink-0"
             ></iconify-icon>
             <span class="relative z-10">Confirm Setup</span>
           </button>
         {:else if user.twofa}
           <button
             type="button"
-            class="px-6 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center gap-2"
+            class="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 rounded-2xl font-semibold text-sm sm:text-base transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center justify-center gap-2"
             style="background: linear-gradient(135deg, #F87171 0%, #EF4444 100%); color: white;"
             onclick={startDisabling2fa}
           >
@@ -672,8 +672,8 @@
             <iconify-icon
               noobserver
               icon="ph:shield-slash-bold"
-              width="24"
-              class="relative z-10 group-hover:rotate-12 transition-transform duration-300"
+              width="20"
+              class="relative z-10 group-hover:rotate-12 transition-transform duration-300 flex-shrink-0"
             ></iconify-icon>
             <span class="relative z-10"
               >{$t("user.settings.twofaDisable")}</span
@@ -682,7 +682,7 @@
         {:else}
           <button
             type="button"
-            class="px-6 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center gap-2"
+            class="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 rounded-2xl font-semibold text-sm sm:text-base transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center justify-center gap-2"
             style="background: linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%); color: white;"
             onclick={startEnabling2fa}
           >
@@ -691,8 +691,8 @@
             <iconify-icon
               noobserver
               icon="ph:shield-check-bold"
-              width="24"
-              class="relative z-10 group-hover:rotate-12 transition-transform duration-300"
+              width="20"
+              class="relative z-10 group-hover:rotate-12 transition-transform duration-300 flex-shrink-0"
             ></iconify-icon>
             <span class="relative z-10"
               >{$t("user.settings.twofaSetup")}</span
@@ -969,25 +969,25 @@
       class="premium-card backdrop-blur-xl bg-white/5 border-2 border-white/10 hover:border-amber-500/40 transition-all duration-500 animate-scaleIn"
       style="animation-delay: 0.1s;"
     >
-      <div class="flex items-start gap-4">
+      <div class="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
       <div
-        class="p-3 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg shadow-amber-500/30 flex-shrink-0"
+        class="p-2.5 sm:p-3 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg shadow-amber-500/30 flex-shrink-0"
       >
-        <iconify-icon icon="ph:arrows-clockwise-bold" class="text-white flex-shrink-0" width="32" height="32" style="min-width: 32px; min-height: 32px;"
+        <iconify-icon icon="ph:arrows-clockwise-bold" class="text-white flex-shrink-0" width="28" height="28" style="min-width: 28px; min-height: 28px;"
         ></iconify-icon>
       </div>
-      <div class="flex-1">
-        <h3 class="text-xl font-bold gradient-text mb-2">
+      <div class="flex-1 min-w-0 w-full">
+        <h3 class="text-lg sm:text-xl font-bold gradient-text mb-2">
           Replace Wallet (Advanced)
         </h3>
-        <p class="text-white/60 mb-4">
+        <p class="text-white/60 mb-4 text-sm sm:text-base">
           Import a different wallet using a 12-word seed phrase. This will completely replace your current wallet. Only use this if you want to switch to a different wallet.
         </p>
-        
+
         {#if !showRestore}
           <button
             onclick={toggleRestore}
-            class="px-6 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center gap-2"
+            class="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 rounded-2xl font-semibold text-sm sm:text-base transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center justify-center gap-2"
             style="background: linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%); color: white;"
           >
             <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
@@ -995,29 +995,29 @@
             <iconify-icon
               noobserver
               icon="ph:arrows-clockwise-bold"
-              width="24"
-              class="relative z-10 group-hover:rotate-180 transition-transform duration-500"
+              width="20"
+              class="relative z-10 group-hover:rotate-180 transition-transform duration-500 flex-shrink-0"
             ></iconify-icon>
             <span class="relative z-10">Import from Seed Phrase</span>
           </button>
         {:else}
           <div class="space-y-4 animate-scaleIn">
-            <div class="bg-red-500/20 border-2 border-red-500/50 rounded-xl p-4">
-              <div class="flex items-start gap-3">
+            <div class="bg-red-500/20 border-2 border-red-500/50 rounded-xl p-3 sm:p-4">
+              <div class="flex items-start gap-2 sm:gap-3">
                 <iconify-icon
                   icon="ph:warning-bold"
-                  class="text-red-400 mt-1"
-                  width="28"
+                  class="text-red-400 mt-1 flex-shrink-0"
+                  width="24"
                 ></iconify-icon>
-                <div>
-                  <p class="font-bold text-red-400 text-lg uppercase tracking-wide mb-2">
+                <div class="min-w-0">
+                  <p class="font-bold text-red-400 text-sm sm:text-base uppercase tracking-wide mb-2">
                     ⚠️ Warning - This Will Replace Your Wallet!
                   </p>
-                  <p class="text-white/90 text-sm mb-2">
+                  <p class="text-white/90 text-xs sm:text-sm mb-2">
                     Importing a seed will create a completely new wallet. Your old seed phrase will still work if you need to restore it later.
                   </p>
-                  <p class="text-white/80 text-sm font-semibold mb-1">Only proceed if:</p>
-                  <ul class="text-white/80 text-sm space-y-1 ml-4 list-disc">
+                  <p class="text-white/80 text-xs sm:text-sm font-semibold mb-1">Only proceed if:</p>
+                  <ul class="text-white/80 text-xs sm:text-sm space-y-1 ml-4 list-disc">
                     <li>You've lost your original seed phrase and can't restore it, OR</li>
                     <li>You want to start fresh with a new wallet, OR</li>
                     <li>You understand this creates a separate wallet (not linked to your old one)</li>
@@ -1028,21 +1028,21 @@
 
             <!-- Lightning Address Warning -->
             {#if user?.lightningAddress}
-            <div class="bg-amber-500/20 border-2 border-amber-500/50 rounded-xl p-4">
-              <div class="flex items-start gap-3">
+            <div class="bg-amber-500/20 border-2 border-amber-500/50 rounded-xl p-3 sm:p-4">
+              <div class="flex items-start gap-2 sm:gap-3">
                 <iconify-icon
                   icon="ph:lightning-bold"
-                  class="text-amber-400 mt-1"
-                  width="28"
+                  class="text-amber-400 mt-1 flex-shrink-0"
+                  width="24"
                 ></iconify-icon>
-                <div>
-                  <p class="font-bold text-amber-400 text-lg uppercase tracking-wide mb-2">
+                <div class="min-w-0">
+                  <p class="font-bold text-amber-400 text-sm sm:text-base uppercase tracking-wide mb-2 break-words">
                     ⚡ NEW SEED = NEW LIGHTNING ADDRESS
                   </p>
-                  <p class="text-white/90 text-sm font-semibold mb-2">
+                  <p class="text-white/90 text-xs sm:text-sm font-semibold mb-2 break-all">
                     Current: <span class="font-mono">{user.lightningAddress}</span>
                   </p>
-                  <p class="text-white/80 text-sm">
+                  <p class="text-white/80 text-xs sm:text-sm">
                     Each seed has its own unique Lightning address. The imported seed will have a different Lightning address. Your current address is tied to your current seed only.
                   </p>
                 </div>
@@ -1107,21 +1107,21 @@
             {:else}
               <!-- EXTRA CONFIRMATION with BIG LETTERS -->
               <div class="space-y-4 animate-scaleIn">
-                <div class="bg-red-500/20 border-2 border-red-500/50 rounded-xl p-4">
-                  <div class="flex items-start gap-3">
+                <div class="bg-red-500/20 border-2 border-red-500/50 rounded-xl p-3 sm:p-4">
+                  <div class="flex items-start gap-2 sm:gap-3">
                     <iconify-icon
                       icon="ph:warning-bold"
-                      class="text-red-400 mt-1"
-                      width="32"
+                      class="text-red-400 mt-1 flex-shrink-0"
+                      width="24"
                     ></iconify-icon>
-                    <div>
-                      <p class="font-bold text-red-400 text-2xl uppercase tracking-wide mb-3">
+                    <div class="min-w-0">
+                      <p class="font-bold text-red-400 text-base sm:text-xl md:text-2xl uppercase tracking-wide mb-2 sm:mb-3 break-words">
                         ⚠️ ARE YOU ABSOLUTELY SURE?
                       </p>
-                      <p class="text-white/90 text-base font-semibold">
+                      <p class="text-white/90 text-sm sm:text-base font-semibold">
                         This action will REPLACE your current wallet completely!
                       </p>
-                      <p class="text-white/80 text-sm mt-2">
+                      <p class="text-white/80 text-xs sm:text-sm mt-2">
                         Make sure you have backed up your existing wallet's recovery phrase before continuing. This cannot be undone.
                       </p>
                     </div>
@@ -1130,21 +1130,21 @@
 
                 <!-- Lightning Address Warning -->
                 {#if user?.lightningAddress}
-                <div class="bg-amber-500/20 border-2 border-amber-500/50 rounded-xl p-4">
-                  <div class="flex items-start gap-3">
+                <div class="bg-amber-500/20 border-2 border-amber-500/50 rounded-xl p-3 sm:p-4">
+                  <div class="flex items-start gap-2 sm:gap-3">
                     <iconify-icon
                       icon="ph:lightning-bold"
-                      class="text-amber-400 mt-1"
-                      width="28"
+                      class="text-amber-400 mt-1 flex-shrink-0"
+                      width="24"
                     ></iconify-icon>
-                    <div>
-                      <p class="font-bold text-amber-400 text-lg uppercase tracking-wide mb-2">
+                    <div class="min-w-0">
+                      <p class="font-bold text-amber-400 text-sm sm:text-base uppercase tracking-wide mb-2 break-words">
                         ⚡ NEW SEED = NEW LIGHTNING ADDRESS
                       </p>
-                      <p class="text-white/90 text-sm font-semibold mb-2">
+                      <p class="text-white/90 text-xs sm:text-sm font-semibold mb-2 break-all">
                         Current: <span class="font-mono">{user.lightningAddress}</span>
                       </p>
-                      <p class="text-white/80 text-sm">
+                      <p class="text-white/80 text-xs sm:text-sm">
                         Each seed has its own unique Lightning address. The imported seed will have a different Lightning address. Your current address is tied to your current seed only.
                       </p>
                     </div>
@@ -1157,7 +1157,7 @@
                     type="button"
                     onclick={restoreWallet}
                     disabled={restoring || !restoreMnemonic.trim()}
-                    class="flex-1 px-6 py-3 rounded-2xl font-bold text-base transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    class="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 rounded-2xl font-bold text-sm sm:text-base transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                     style="background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%); color: white;"
                   >
                     <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
@@ -1165,18 +1165,18 @@
                     {#if restoring}
                       <iconify-icon
                         icon="ph:spinner"
-                        width="24"
-                        class="animate-spin relative z-10"
+                        width="20"
+                        class="animate-spin relative z-10 flex-shrink-0"
                       ></iconify-icon>
                       <span class="relative z-10">Restoring...</span>
                     {:else}
                       <iconify-icon
                         noobserver
                         icon="ph:warning-circle-bold"
-                        width="24"
-                        class="relative z-10"
+                        width="20"
+                        class="relative z-10 flex-shrink-0"
                       ></iconify-icon>
-                      <span class="relative z-10 uppercase">YES, REPLACE MY WALLET</span>
+                      <span class="relative z-10 uppercase text-xs sm:text-sm">YES, REPLACE MY WALLET</span>
                     {/if}
                   </button>
 
@@ -1220,25 +1220,25 @@
     class="premium-card backdrop-blur-xl bg-white/5 border-2 border-white/10 hover:border-purple-500/40 transition-all duration-500 animate-scaleIn"
     style="animation-delay: 0.2s;"
   >
-      <div class="flex items-start gap-4">
+      <div class="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
         <div
-          class="p-3 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 shadow-lg shadow-purple-500/30 flex-shrink-0"
+          class="p-2.5 sm:p-3 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 shadow-lg shadow-purple-500/30 flex-shrink-0"
         >
-          <iconify-icon icon="ph:sparkle-bold" class="text-white flex-shrink-0" width="32" height="32" style="min-width: 32px; min-height: 32px;"
+          <iconify-icon icon="ph:sparkle-bold" class="text-white flex-shrink-0" width="28" height="28" style="min-width: 28px; min-height: 28px;"
           ></iconify-icon>
         </div>
-        <div class="flex-1">
-          <h3 class="text-xl font-bold gradient-text mb-2">
+        <div class="flex-1 min-w-0 w-full">
+          <h3 class="text-lg sm:text-xl font-bold gradient-text mb-2">
             Generate New Seed
           </h3>
-          <p class="text-white/60 mb-4">
+          <p class="text-white/60 mb-4 text-sm sm:text-base">
             Generate a brand new wallet with a fresh seed phrase. This replaces the wallet on this device/browser only. Your original wallet can still be restored later with its seed phrase if needed.
           </p>
-          
+
           {#if !showGenerateNew}
             <button
               onclick={() => showGenerateNew = true}
-              class="px-6 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center gap-2"
+              class="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 rounded-2xl font-semibold text-sm sm:text-base transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center justify-center gap-2"
               style="background: linear-gradient(135deg, #A855F7 0%, #EC4899 100%); color: white;"
             >
               <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
@@ -1246,26 +1246,26 @@
               <iconify-icon
                 noobserver
                 icon="ph:sparkle-bold"
-                width="24"
-                class="relative z-10 group-hover:rotate-12 transition-transform duration-500"
+                width="20"
+                class="relative z-10 group-hover:rotate-12 transition-transform duration-500 flex-shrink-0"
               ></iconify-icon>
               <span class="relative z-10">Generate New Wallet</span>
             </button>
           {:else}
             <div class="space-y-4 animate-scaleIn">
-              <div class="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
-                <div class="flex items-start gap-3">
+              <div class="bg-red-500/10 border border-red-500/30 rounded-xl p-3 sm:p-4">
+                <div class="flex items-start gap-2 sm:gap-3">
                   <iconify-icon
                     icon="ph:warning-bold"
-                    class="text-red-400 mt-1"
-                    width="24"
+                    class="text-red-400 mt-1 flex-shrink-0"
+                    width="20"
                   ></iconify-icon>
-                  <div>
-                    <p class="font-bold text-red-400">Warning - This Will Replace Your Wallet!</p>
-                    <p class="text-white/80 text-sm mt-1">
+                  <div class="min-w-0">
+                    <p class="font-bold text-red-400 text-sm sm:text-base">Warning - This Will Replace Your Wallet!</p>
+                    <p class="text-white/80 text-xs sm:text-sm mt-1">
                       Generating a new seed will create a completely new wallet. Your old seed phrase will still work if you need to restore it later. Only proceed if:
                     </p>
-                    <ul class="text-white/80 text-sm mt-2 ml-4 list-disc">
+                    <ul class="text-white/80 text-xs sm:text-sm mt-2 ml-4 list-disc">
                       <li>You've lost your original seed phrase and can't restore it, OR</li>
                       <li>You want to start fresh with a new wallet, OR</li>
                       <li>You understand this creates a separate wallet (not linked to your old one)</li>
@@ -1280,7 +1280,7 @@
                     type="button"
                     onclick={() => confirmGenerateNew = true}
                     disabled={generatingNewSeed}
-                    class="flex-1 px-6 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    class="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 rounded-2xl font-semibold text-sm sm:text-base transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                     style="background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%); color: white;"
                   >
                     <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
@@ -1288,8 +1288,8 @@
                     <iconify-icon
                       noobserver
                       icon="ph:arrows-clockwise-bold"
-                      width="24"
-                      class="relative z-10 group-hover:rotate-180 transition-transform duration-500"
+                      width="20"
+                      class="relative z-10 group-hover:rotate-180 transition-transform duration-500 flex-shrink-0"
                     ></iconify-icon>
                     <span class="relative z-10">Yes, Replace My Wallet</span>
                   </button>
@@ -1315,21 +1315,21 @@
               {:else}
                 <!-- EXTRA CONFIRMATION with BIG LETTERS -->
                 <div class="space-y-4 animate-scaleIn">
-                  <div class="bg-red-500/20 border-2 border-red-500/50 rounded-xl p-4">
-                    <div class="flex items-start gap-3">
+                  <div class="bg-red-500/20 border-2 border-red-500/50 rounded-xl p-3 sm:p-4">
+                    <div class="flex items-start gap-2 sm:gap-3">
                       <iconify-icon
                         icon="ph:warning-bold"
-                        class="text-red-400 mt-1"
-                        width="32"
+                        class="text-red-400 mt-1 flex-shrink-0"
+                        width="24"
                       ></iconify-icon>
-                      <div>
-                        <p class="font-bold text-red-400 text-2xl uppercase tracking-wide mb-3">
+                      <div class="min-w-0">
+                        <p class="font-bold text-red-400 text-base sm:text-xl md:text-2xl uppercase tracking-wide mb-2 sm:mb-3 break-words">
                           ⚠️ FINAL CONFIRMATION REQUIRED
                         </p>
-                        <p class="text-white/90 text-base font-semibold">
+                        <p class="text-white/90 text-sm sm:text-base font-semibold">
                           This will generate a NEW wallet and REPLACE your current one!
                         </p>
-                        <p class="text-white/80 text-sm mt-2">
+                        <p class="text-white/80 text-xs sm:text-sm mt-2">
                           Make absolutely sure you have saved your current wallet's recovery phrase. You will need it to restore this wallet in the future.
                         </p>
                       </div>
@@ -1338,21 +1338,21 @@
 
                   <!-- Lightning Address Warning -->
                   {#if user?.lightningAddress}
-                  <div class="bg-amber-500/20 border-2 border-amber-500/50 rounded-xl p-4">
-                    <div class="flex items-start gap-3">
+                  <div class="bg-amber-500/20 border-2 border-amber-500/50 rounded-xl p-3 sm:p-4">
+                    <div class="flex items-start gap-2 sm:gap-3">
                       <iconify-icon
                         icon="ph:lightning-bold"
-                        class="text-amber-400 mt-1"
-                        width="28"
+                        class="text-amber-400 mt-1 flex-shrink-0"
+                        width="24"
                       ></iconify-icon>
-                      <div>
-                        <p class="font-bold text-amber-400 text-lg uppercase tracking-wide mb-2">
+                      <div class="min-w-0">
+                        <p class="font-bold text-amber-400 text-sm sm:text-base uppercase tracking-wide mb-2 break-words">
                           ⚡ NEW SEED = NEW LIGHTNING ADDRESS
                         </p>
-                        <p class="text-white/90 text-sm font-semibold mb-2">
+                        <p class="text-white/90 text-xs sm:text-sm font-semibold mb-2 break-all">
                           Current: <span class="font-mono">{user.lightningAddress}</span>
                         </p>
-                        <p class="text-white/80 text-sm">
+                        <p class="text-white/80 text-xs sm:text-sm">
                           Each seed has its own unique Lightning address. The new seed will get a different Lightning address. Your current address is tied to your current seed only.
                         </p>
                       </div>
@@ -1365,7 +1365,7 @@
                       type="button"
                       onclick={() => generateNewSeed()}
                       disabled={generatingNewSeed}
-                      class="flex-1 px-6 py-3 rounded-2xl font-bold text-base transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                      class="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 rounded-2xl font-bold text-sm sm:text-base transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                       style="background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%); color: white;"
                     >
                       <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
@@ -1373,18 +1373,18 @@
                       {#if generatingNewSeed}
                         <iconify-icon
                           icon="ph:spinner"
-                          width="24"
-                          class="animate-spin relative z-10"
+                          width="20"
+                          class="animate-spin relative z-10 flex-shrink-0"
                         ></iconify-icon>
                         <span class="relative z-10">Generating...</span>
                       {:else}
                         <iconify-icon
                           noobserver
                           icon="ph:warning-circle-bold"
-                          width="24"
-                          class="relative z-10"
+                          width="20"
+                          class="relative z-10 flex-shrink-0"
                         ></iconify-icon>
-                        <span class="relative z-10 uppercase">YES, I'M ABSOLUTELY SURE</span>
+                        <span class="relative z-10 uppercase text-xs sm:text-sm">YES, I'M ABSOLUTELY SURE</span>
                       {/if}
                     </button>
 

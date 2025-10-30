@@ -400,16 +400,16 @@
       <!-- Wallet Identity Info -->
       {#if walletPubkey}
         <div class="wallet-info-box">
-          <div class="flex items-start gap-3">
-            <svg class="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div class="flex items-start gap-2 sm:gap-3">
+            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-blue-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
             </svg>
-            <div class="flex-1">
-              <p class="font-medium text-blue-400 mb-1">Wallet Identity</p>
-              <p class="text-sm text-white/60 mb-2">This Lightning address is tied to your wallet seed</p>
+            <div class="flex-1 min-w-0">
+              <p class="font-medium text-blue-400 mb-1 text-sm sm:text-base">Wallet Identity</p>
+              <p class="text-xs sm:text-sm text-white/60 mb-2">This Lightning address is tied to your wallet seed</p>
               <div class="wallet-pubkey-display">
                 <span class="text-xs text-white/40 font-mono">Pubkey:</span>
-                <span class="text-xs text-white/80 font-mono ml-2">{truncatePubkey(walletPubkey)}</span>
+                <span class="text-xs text-white/80 font-mono ml-2 break-all">{truncatePubkey(walletPubkey)}</span>
               </div>
             </div>
           </div>
@@ -418,20 +418,20 @@
 
       <!-- Seed = Address Warning -->
       <div class="warning-box">
-        <div class="flex items-start gap-3">
-          <svg class="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="flex items-start gap-2 sm:gap-3">
+          <svg class="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
-          <div class="flex-1">
-            <p class="font-medium text-amber-400 mb-2">Your Seed = Your Lightning Address</p>
-            <ul class="text-sm text-white/70 space-y-2">
+          <div class="flex-1 min-w-0">
+            <p class="font-medium text-amber-400 mb-2 text-sm sm:text-base">Your Seed = Your Lightning Address</p>
+            <ul class="text-xs sm:text-sm text-white/70 space-y-2">
               <li><strong>• This Lightning address is tied to THIS seed phrase only</strong></li>
               <li>• New device = new seed = new Lightning address (e.g., user → user1234)</li>
               <li>• To use this same address on another device, you must <strong>restore this seed phrase</strong></li>
               <li>• If you import a different seed, you'll get a different Lightning address</li>
             </ul>
-            <a href="/settings/security" class="inline-flex items-center gap-1 text-sm text-blue-400 hover:text-blue-300 mt-3 transition-colors font-medium">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <a href="/settings/security" class="inline-flex items-center gap-1 text-xs sm:text-sm text-blue-400 hover:text-blue-300 mt-3 transition-colors font-medium">
+              <svg class="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
               Backup Seed Phrase Now
@@ -861,8 +861,14 @@
     background: rgba(59, 130, 246, 0.1);
     border: 1px solid rgba(59, 130, 246, 0.3);
     border-radius: 0.75rem;
-    padding: 1rem;
+    padding: 0.75rem;
     margin-bottom: 1.5rem;
+  }
+
+  @media (min-width: 640px) {
+    .wallet-info-box {
+      padding: 1rem;
+    }
   }
 
   .wallet-pubkey-display {
@@ -871,6 +877,8 @@
     border-radius: 0.5rem;
     padding: 0.5rem 0.75rem;
     margin-top: 0.5rem;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
 
   /* Warning Box */
@@ -878,8 +886,14 @@
     background: rgba(245, 158, 11, 0.1);
     border: 1px solid rgba(245, 158, 11, 0.3);
     border-radius: 0.75rem;
-    padding: 1rem;
+    padding: 0.75rem;
     margin-bottom: 1.5rem;
+  }
+
+  @media (min-width: 640px) {
+    .warning-box {
+      padding: 1rem;
+    }
   }
 
   .warning-box strong {
