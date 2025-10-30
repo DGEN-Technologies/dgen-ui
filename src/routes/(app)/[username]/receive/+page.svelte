@@ -732,7 +732,10 @@
         <div class="flex justify-center mt-4">
           <button
             class="text-base text-white/60 hover:text-white transition-all duration-300 flex items-center gap-2 hover:gap-3"
-            onclick={() => showMoreOptionsExpanded = true}
+            onclick={() => {
+              showMoreOptionsExpanded = true;
+              showLightningAddress = false;
+            }}
           >
             <span class="text-lg md:text-2xl font-semibold">More deposit options</span>
             <iconify-icon icon="ph:caret-down-bold" width="16"></iconify-icon>
@@ -741,33 +744,33 @@
 
         <!-- Compact payment method buttons (70% size = 30% smaller) -->
         <div class="flex flex-wrap justify-center gap-2 mt-4 px-4">
-          <!-- Lightning Button -->
+          <!-- Liquid Button -->
           <button
             class="premium-card border-2 transition-all duration-300 hover:scale-105 flex items-center gap-2 px-4 py-3"
-            class:border-dgen-aqua={showLightningAddress}
-            class:bg-dgen-aqua={showLightningAddress}
-            class:bg-opacity-20={showLightningAddress}
-            class:shadow-lg={showLightningAddress}
-            class:shadow-dgen-aqua={showLightningAddress}
-            class:border-white={!showLightningAddress}
-            class:border-opacity-20={!showLightningAddress}
-            class:hover:border-dgen-aqua={!showLightningAddress}
-            class:hover:border-opacity-60={!showLightningAddress}
+            class:border-blue-400={invoiceType === types.liquid && !showLightningAddress}
+            class:bg-blue-400={invoiceType === types.liquid && !showLightningAddress}
+            class:bg-opacity-20={invoiceType === types.liquid && !showLightningAddress}
+            class:shadow-lg={invoiceType === types.liquid && !showLightningAddress}
+            class:shadow-blue-400={invoiceType === types.liquid && !showLightningAddress}
+            class:border-white={invoiceType !== types.liquid || showLightningAddress}
+            class:border-opacity-20={invoiceType !== types.liquid || showLightningAddress}
+            class:hover:border-blue-400={invoiceType !== types.liquid || showLightningAddress}
+            class:hover:border-opacity-60={invoiceType !== types.liquid || showLightningAddress}
             onclick={() => {
-              // Switch to Lightning Address view
-              showLightningAddress = true;
-              invoiceType = "lnurl";
-              // Clear any existing invoice data
+              // Switch to Liquid - just set type, don't auto-generate
+              showLightningAddress = false;
+              invoiceType = types.liquid;
+              // Clear invoice data to show asset picker
               invoiceText = '';
               hash = '';
               id = undefined;
             }}
             style="transform: scale(0.7);"
           >
-            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-dgen-aqua to-cyan-500 flex items-center justify-center">
-              <iconify-icon icon="ph:at-bold" class="text-white" width="18"></iconify-icon>
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center">
+              <iconify-icon icon="ph:drop-fill" class="text-white" width="18"></iconify-icon>
             </div>
-            <span class="font-bold text-white text-sm">Lightning</span>
+            <span class="font-bold text-white text-sm">Liquid</span>
           </button>
 
           <!-- Bitcoin Button -->
@@ -797,33 +800,33 @@
             <span class="font-bold text-white text-sm">Bitcoin</span>
           </button>
 
-          <!-- Liquid Button -->
+          <!-- Lightning Button -->
           <button
             class="premium-card border-2 transition-all duration-300 hover:scale-105 flex items-center gap-2 px-4 py-3"
-            class:border-blue-400={invoiceType === types.liquid && !showLightningAddress}
-            class:bg-blue-400={invoiceType === types.liquid && !showLightningAddress}
-            class:bg-opacity-20={invoiceType === types.liquid && !showLightningAddress}
-            class:shadow-lg={invoiceType === types.liquid && !showLightningAddress}
-            class:shadow-blue-400={invoiceType === types.liquid && !showLightningAddress}
-            class:border-white={invoiceType !== types.liquid || showLightningAddress}
-            class:border-opacity-20={invoiceType !== types.liquid || showLightningAddress}
-            class:hover:border-blue-400={invoiceType !== types.liquid || showLightningAddress}
-            class:hover:border-opacity-60={invoiceType !== types.liquid || showLightningAddress}
+            class:border-dgen-aqua={showLightningAddress}
+            class:bg-dgen-aqua={showLightningAddress}
+            class:bg-opacity-20={showLightningAddress}
+            class:shadow-lg={showLightningAddress}
+            class:shadow-dgen-aqua={showLightningAddress}
+            class:border-white={!showLightningAddress}
+            class:border-opacity-20={!showLightningAddress}
+            class:hover:border-dgen-aqua={!showLightningAddress}
+            class:hover:border-opacity-60={!showLightningAddress}
             onclick={() => {
-              // Switch to Liquid - just set type, don't auto-generate
-              showLightningAddress = false;
-              invoiceType = types.liquid;
-              // Clear invoice data to show asset picker
+              // Switch to Lightning Address view
+              showLightningAddress = true;
+              invoiceType = "lnurl";
+              // Clear any existing invoice data
               invoiceText = '';
               hash = '';
               id = undefined;
             }}
             style="transform: scale(0.7);"
           >
-            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center">
-              <iconify-icon icon="ph:drop-fill" class="text-white" width="18"></iconify-icon>
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-dgen-aqua to-cyan-500 flex items-center justify-center">
+              <iconify-icon icon="ph:at-bold" class="text-white" width="18"></iconify-icon>
             </div>
-            <span class="font-bold text-white text-sm">Liquid</span>
+            <span class="font-bold text-white text-sm">Lightning</span>
           </button>
         </div>
       {/if}
@@ -849,33 +852,52 @@
       <div class="space-y-4 mt-5">
         <!-- Payment Method Cards -->
         <div class="grid grid-cols-1 gap-3 px-2">
-          <!-- Lightning Address -->
+          <!-- Liquid Network -->
           <button
-            class="glass rounded-2xl p-4 transition-all duration-300 border-2 text-left group hover:scale-[1.02] border-white border-opacity-20 hover:border-dgen-aqua hover:border-opacity-60"
+            class="glass rounded-2xl p-4 transition-all duration-300 border-2 text-left group hover:scale-[1.02]"
+            class:border-blue-400={invoiceType === types.liquid}
+            class:bg-blue-400={invoiceType === types.liquid}
+            class:bg-opacity-10={invoiceType === types.liquid}
+            class:shadow-lg={invoiceType === types.liquid}
+            class:shadow-blue-400={invoiceType === types.liquid}
+            class:shadow-opacity-20={invoiceType === types.liquid}
+            class:border-white={invoiceType !== types.liquid}
+            class:border-opacity-20={invoiceType !== types.liquid}
+            class:hover:border-blue-400={invoiceType !== types.liquid}
+            class:hover:border-opacity-60={invoiceType !== types.liquid}
             onclick={() => {
-              // Show Lightning Address view
+              // Collapse to compact buttons and generate Liquid invoice
               showMoreOptionsExpanded = false;
-              showLightningAddress = true;
-              invoiceType = "lnurl"; // Track selection for collapsed view
+              showLightningAddress = false;
+              newAmount = undefined;
+              amount = undefined;
+              setType(types.liquid);
             }}
           >
             <div class="flex items-start gap-4">
-              <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-dgen-aqua to-cyan-500 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform shadow-lg">
-                <iconify-icon icon="ph:at-bold" class="text-white" width="24"></iconify-icon>
+              <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform shadow-lg">
+                <iconify-icon icon="ph:drop-fill" class="text-white" width="24"></iconify-icon>
               </div>
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 mb-1">
-                  <h3 class="font-bold text-white text-lg">Lightning Address</h3>
-                  <span class="badge badge-sm bg-dgen-aqua/20 text-dgen-aqua border-dgen-aqua/30">Static</span>
+                  <h3 class="font-bold text-white text-lg">Liquid Network</h3>
+                  <span class="badge badge-sm bg-blue-400/20 text-blue-400 border-blue-400/30 whitespace-nowrap">L-BTC • USDT</span>
                 </div>
-                <p class="text-sm text-white/70 leading-relaxed">Permanent address. Share once, receive anytime. Lightning only.</p>
+                <p class="text-sm text-white/70 leading-relaxed">Fast, confidential. Receive Bitcoin or USDT stablecoins.</p>
                 <div class="flex items-center gap-3 mt-2 text-xs">
-                  <span class="text-dgen-aqua flex items-center gap-1">
-                    <iconify-icon icon="ph:infinity-bold" width="14"></iconify-icon>
-                    Reusable
+                  <span class="text-blue-400 flex items-center gap-1">
+                    <iconify-icon icon="ph:eye-slash-bold" width="14"></iconify-icon>
+                    Private
+                  </span>
+                  <span class="text-cyan-400 flex items-center gap-1">
+                    <iconify-icon icon="ph:clock-bold" width="14"></iconify-icon>
+                    ~2 min
                   </span>
                 </div>
               </div>
+              {#if invoiceType === types.liquid}
+                <iconify-icon icon="ph:check-circle-fill" class="text-blue-400 flex-shrink-0" width="24"></iconify-icon>
+              {/if}
             </div>
           </button>
 
@@ -930,51 +952,45 @@
             </div>
           </button>
 
-          <!-- Liquid Network -->
+          <!-- Lightning Address -->
           <button
             class="glass rounded-2xl p-4 transition-all duration-300 border-2 text-left group hover:scale-[1.02]"
-            class:border-blue-400={invoiceType === types.liquid}
-            class:bg-blue-400={invoiceType === types.liquid}
-            class:bg-opacity-10={invoiceType === types.liquid}
-            class:shadow-lg={invoiceType === types.liquid}
-            class:shadow-blue-400={invoiceType === types.liquid}
-            class:shadow-opacity-20={invoiceType === types.liquid}
-            class:border-white={invoiceType !== types.liquid}
-            class:border-opacity-20={invoiceType !== types.liquid}
-            class:hover:border-blue-400={invoiceType !== types.liquid}
-            class:hover:border-opacity-60={invoiceType !== types.liquid}
+            class:border-dgen-aqua={invoiceType === "lnurl"}
+            class:bg-dgen-aqua={invoiceType === "lnurl"}
+            class:bg-opacity-10={invoiceType === "lnurl"}
+            class:shadow-lg={invoiceType === "lnurl"}
+            class:shadow-dgen-aqua={invoiceType === "lnurl"}
+            class:shadow-opacity-20={invoiceType === "lnurl"}
+            class:border-white={invoiceType !== "lnurl"}
+            class:border-opacity-20={invoiceType !== "lnurl"}
+            class:hover:border-dgen-aqua={invoiceType !== "lnurl"}
+            class:hover:border-opacity-60={invoiceType !== "lnurl"}
             onclick={() => {
-              // Collapse to compact buttons and generate Liquid invoice
+              // Show Lightning Address view
               showMoreOptionsExpanded = false;
-              showLightningAddress = false;
-              newAmount = undefined;
-              amount = undefined;
-              setType(types.liquid);
+              showLightningAddress = true;
+              invoiceType = "lnurl"; // Track selection for collapsed view
             }}
           >
             <div class="flex items-start gap-4">
-              <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform shadow-lg">
-                <iconify-icon icon="ph:drop-fill" class="text-white" width="24"></iconify-icon>
+              <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-dgen-aqua to-cyan-500 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform shadow-lg">
+                <iconify-icon icon="ph:at-bold" class="text-white" width="24"></iconify-icon>
               </div>
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 mb-1">
-                  <h3 class="font-bold text-white text-lg">Liquid Network</h3>
-                  <span class="badge badge-sm bg-blue-400/20 text-blue-400 border-blue-400/30 whitespace-nowrap">L-BTC • USDT</span>
+                  <h3 class="font-bold text-white text-lg">Lightning Address</h3>
+                  <span class="badge badge-sm bg-dgen-aqua/20 text-dgen-aqua border-dgen-aqua/30">Static</span>
                 </div>
-                <p class="text-sm text-white/70 leading-relaxed">Fast, confidential. Receive Bitcoin or USDT stablecoins.</p>
+                <p class="text-sm text-white/70 leading-relaxed">Lightning only. Requires you to be online to receive.</p>
                 <div class="flex items-center gap-3 mt-2 text-xs">
-                  <span class="text-blue-400 flex items-center gap-1">
-                    <iconify-icon icon="ph:eye-slash-bold" width="14"></iconify-icon>
-                    Private
-                  </span>
-                  <span class="text-cyan-400 flex items-center gap-1">
-                    <iconify-icon icon="ph:clock-bold" width="14"></iconify-icon>
-                    ~2 min
+                  <span class="text-dgen-aqua flex items-center gap-1">
+                    <iconify-icon icon="ph:infinity-bold" width="14"></iconify-icon>
+                    Reusable
                   </span>
                 </div>
               </div>
-              {#if invoiceType === types.liquid}
-                <iconify-icon icon="ph:check-circle-fill" class="text-blue-400 flex-shrink-0" width="24"></iconify-icon>
+              {#if invoiceType === "lnurl"}
+                <iconify-icon icon="ph:check-circle-fill" class="text-dgen-aqua flex-shrink-0" width="24"></iconify-icon>
               {/if}
             </div>
           </button>
