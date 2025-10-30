@@ -1,0 +1,22 @@
+{
+  "appId": "io.dgen",
+  "appName": "DGEN Wallet",
+  "server": {
+    "hostname": "dev.dgentech.io",
+    "url": "https://dev.dgentech.io/start"
+  },
+  "android": {
+    "webContentsDebuggingEnabled": true,
+    "allowMixedContent": true,
+    "useBrowserHistory": true,
+    "immersive": false
+  },
+  "plugins": {
+    "NfcWriter": {},
+    "StatusBar": {
+      "overlaysWebView": false,
+      "style": "DARK",
+      "backgroundColor": "#ffffffff"
+    }
+  }
+}

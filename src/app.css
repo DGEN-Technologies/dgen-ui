@@ -1,0 +1,233 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: "PublicSans";
+  src: url("/fonts/Public_Sans/static/PublicSans-Regular.ttf")
+    format("truetype");
+}
+
+html {
+  font-family: PublicSans, sans-serif;
+}
+
+::selection {
+  color: black;
+  background: #eaf2ff;
+}
+
+:fullscreen {
+  background-color: white;
+}
+
+/* Modern Button Styles */
+.btn-modern {
+  @apply px-6 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden inline-flex items-center justify-center gap-2;
+  background: linear-gradient(135deg, #74EBD5 0%, #9688DD 100%);
+  color: white;
+}
+
+.btn-modern:hover {
+  box-shadow: 0 10px 30px rgba(116, 235, 213, 0.3);
+}
+
+.btn-modern-primary {
+  background: linear-gradient(135deg, #74EBD5 0%, #9688DD 100%);
+}
+
+.btn-modern-secondary {
+  background: linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%);
+}
+
+.btn-modern-success {
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+}
+
+.btn-modern-warning {
+  background: linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%);
+}
+
+.btn-modern-danger {
+  background: linear-gradient(135deg, #F87171 0%, #EF4444 100%);
+}
+
+.btn-modern-info {
+  background: linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%);
+}
+
+/* Shimmer overlay for all modern buttons */
+.btn-modern::before {
+  content: "";
+  @apply absolute inset-0 opacity-0 transition-opacity duration-300;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.1) 100%);
+}
+
+.btn-modern:hover::before {
+  @apply opacity-100;
+}
+
+/* Icon animations for modern buttons */
+.btn-modern iconify-icon {
+  @apply relative z-10 transition-transform duration-300;
+}
+
+.btn-modern:hover iconify-icon {
+  @apply rotate-12;
+}
+
+input:not([type="range"]) {
+  @apply input;
+}
+
+.input {
+  @apply input-bordered input-lg input-primary;
+}
+
+textarea {
+  @apply textarea textarea-bordered textarea-lg textarea-primary;
+}
+
+select {
+  @apply select select-bordered select-lg select-primary;
+}
+
+input:not([type="range"]),
+textarea,
+select,
+.input {
+  @apply w-full rounded-2xl;
+}
+
+textarea:focus,
+textarea:focus-within,
+.input:focus,
+.input:focus-within {
+  @apply outline-offset-0;
+}
+
+input.clean,
+textarea.clean {
+  border: none !important;
+  outline: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: none !important;
+  box-shadow: none !important;
+}
+
+.btn {
+  @apply rounded-2xl btn-lg btn-block outline-none;
+}
+
+/* Mobile-first responsive improvements */
+@media (max-width: 768px) {
+  .container {
+    @apply px-4;
+  }
+
+  h1,
+  .text-6xl {
+    @apply text-4xl;
+  }
+
+  h2,
+  .text-5xl {
+    @apply text-3xl;
+  }
+
+  h3,
+  .text-4xl {
+    @apply text-2xl;
+  }
+
+  .btn-lg {
+    @apply text-lg px-4 py-3;
+  }
+
+  .premium-card {
+    @apply p-4;
+  }
+
+  /* Improve touch targets for mobile */
+  button,
+  a,
+  .clickable {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Better spacing on mobile */
+  section {
+    @apply py-16;
+  }
+
+  /* Stack elements on mobile */
+  .grid {
+    @apply gap-4;
+  }
+
+  /* Ensure cards don't get cut off on mobile */
+  .invoice .premium-card {
+    @apply max-w-none mx-auto;
+  }
+
+  /* Better mobile grid for wallet actions */
+  .grid-cols-2.sm\:grid-cols-4 {
+    @apply gap-2;
+  }
+
+  /* Ensure text doesn't overflow on mobile buttons */
+  .btn .flex.items-center span {
+    @apply text-sm;
+  }
+}
+
+/* Improved gradient backgrounds - DGEN Aqua Theme */
+.gradient-text {
+  background: linear-gradient(90deg, #74EBD5 0%, #9688DD 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.btn-liquid {
+  background: linear-gradient(90deg, #74EBD5 0%, #6AEEC7 50%, #9688DD 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-liquid::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  transition: left 0.6s;
+}
+
+.btn-liquid:hover::before {
+  left: 100%;
+}
+
+/* Glass morphism effects */
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.premium-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 1.5rem;
+  padding: 2rem;
+}

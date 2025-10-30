@@ -1,0 +1,46 @@
+[build]
+  command = "bun run build"
+  publish = "build"
+  
+  # Environment variables that should NOT be marked as secrets
+  # These are public URLs that need to be accessible in the browser
+  [build.environment]
+    SECRETS_SCAN_OMIT_KEYS = "PUBLIC_SOCKET,PUBLIC_DGEN_URL,PUBLIC_DOMAIN"
+
+[functions]
+  node_bundler = "esbuild"
+
+# Security Headers - CRITICAL for preventing XSS and injection attacks
+# Note: CSP is now managed by SvelteKit (svelte.config.js) with automatic nonce generation
+# These headers provide additional defense-in-depth
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # Prevent clickjacking
+    X-Frame-Options = "DENY"
+    # Prevent MIME type sniffing
+    X-Content-Type-Options = "nosniff"
+    # Force HTTPS (only in production)
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+    # Referrer policy
+    Referrer-Policy = "no-referrer"
+    # Permissions policy - disable unnecessary browser features
+    Permissions-Policy = "geolocation=(), microphone=(), camera=()"
+    # Cross-Origin policies for additional isolation
+    Cross-Origin-Embedder-Policy = "require-corp"
+    Cross-Origin-Opener-Policy = "same-origin"
+    Cross-Origin-Resource-Policy = "same-origin"
+
+# Basic auth for password protection
+[context.production]
+  environment = { NODE_ENV = "production" }
+
+# Environment variables for different contexts
+[context.deploy-preview]
+  environment = { NODE_ENV = "staging" }
+
+[context.branch-deploy]
+  environment = { NODE_ENV = "development" }
+
+# Password protection disabled - plugin not available
+# For password protection, consider using environment variables in your app

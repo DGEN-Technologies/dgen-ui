@@ -1,0 +1,148 @@
+<script>
+  import { preventDefault } from "svelte/legacy";
+  import { PUBLIC_DGEN_URL } from "$env/static/public";
+
+  import { t } from "$lib/translations";
+  import { upload } from "$lib/upload";
+  import { fail } from "$lib/utils";
+  import { applyAction, deserialize } from "$app/forms";
+  import Spinner from "$comp/Spinner.svelte";
+  let { item = $bindable(), user } = $props();
+
+  let fileInput = $state(),
+    formElement = $state(),
+    file,
+    submitting = $state(),
+    progress;
+  let select = () => fileInput.click();
+  let src = $state();
+
+  let tooLarge = {};
+  let handleFile = async ({ target }, type) => {
+    tooLarge[type] = false;
+    file = target.files[0];
+    if (!file) return;
+
+    if (file.size > 10000000) return (tooLarge[type] = true);
+
+    var reader = new FileReader();
+    reader.onload = async (e) => {
+      src = e.target.result;
+    };
+
+    reader.readAsDataURL(file);
+  };
+
+  async function handleSubmit() {
+    try {
+      submitting = true;
+      let data = new FormData(formElement);
+
+      if (src) {
+        try {
+          let { hash } = JSON.parse(await upload(file, "item", progress));
+
+          data.set("image", hash);
+          // No need to preload - will be loaded through proxy when displayed
+        } catch (e) {
+          console.log("problem upsubmitting avatar", e);
+        }
+      }
+
+      const response = await fetch(formElement.action, {
+        method: "POST",
+        body: data,
+      });
+
+      const result = deserialize(await response.text());
+
+      applyAction(result);
+    } catch (e) {
+      console.log(e);
+      fail("Something went wrong");
+    }
+
+    submitting = false;
+  }
+</script>
+
+<form
+  method="POST"
+  class="space-y-5"
+  onsubmit={preventDefault(handleSubmit)}
+  bind:this={formElement}
+>
+  <input type="hidden" name="id" bind:value={item.id} />
+  <input type="hidden" name="image" bind:value={item.image} />
+
+  <div>
+    <label for="name" class="font-bold mb-1 block">{$t("items.name")}</label>
+    <input name="name" bind:value={item.name} />
+  </div>
+
+  <div>
+    <label for="price" class="font-bold mb-1 block">{$t("items.price")}</label>
+    <div class="flex">
+      <input
+        name="price"
+        bind:value={item.price}
+        class="border-r-none rounded-r-none"
+      />
+      <div
+        class="text-gray-600 rounded-r-2xl p-4 my-auto rounded-l-none rounded border bg-gray-100"
+      >
+        {user.currency}
+      </div>
+    </div>
+  </div>
+
+  <div class="w-full">
+    <label for="img" class="font-bold mb-1 block">{$t("items.image")}</label>
+
+    <div class="grid sm:grid-cols-2 gap-4">
+      <div class="h-64 rounded-2xl overflow-hidden">
+        {#if src}
+          <img
+            {src}
+            alt={item.name}
+            class="object-cover w-full h-full"
+            onclick={select}
+            onkeydown={select}
+          />
+        {:else if item.image}
+          <img
+            src={item.image}
+            alt={item.name}
+            class="object-cover w-full h-full"
+            onclick={select}
+            onkeydown={select}
+          />
+        {:else}
+          <div
+            class="bg-gradient-to-r from-primary to-gradient mb-4 cursor-pointer hover:opacity-80 w-full h-full"
+            onclick={select}
+            onkeydown={select}
+            alt="Banner"
+          ></div>
+        {/if}
+      </div>
+    </div>
+
+    <input
+      type="file"
+      class="hidden"
+      bind:this={fileInput}
+      onchange={(e) => handleFile(e, "item")}
+    />
+  </div>
+
+  <button
+    class="rounded-full py-5 px-6 font-bold hover:opacity-80 bg-black text-white text-2xl w-full text-center"
+  >
+    {#if submitting}
+      <Spinner />
+    {:else}
+      {$t("items.submit")}
+    {/if}
+  </button>
+</form>

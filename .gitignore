@@ -1,0 +1,15 @@
+.DS_Store
+node_modules
+/build
+/.svelte-kit
+/package
+.env
+ios
+.history/
+db
+.netlify
+
+# Test artifacts
+test-results/
+playwright-report/
+test-*.js

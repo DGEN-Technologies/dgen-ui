@@ -1,0 +1,40 @@
+{
+  "theme_color": "#fff",
+  "background_color": "#000",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/start",
+  "name": "DGEN",
+  "description": "",
+  "short_name": "DGEN",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/favicon.ico.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/favicon.ico.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "protocol_handlers": [
+    {
+      "protocol": "bitcoin",
+      "url": "/send/%s"
+    }
+  ]
+}

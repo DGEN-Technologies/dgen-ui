@@ -1,0 +1,5 @@
+dgen:
+  android:
+    repository: https://github.com/dgentech/dgen-ui
+    artifacts:
+      - dgen-v%v.apk
