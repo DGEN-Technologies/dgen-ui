@@ -136,7 +136,14 @@
                     } else {
                       // For Bitcoin: convert USD to sats using exchange rate
                       // dollarAmount * 100,000,000 / rate = sats
-                      newAmount = Math.round((dollarAmount * 100000000) / rate);
+                      let calculatedSats = Math.round((dollarAmount * 100000000) / rate);
+
+                      // For Bitcoin on-chain, enforce minimum of 25,000 sats
+                      if (invoiceType === 'bitcoin') {
+                        newAmount = Math.max(calculatedSats, 25000);
+                      } else {
+                        newAmount = calculatedSats;
+                      }
                     }
                   }}
                 >
