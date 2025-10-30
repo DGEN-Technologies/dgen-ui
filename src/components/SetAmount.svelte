@@ -169,7 +169,7 @@
             bind:this={submit}
             type="submit"
             onclick={setAmount}
-            class="btn-gradient flex-1 hover:shadow-lg hover:shadow-dgen-cyan/30 flex items-center justify-center gap-2"
+            class="btn btn-gradient flex-1 hover:shadow-lg hover:shadow-dgen-cyan/30 flex items-center justify-center gap-2"
           >
             <iconify-icon icon="ph:check-bold" width="20"></iconify-icon>
             <span class="font-semibold">{t("payments.ok")}</span>
