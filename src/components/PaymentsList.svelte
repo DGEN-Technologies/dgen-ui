@@ -620,7 +620,7 @@
                   onclick={() => unit = 'btc'}
                 >
                   <div class="flex items-center justify-center gap-0.5">
-                    <iconify-icon icon="cryptocurrency:btc" class="text-orange-400" width="11"></iconify-icon>
+                    <iconify-icon icon="cryptocurrency:btc" class="{unit === 'btc' ? 'text-white' : 'text-orange-400'}" width="11"></iconify-icon>
                     <span>BTC</span>
                   </div>
                 </button>

@@ -620,9 +620,9 @@
   <div class="space-y-5 w-full">
     <div class="text-center">
       <div
-        class="text-5xl md:text-6xl font-semibold tracking-widest flex justify-center"
+        class="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight flex justify-center"
       >
-        <div class="my-auto" class:text-5xl={!fiat}>
+        <div class="my-auto flex items-center gap-1">
           {#if fiat}
             {#if position === "before"}{symbol}{/if}
           {:else if isUSDT}
@@ -630,18 +630,24 @@
               noobserver
               icon="cryptocurrency:usdt"
               class="text-green-400"
+              width="32"
+              height="32"
             ></iconify-icon>
           {:else if $unitPreference === 'btc'}
             <iconify-icon
               noobserver
               icon="cryptocurrency:btc"
               class="text-orange-400"
+              width="32"
+              height="32"
             ></iconify-icon>
           {:else}
             <iconify-icon
               noobserver
               icon="ph:lightning-fill"
               class="text-yellow-300"
+              width="32"
+              height="32"
             ></iconify-icon>
           {/if}
         </div>
@@ -673,11 +679,12 @@
         {#if fiat && position === "after"}{symbol}{/if}
       </div>
 
-      <!-- swap button -->
+      <!-- swap button - show alternate currency much smaller -->
       <button
         type="button"
-        class="flex items-center justify-center text-2xl cursor-pointer mx-auto select-none"
+        class="flex items-center justify-center text-xs sm:text-sm cursor-pointer mx-auto select-none text-white/60 hover:text-white/80 gap-1"
         aria-label="Swap currency display"
+        title="Click to swap currency display"
         onclick={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -690,25 +697,28 @@
               noobserver
               icon="cryptocurrency:usdt"
               class="text-green-400"
+              width="14"
             ></iconify-icon>
-            {isFinite(amount) ? (amount / 100000000).toFixed(2) : "0.00"} USDT
+            <span>{isFinite(amount) ? (amount / 100000000).toFixed(2) : "0.00"} USDT</span>
           {:else if $unitPreference === 'btc'}
             <iconify-icon
               noobserver
               icon="cryptocurrency:btc"
               class="text-orange-400"
+              width="14"
             ></iconify-icon>
-            {isFinite(amount) ? btc(amount) : "0.00000000"} BTC
+            <span>{isFinite(amount) ? btc(amount) : "0.00000000"} BTC</span>
           {:else}
             <iconify-icon
               noobserver
               icon="ph:lightning-fill"
               class="text-yellow-300"
+              width="14"
             ></iconify-icon>
-            {isFinite(amount) ? s(amount, locale) : "0"}
+            <span>{isFinite(amount) ? s(amount, locale) : "0"} sats</span>
           {/if}
         {:else}
-          {f(amountFiat, currency, locale)}
+          <span>{f(amountFiat, currency, locale)}</span>
         {/if}
       </button>
     </div>
