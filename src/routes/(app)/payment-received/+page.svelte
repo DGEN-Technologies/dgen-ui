@@ -6,6 +6,7 @@
   import { paymentReceived } from "$lib/stores/paymentEvents";
   import { page } from "$app/stores";
   import { get } from "svelte/store";
+  import { toast } from '@zerodevx/svelte-toast';
 
   // Get user data from page store
   const pageData = get(page);
@@ -17,6 +18,9 @@
 
   // Read from the store on mount
   onMount(() => {
+    // Dismiss all toasts when showing the success page
+    toast.pop(0);
+
     const event = get(paymentReceived);
 
     if (event) {
@@ -30,11 +34,15 @@
     }
 
     const handleClick = () => {
+      // Clear the payment event when leaving
+      paymentReceived.set(null);
       goto(`/${user?.username || ''}`);
     };
 
     // Auto-redirect after 5 seconds
     const timer = setTimeout(() => {
+      // Clear the payment event when leaving
+      paymentReceived.set(null);
       goto(`/${user?.username || ''}`);
     }, 5000);
 

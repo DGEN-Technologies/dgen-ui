@@ -68,59 +68,87 @@ export const messages = (data) => ({
   // New real-time payment event handlers
   async paymentReceived() {
     const { payment, invoice: invoiceData } = data;
-    
+
     // Invalidate all payment-related data to refresh
     invalidate("app:user");
     invalidate("app:invoice");
     invalidate("app:payments");
-    
+
     // Update the invoice store if we're on the relevant invoice page
     const currentInvoice = get(invoice);
     if (currentInvoice && invoiceData && currentInvoice.id === invoiceData.id) {
       invoice.set({ ...currentInvoice, ...invoiceData, confirmed: true });
     }
-    
-    // Show success notification
+
+    // Broadcast to payment events store for green checkmark UI
     const amount = payment?.amountSat || payment?.amount || 0;
-    success(`Payment Received! ⚡️${s(amount)}`);
-    
-    // Only redirect if we have a valid invoice ID and we're viewing that specific invoice
-    const currentPath = window.location.pathname;
-    if (invoiceData?.id && currentPath.includes(`/invoice/${invoiceData.id}`) && !currentPath.includes('/receive')) {
-      // Redirect to the paid page for this specific invoice
-      setTimeout(() => {
-        goto(`/invoice/${invoiceData.id}/paid`);
-      }, 2000);
+    if (amount > 0) {
+      const { notifyPaymentReceived } = await import('$lib/stores/paymentEvents');
+      notifyPaymentReceived(
+        {
+          amountSat: amount,
+          paymentType: 'receive',
+          ...payment
+        },
+        'confirmed'
+      );
     }
-    // Otherwise stay on current page (receive page, different invoice, etc)
+
+    // Navigate to payment received page with green checkmark
+    const currentPath = window.location.pathname;
+    const username = cookies.get("username");
+
+    // Show green checkmark if on receive-related pages
+    if (currentPath.includes('/receive') ||
+        currentPath.includes(`/${username}`) ||
+        currentPath.includes('/invoice')) {
+      await wait(() => !get(navigating));
+      setTimeout(() => {
+        goto('/payment-received');
+      }, 1000);
+    }
   },
 
   async invoicePaid() {
     const { invoiceId, amountSat } = data;
-    
+
     // Invalidate to refresh data
     invalidate("app:user");
     invalidate("app:invoice");
     invalidate("app:payments");
-    
+
     // Update the invoice store if viewing this invoice
     const currentInvoice = get(invoice);
     if (currentInvoice && invoiceId && currentInvoice.id === invoiceId) {
       invoice.set({ ...currentInvoice, confirmed: true, paid: true });
     }
-    
-    // Show success
-    success(`Invoice Paid! ⚡️${s(amountSat)}`);
-    
-    // Only redirect if we have a valid invoice ID and are viewing that specific invoice
-    const currentPath = window.location.pathname;
-    if (invoiceId && currentPath.includes(`/invoice/${invoiceId}`) && !currentPath.includes('/receive')) {
-      // Only redirect if we're viewing this specific invoice
-      setTimeout(() => {
-        goto(`/invoice/${invoiceId}/paid`);
-      }, 2000);
+
+    // Broadcast to payment events store for green checkmark UI
+    if (amountSat > 0) {
+      const { notifyPaymentReceived } = await import('$lib/stores/paymentEvents');
+      notifyPaymentReceived(
+        {
+          amountSat,
+          paymentType: 'receive',
+          id: invoiceId
+        },
+        'complete'
+      );
     }
-    // Otherwise just show the success message but stay on current page
+
+    // Navigate to payment received page with green checkmark
+    const currentPath = window.location.pathname;
+    const username = cookies.get("username");
+
+    // Show green checkmark if on receive-related pages
+    if (currentPath.includes('/receive') ||
+        currentPath.includes(`/${username}`) ||
+        currentPath.includes('/invoice')) {
+      await wait(() => !get(navigating));
+      setTimeout(() => {
+        goto('/payment-received');
+      }, 1000);
+    }
   },
 
   async balanceUpdated() {

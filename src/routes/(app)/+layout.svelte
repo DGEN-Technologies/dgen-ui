@@ -243,48 +243,22 @@
             }, 1000); // Wait 1 second before refreshing
           }
 
-          // Handle payment events
-          if (event.type === 'paymentSucceeded') {
-            // Get payment details from event
-            // @ts-ignore - Breez SDK event structure
-            const payment = event.details;
-            console.log('[Payment] Received payment:', payment?.amountSat, 'sats');
-
-            // Broadcast to payment events store for UI components to react
-            if (payment && payment.paymentType === 'receive') {
-              const { notifyPaymentReceived } = await import('$lib/stores/paymentEvents');
-              notifyPaymentReceived(payment);
-            }
-
-            const { walletStore, transactions } = await import('$lib/stores/wallet');
-            await walletStore.refresh();
-            await transactions.refresh();
-          }
-
-          if (event.type === 'paymentFailed') {
-            const { walletStore, transactions } = await import('$lib/stores/wallet');
-            await walletStore.refresh();
-            await transactions.refresh();
-          }
+          // Note: Payment events (paymentPending, paymentWaitingConfirmation, paymentSucceeded, etc.)
+          // are handled comprehensively in wallet.ts:371-500 with proper navigation and notifications.
+          // We don't handle them here to avoid duplicate processing.
           });
         }
       } catch (e) {
         console.error('[Layout] Failed to add event listener:', e);
       }
       
-      // SDK is connected - initialize wallet store but don't load data yet
-      // Wait for dataSynced event to ensure payment types are correct
+      // SDK is connected - initialize wallet store which will start event listening
       const { walletStore, transactions } = await import('$lib/stores/wallet');
 
-      // Set initial connecting state (like misty-breez)
-      walletStore.set({
-        isUnlocked: true,
-        isInitialized: true,
-        isConnecting: true, // Keep connecting state until data syncs
-        didCompleteInitialSync: false, // Will be set to true on 'dataSynced' event
-        info: null,
-        error: null
-      });
+      // Initialize the wallet store, which will:
+      // 1. Get wallet info
+      // 2. Start event listening for payment events
+      await walletStore.init(userPassword, userId);
 
       initBrowserSDK();
 
