@@ -681,10 +681,10 @@
     } else if (address_type) {
       setType(types.bitcoin, address_type);
     } else {
-      // Default to Lightning BOLT11 - show amount modal immediately
+      // Default to Lightning BOLT11 - let user set amount when ready
       invoiceType = types.lightning;
       settingAmountFromOptions = false;
-      toggleAmount();
+      // Don't auto-show amount modal - let user explore deposit options first
     }
 
     // Listen for needAmount event from InvoiceTypes
@@ -1432,23 +1432,28 @@
     <button
       class="glass border-2 border-white/30 hover:border-white/50 hover:bg-white/20 shadow-xl rounded-full px-4 py-2 font-medium text-sm transition-all pointer-events-auto flex items-center gap-2"
       onclick={() => {
-        // Reset to default Lightning Invoice BOLT11 state
-        showMoreOptions = false;
-        showMoreOptionsExpanded = false;
-        showLightningAddress = false;
-        invoiceType = types.lightning;
-        invoiceText = '';
-        hash = '';
-        id = undefined;
-        amount = undefined;
-        newAmount = undefined;
-        // Show amount modal like on page load
-        settingAmountFromOptions = false;
-        toggleAmount();
+        // If showing Lightning Address or an invoice, go back to expanded options menu
+        if (showLightningAddress || invoiceText) {
+          showLightningAddress = false;
+          showMoreOptionsExpanded = true;
+          invoiceText = '';
+          hash = '';
+          id = undefined;
+          amount = undefined;
+          newAmount = undefined;
+          // Reset to Lightning to show default "Set Amount" view in main content
+          invoiceType = types.lightning;
+        } else {
+          // If in expanded options menu, go back to Lightning Invoice
+          showMoreOptions = false;
+          showMoreOptionsExpanded = false;
+          invoiceType = types.lightning;
+          settingAmountFromOptions = false;
+        }
       }}
     >
       <iconify-icon icon="ph:arrow-left-bold" width="16"></iconify-icon>
-      <span>Back to Lightning Invoice</span>
+      <span>Back</span>
     </button>
   </div>
 {/if}

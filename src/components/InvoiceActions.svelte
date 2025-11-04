@@ -59,12 +59,6 @@
       </div>
     </button>
 
-    <button class="btn grow !w-auto" onclick={() => goto(`/${user.username}/receive`)}>
-      <iconify-icon noobserver icon="ph:clipboard-text-bold" width="32"
-      ></iconify-icon>
-      <div class="my-auto text-lg">{t("user.send.paste")}</div>
-    </button>
-
     <button class="btn grow !w-auto" onclick={() => goto("/scan")}>
       <iconify-icon noobserver icon="ph:camera-bold" width="32"></iconify-icon>
       <div class="my-auto text-lg">{t("user.send.scan")}</div>
