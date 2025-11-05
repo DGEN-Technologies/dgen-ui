@@ -206,7 +206,9 @@
             const now = Date.now();
 
             // Prevent rapid successive syncs (within 10 seconds)
-            if (now - lastSyncTime < 10000) {
+            // BUT: Always allow the first sync (lastSyncTime === 0) to ensure
+            // transactions are loaded when wallet opens (e.g., after Bitcoin purchase)
+            if (lastSyncTime !== 0 && now - lastSyncTime < 10000) {
               return;
             }
 
