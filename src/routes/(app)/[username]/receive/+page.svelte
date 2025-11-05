@@ -823,7 +823,7 @@
             }}
             style="transform: scale(0.7);"
           >
-            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-dgen-aqua to-cyan-500 flex items-center justify-center">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-yellow-300 to-amber-500 flex items-center justify-center">
               <iconify-icon icon="ph:at-bold" class="text-white" width="18"></iconify-icon>
             </div>
             <span class="font-bold text-white text-sm">Lightning</span>
@@ -973,17 +973,17 @@
             }}
           >
             <div class="flex items-start gap-4">
-              <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-dgen-aqua to-cyan-500 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform shadow-lg">
+              <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-300 to-amber-500 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform shadow-lg">
                 <iconify-icon icon="ph:at-bold" class="text-white" width="24"></iconify-icon>
               </div>
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 mb-1">
                   <h3 class="font-bold text-white text-lg">Lightning Address</h3>
-                  <span class="badge badge-sm bg-dgen-aqua/20 text-dgen-aqua border-dgen-aqua/30">Static</span>
+                  <span class="badge badge-sm bg-yellow-400/20 text-yellow-400 border-yellow-400/30">Static</span>
                 </div>
                 <p class="text-sm text-white/70 leading-relaxed">Lightning only. Requires you to be online to receive.</p>
                 <div class="flex items-center gap-3 mt-2 text-xs">
-                  <span class="text-dgen-aqua flex items-center gap-1">
+                  <span class="text-yellow-400 flex items-center gap-1">
                     <iconify-icon icon="ph:infinity-bold" width="14"></iconify-icon>
                     Reusable
                   </span>
