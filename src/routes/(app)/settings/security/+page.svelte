@@ -475,6 +475,11 @@
   function hideNewSeedPhrase() {
     showNewSeedPhrase = false;
     newGeneratedSeed = "";
+
+    // Redirect to profile wallet page (same as Replace Wallet flow)
+    setTimeout(() => {
+      window.location.href = user?.username ? `/${user.username}` : '/';
+    }, 500);
   }
 
   async function copyNewSeedPhrase() {
