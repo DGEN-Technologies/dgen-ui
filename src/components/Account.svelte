@@ -213,9 +213,9 @@
       </div>
 
       <!-- Quick Actions with liquid effect -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-white/10">
+      <div class="flex justify-center gap-3 mt-6 pt-6 border-t border-white/10">
         <button
-          class="glass rounded-xl py-4 sm:py-3 px-3 sm:px-2 font-bold hover:bg-white/10 transition-all duration-300 hover:scale-105 border border-white/20 hover:border-white/40 min-w-0"
+          class="glass rounded-xl py-4 sm:py-3 px-3 sm:px-2 font-bold hover:bg-white/10 transition-all duration-300 hover:scale-105 border border-white/20 hover:border-white/40 min-w-0 flex-1 max-w-[150px]"
           onclick={(e) => {
             e.stopPropagation();
             goto(`/${user.username}/receive`);
@@ -223,11 +223,11 @@
         >
           <span class="flex flex-col items-center justify-center gap-1.5 sm:gap-1">
             <iconify-icon icon="ph:arrow-down-bold" width="22" class="flex-shrink-0"></iconify-icon>
-            <span class="text-xs sm:text-xs truncate w-full">Receive</span>
+            <span class="text-xs sm:text-xs truncate w-full hidden sm:block">Receive</span>
           </span>
         </button>
         <button
-          class="glass rounded-xl py-4 sm:py-3 px-3 sm:px-2 font-bold hover:bg-white/10 transition-all duration-300 hover:scale-105 border border-white/20 hover:border-white/40 min-w-0"
+          class="glass rounded-xl py-4 sm:py-3 px-3 sm:px-2 font-bold hover:bg-white/10 transition-all duration-300 hover:scale-105 border border-white/20 hover:border-white/40 min-w-0 flex-1 max-w-[150px]"
           onclick={(e) => {
             e.stopPropagation();
             goto("/send");
@@ -235,11 +235,12 @@
         >
           <span class="flex flex-col items-center justify-center gap-1.5 sm:gap-1">
             <iconify-icon icon="ph:paper-plane-bold" width="22" class="flex-shrink-0"></iconify-icon>
-            <span class="text-xs sm:text-xs truncate w-full">Send</span>
+            <span class="text-xs sm:text-xs truncate w-full hidden sm:block">Send</span>
           </span>
         </button>
-        <button
-          class="glass rounded-xl py-4 sm:py-3 px-3 sm:px-2 font-bold hover:bg-white/10 transition-all duration-300 hover:scale-105 border border-white/20 hover:border-white/40 min-w-0"
+        <!-- Buy Bitcoin button commented out -->
+        <!-- <button
+          class="glass rounded-xl py-4 sm:py-3 px-3 sm:px-2 font-bold hover:bg-white/10 transition-all duration-300 hover:scale-105 border border-white/20 hover:border-white/40 min-w-0 flex-1 max-w-[150px]"
           onclick={(e) => {
             e.stopPropagation();
             showBuyBitcoin = true;
@@ -247,11 +248,11 @@
         >
           <span class="flex flex-col items-center justify-center gap-1.5 sm:gap-1">
             <iconify-icon icon="cryptocurrency:btc" width="22" class="flex-shrink-0"></iconify-icon>
-            <span class="text-xs sm:text-xs truncate w-full">Buy</span>
+            <span class="text-xs sm:text-xs truncate w-full hidden sm:block">Buy</span>
           </span>
-        </button>
+        </button> -->
         <button
-          class="glass rounded-xl py-4 sm:py-3 px-3 sm:px-2 font-bold hover:bg-white/10 transition-all duration-300 hover:scale-105 border border-white/20 hover:border-white/40 min-w-0"
+          class="glass rounded-xl py-4 sm:py-3 px-3 sm:px-2 font-bold hover:bg-white/10 transition-all duration-300 hover:scale-105 border border-white/20 hover:border-white/40 min-w-0 flex-1 max-w-[150px]"
           onclick={(e) => {
             e.stopPropagation();
             goto("/scan");
@@ -259,7 +260,7 @@
         >
           <span class="flex flex-col items-center justify-center gap-1.5 sm:gap-1">
             <iconify-icon icon="ph:scan-bold" width="22" class="flex-shrink-0"></iconify-icon>
-            <span class="text-xs sm:text-xs truncate w-full">Scan</span>
+            <span class="text-xs sm:text-xs truncate w-full hidden sm:block">Scan</span>
           </span>
         </button>
       </div>
