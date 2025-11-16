@@ -13,6 +13,9 @@
   $effect(() => ($themeStore = data.theme));
   $effect(() => (theme = $themeStore));
 
+  // Fallback to ensure app renders even if translations are slow/stuck
+  let forceRender = $state(false);
+
   let host = PUBLIC_DOMAIN.includes("localhost")
     ? `http://${PUBLIC_DOMAIN}`
     : `https://${PUBLIC_DOMAIN}`;
@@ -24,6 +27,12 @@
   }
   onMount(() => {
     if (!browser) return;
+
+    // Force render after 2 seconds to prevent white screen issues
+    // This ensures the app always loads even if translations are stuck
+    setTimeout(() => {
+      forceRender = true;
+    }, 2000);
 
     // Start security monitoring for suspicious DOM access
     domSecurityMonitor.startMonitoring();
@@ -86,7 +95,7 @@
   <meta name="twitter:creator" content="@dgenwalletapp" />
 </svelte:head>
 
-{#if !$loading}
+{#if !$loading || forceRender}
   <main data-theme={theme} class:pro-mode={$proMode}>
     {@render children?.()}
   </main>
