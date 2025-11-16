@@ -99,8 +99,8 @@
         const networkMinSat = Number(limitsResponse.send.minSat);
         const networkMaxSat = Number(limitsResponse.send.maxSat);
 
-        minSendable = Math.max(lnurlMinSat, networkMinSat);
-        maxSendable = Math.min(lnurlMaxSat, networkMaxSat);
+        minSendable = Math.min(Math.max(networkMinSat, lnurlMinSat), networkMaxSat);
+        maxSendable = Math.max(networkMinSat, Math.min(networkMaxSat, lnurlMaxSat));
 
         // Set default amount to minimum
         amountSat = minSendable;
