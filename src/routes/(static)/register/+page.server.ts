@@ -27,14 +27,20 @@ export const actions = {
   default: async ({ cookies, request, fetch }) => {
     const ip = request.headers.get("cf-connecting-ip");
     const form = await fd(request);
-    const { picture, username, password } = form;
+    const { picture, username, password, confirm } = form;
     let { loginRedirect } = form;
     if (loginRedirect === "undefined") loginRedirect = undefined;
+
+    // Server-side password confirmation validation
+    if (password !== confirm) {
+      console.log("[Register Action] Password mismatch:", { password, confirm });
+      return { status: 400, error: "Passwords don't match" };
+    }
 
     console.log("[Register Action] Starting registration for:", username);
     const user = { picture, username, password };
     const result = await register(user, ip, cookies, loginRedirect, fetch);
-    
+
     // If registration failed, return the error
     if (result && result.status === 400) {
       console.log("[Register Action] Registration failed with error:", result.error);

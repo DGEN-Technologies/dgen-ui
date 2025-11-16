@@ -46,6 +46,8 @@
 
   let username = $state();
   let revealPassword = $state(false);
+  let confirmPassword = $state("");
+  let revealConfirmPassword = $state(false);
   
   // Simple avatar color system
   const avatarColors = [
@@ -67,7 +69,9 @@
       cleared = true;
       username = "";
       $password = "";
+      confirmPassword = "";
       revealPassword = false;
+      revealConfirmPassword = false;
     }
   };
 
@@ -92,8 +96,7 @@
     }
   });
 
-  let token = $state(),
-    formElement;
+  let token = $state();
   let code = [];
   let redirect;
 
@@ -209,11 +212,19 @@
       </div>
     {/if}
 
-    <form 
-      class="space-y-5" 
+    <form
+      class="space-y-5"
       method="POST"
       use:enhance={() => {
+        // Validate password confirmation
+        if ($password !== confirmPassword) {
+          fail($t("accounts.passwordMismatch"));
+          // Cancel form submission
+          return () => {};
+        }
+
         loading = true;
+
         return async ({ result, update }) => {
           loading = false;
           await update();
@@ -226,6 +237,7 @@
         value={$loginRedirect || $page.url.searchParams.get("redirect")}
       />
       <input type="hidden" name="token" value={token} />
+      <input type="hidden" name="confirm" bind:value={confirmPassword} />
 
       <div class="relative group">
         <div
@@ -261,8 +273,25 @@
         ></div>
         <div class="relative">
           <PasswordInput
+            id="password"
             bind:value={$password}
             placeholder={$t("login.password")}
+            required
+          />
+        </div>
+      </div>
+
+      <div class="relative group">
+        <div
+          class="absolute inset-0 bg-gradient-accent opacity-0 group-focus-within:opacity-20 rounded-2xl blur-xl transition-opacity duration-300"
+        ></div>
+        <div class="relative">
+          <PasswordInput
+            id="confirmPassword"
+            name="confirmPassword"
+            bind:value={confirmPassword}
+            placeholder={$t("accounts.confirmPassword")}
+            required
           />
         </div>
       </div>
