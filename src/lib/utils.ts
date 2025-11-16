@@ -292,7 +292,7 @@ export const login = async (
   fetchFn = fetch,
 ) => {
   const maxAge = 380 * 24 * 60 * 60;
-  
+
   // Use the fetchFn passed from the server action
   const res = await fetchFn("/api/backend/login", {
     method: "POST",
@@ -303,9 +303,15 @@ export const login = async (
       "cf-connecting-ip": ip,
     },
   });
+
+  // Handle authentication failures
   if (res.status === 401) {
     const text = await res.text();
-    if (text.startsWith("2fa")) throw new Error("2fa");
+    if (text.startsWith("2fa")) {
+      throw new Error("2fa");
+    }
+    // For any other 401 error, throw login failed
+    throw new Error("Login failed");
   }
 
   const { user: u, token } = await res.json();
@@ -652,14 +658,27 @@ export const register = async (user, ip, cookies, loginRedirect, fetchFn = fetch
   // Only attempt login if registration was successful
   if (registrationSuccessful) {
     try {
+      // Small delay to ensure Redis operations complete (reduces race conditions)
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       await login(user, cookies, ip, fetchFn);
       console.log("[Register Utils] Auto-login successful for new user:", user.username);
     } catch (e) {
       const { message } = e as Error;
       console.log("[Register Utils] Auto-login failed for new user:", message);
-      // If auto-login fails after successful registration, still show as success
-      // The user can manually login
-      return svelteFail(400, { error: "Registration successful but auto-login failed. Please try logging in manually." });
+
+      // Retry once after a short delay in case of timing issues
+      try {
+        console.log("[Register Utils] Retrying auto-login after delay...");
+        await new Promise(resolve => setTimeout(resolve, 500));
+        await login(user, cookies, ip, fetchFn);
+        console.log("[Register Utils] Auto-login retry successful for:", user.username);
+      } catch (retryError) {
+        console.log("[Register Utils] Auto-login retry also failed");
+        // If auto-login fails after successful registration, still show as success
+        // The user can manually login
+        return svelteFail(400, { error: "Registration successful but auto-login failed. Please try logging in manually." });
+      }
     }
 
     // Set the signing key cookie for the new user
