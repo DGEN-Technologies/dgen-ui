@@ -386,7 +386,12 @@ const startEventListening = async (): Promise<void> => {
             // Only notify if initial sync is complete (prevents showing stale pending payments)
             const currentState = get(walletStore);
             if (event.details && currentState.didCompleteInitialSync) {
-              notifyPaymentReceived(event.details, 'pending');
+              // Only show "Payment Received" notification for incoming payments
+              if (event.details.paymentType === 'receive') {
+                notifyPaymentReceived(event.details, 'pending');
+              } else {
+                console.log('[WalletStore] Outgoing payment pending');
+              }
             } else {
               console.log('[WalletStore] Skipping notification - waiting for initial sync');
             }
@@ -401,16 +406,21 @@ const startEventListening = async (): Promise<void> => {
             // Only show notifications and navigate after initial sync is complete
             const stateConfirmed = get(walletStore);
             if (event.details && stateConfirmed.didCompleteInitialSync) {
-              // Show successful payment feedback (as per Breez SDK UX guide)
-              notifyPaymentReceived(event.details, 'confirmed');
+              // Only show "Payment Received" feedback for incoming payments
+              if (event.details.paymentType === 'receive') {
+                // Show successful payment feedback (as per Breez SDK UX guide)
+                notifyPaymentReceived(event.details, 'confirmed');
 
-              // Navigate to success screen after short delay
-              // Import goto dynamically to avoid circular dependencies
-              import('$app/navigation').then(({ goto }) => {
-                setTimeout(() => {
-                  goto('/payment-received');
-                }, 1000); // 1 second delay to let the payment event propagate
-              });
+                // Navigate to success screen after short delay
+                // Import goto dynamically to avoid circular dependencies
+                import('$app/navigation').then(({ goto }) => {
+                  setTimeout(() => {
+                    goto('/payment-received');
+                  }, 1000); // 1 second delay to let the payment event propagate
+                });
+              } else {
+                console.log('[WalletStore] Outgoing payment waiting confirmation');
+              }
             } else {
               console.log('[WalletStore] Skipping notification - waiting for initial sync');
             }
@@ -423,7 +433,12 @@ const startEventListening = async (): Promise<void> => {
             // Only notify after initial sync is complete
             const stateComplete = get(walletStore);
             if (event.details && stateComplete.didCompleteInitialSync) {
-              notifyPaymentReceived(event.details, 'complete');
+              // Only show "Payment Received" notification for incoming payments
+              if (event.details.paymentType === 'receive') {
+                notifyPaymentReceived(event.details, 'complete');
+              } else {
+                console.log('[WalletStore] Outgoing payment succeeded');
+              }
             } else {
               console.log('[WalletStore] Skipping notification - waiting for initial sync');
             }
