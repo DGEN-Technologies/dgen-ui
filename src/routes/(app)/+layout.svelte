@@ -264,12 +264,154 @@
 
       initBrowserSDK();
 
+      // Auto-register Lightning Address for new users (non-blocking)
+      // This runs in background and doesn't block the UI
+      autoRegisterLightningAddressInBackground().catch(error => {
+        console.warn('[Layout] Background LN address registration failed (non-critical):', error);
+      });
+
     } catch (error) {
       console.error('[Layout] Browser wallet initialization failed:', error);
       walletInitError = error?.message || 'Failed to initialize wallet';
       // Reset initialized flag on error to allow retry
       walletInitialized = false;
       isAcquiringLock = false;
+    }
+  };
+
+  /**
+   * Auto-register Lightning Address in background after wallet initialization
+   * This ensures new users get their Lightning Address set up automatically
+   * without having to visit the receive page
+   */
+  const autoRegisterLightningAddressInBackground = async () => {
+    if (!user?.id) return;
+
+    // Already has Lightning Address - skip
+    if (user.lightningAddress) {
+      console.log('[Layout] User already has Lightning Address:', user.lightningAddress);
+      lnAddressStore.initialize(user.lnurl, user.lightningAddress, user.bip353Address);
+      return;
+    }
+
+    console.log('[Layout] Auto-registering Lightning Address for new user...');
+    lnAddressStore.setLoading();
+
+    try {
+      const walletService = await import('$lib/walletService');
+
+      // Wait for SDK to be ready (max 10 seconds)
+      let attempts = 0;
+      while (!walletService.isConnected() && attempts < 40) {
+        await new Promise(resolve => setTimeout(resolve, 250));
+        attempts++;
+      }
+
+      if (!walletService.isConnected()) {
+        console.log('[Layout] SDK not ready for LN address registration');
+        lnAddressStore.reset();
+        return;
+      }
+
+      console.log('[Layout] SDK ready, proceeding with auto-registration');
+
+      // Use current origin (HTTPS) and route through backend proxy
+      const currentOrigin = browser ? window.location.origin : PUBLIC_DGEN_URL;
+      const webhookUrl = new URL('/api/backend/api/v1/notify', currentOrigin);
+      webhookUrl.searchParams.set('user', user.id);
+
+      // Try recovery first - this checks if current seed already has a registered address
+      console.log('[Layout] Attempting recovery first...');
+      const recovered = await walletService.recoverLightningAddress(webhookUrl.toString());
+
+      if (recovered && recovered.lightningAddress) {
+        console.log('[Layout] Recovered existing address:', recovered.lightningAddress);
+
+        lnAddressStore.setSuccess(
+          recovered.lnurl,
+          recovered.lightningAddress || '',
+          recovered.bip353Address
+        );
+
+        // Save to user profile
+        const { post } = await import('$lib/utils');
+        const { invalidate } = await import('$app/navigation');
+        await post('/user', {
+          lightningAddress: recovered.lightningAddress,
+          lnurl: recovered.lnurl,
+          bip353Address: recovered.bip353Address
+        });
+
+        user.lightningAddress = recovered.lightningAddress;
+        user.lnurl = recovered.lnurl;
+        user.bip353Address = recovered.bip353Address;
+
+        // Invalidate to refresh all user data across the app
+        await invalidate("app:user");
+
+        return;
+      }
+
+      // No existing address for this seed
+      // Clear stale database address if one exists (from previous seed)
+      if (user.lightningAddress) {
+        console.log('[Layout] Clearing stale database address:', user.lightningAddress);
+        const { post } = await import('$lib/utils');
+        await post('/user', {
+          lightningAddress: null,
+          lnurl: null,
+          bip353Address: null
+        });
+        user.lightningAddress = null;
+        user.lnurl = null;
+        user.bip353Address = null;
+      }
+
+      // Register new address with retry logic
+      console.log('[Layout] No existing address found, registering new one...');
+
+      // Use formatted username from user account
+      const baseUsername = walletService.formatUsername(user.username);
+      console.log('[Layout] Auto-registering with username:', baseUsername);
+
+      // registerLightningAddress now includes automatic retry with discriminators
+      const result = await walletService.registerLightningAddress(
+        baseUsername,
+        webhookUrl.toString()
+      );
+
+      console.log('[Layout] Auto-registration successful:', result.lightningAddress);
+
+      // Log if username was modified with discriminator
+      if (result.usernameModified) {
+        console.log('[Layout] Username was modified from', result.requestedUsername, 'to', result.actualUsername);
+      }
+
+      lnAddressStore.setSuccess(
+        result.lnurl,
+        result.lightningAddress || '',
+        result.bip353Address
+      );
+
+      // Save to user profile
+      const { post } = await import('$lib/utils');
+      const { invalidate } = await import('$app/navigation');
+      await post('/user', {
+        lightningAddress: result.lightningAddress,
+        lnurl: result.lnurl,
+        bip353Address: result.bip353Address
+      });
+
+      user.lightningAddress = result.lightningAddress;
+      user.lnurl = result.lnurl;
+      user.bip353Address = result.bip353Address;
+
+      // Invalidate to refresh all user data across the app
+      await invalidate("app:user");
+
+    } catch (e) {
+      console.error('[Layout] Auto-registration failed:', e);
+      lnAddressStore.setError(e instanceof Error ? e : new Error(String(e)));
     }
   };
 
