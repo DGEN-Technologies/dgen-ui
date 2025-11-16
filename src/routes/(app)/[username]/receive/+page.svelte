@@ -720,7 +720,7 @@
   {/if}
 
   <!-- Content Container -->
-  <div class="invoice container mx-auto max-w-xl px-4 py-4 sm:py-6 relative z-10">
+  <div class="invoice container mx-auto max-w-xl px-4 py-4 sm:py-6 relative z-10" class:pb-32={showMoreOptions}>
     <!-- Title with epic glow effect -->
     <div class="text-center mb-4 sm:mb-6 animate-fadeInUp">
       <div class="relative inline-block">
@@ -1432,7 +1432,8 @@
 {#if showMoreOptions}
   <div class="fixed bottom-6 left-0 right-0 z-10 flex justify-center pointer-events-none px-4">
     <button
-      class="glass border-2 border-white/30 hover:border-white/50 hover:bg-white/20 shadow-xl rounded-full px-4 py-2 font-medium text-sm transition-all pointer-events-auto flex items-center gap-2"
+      class="glass border-2 border-white/60 hover:border-white/90 hover:bg-white/30 shadow-2xl hover:shadow-white/20 rounded-full px-8 py-3 font-bold text-lg transition-all pointer-events-auto flex items-center gap-3"
+      style="box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);"
       onclick={() => {
         // If showing Lightning Address or an invoice, go back to expanded options menu
         if (showLightningAddress || invoiceText) {
@@ -1454,7 +1455,7 @@
         }
       }}
     >
-      <iconify-icon icon="ph:arrow-left-bold" width="16"></iconify-icon>
+      <iconify-icon icon="ph:arrow-left-bold" width="24"></iconify-icon>
       <span>Back</span>
     </button>
   </div>
