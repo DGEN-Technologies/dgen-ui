@@ -805,14 +805,14 @@
           <!-- Lightning Button -->
           <button
             class="premium-card border-2 transition-all duration-300 hover:scale-105 flex items-center gap-2 px-4 py-3"
-            class:border-dgen-aqua={showLightningAddress}
-            class:bg-dgen-aqua={showLightningAddress}
+            class:border-yellow-400={showLightningAddress}
+            class:bg-yellow-400={showLightningAddress}
             class:bg-opacity-20={showLightningAddress}
             class:shadow-lg={showLightningAddress}
-            class:shadow-dgen-aqua={showLightningAddress}
+            class:shadow-yellow-400={showLightningAddress}
             class:border-white={!showLightningAddress}
             class:border-opacity-20={!showLightningAddress}
-            class:hover:border-dgen-aqua={!showLightningAddress}
+            class:hover:border-yellow-400={!showLightningAddress}
             class:hover:border-opacity-60={!showLightningAddress}
             onclick={() => {
               // Switch to Lightning Address view
@@ -828,7 +828,7 @@
             <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-yellow-300 to-amber-500 flex items-center justify-center">
               <iconify-icon icon="ph:at-bold" class="text-white" width="18"></iconify-icon>
             </div>
-            <span class="font-bold text-white text-sm">Lightning</span>
+            <span class="font-bold text-white text-sm">LN Address</span>
           </button>
         </div>
       {/if}
@@ -957,15 +957,15 @@
           <!-- Lightning Address -->
           <button
             class="glass rounded-2xl p-4 transition-all duration-300 border-2 text-left group hover:scale-[1.02]"
-            class:border-dgen-aqua={invoiceType === "lnurl"}
-            class:bg-dgen-aqua={invoiceType === "lnurl"}
+            class:border-yellow-400={invoiceType === "lnurl"}
+            class:bg-yellow-400={invoiceType === "lnurl"}
             class:bg-opacity-10={invoiceType === "lnurl"}
             class:shadow-lg={invoiceType === "lnurl"}
-            class:shadow-dgen-aqua={invoiceType === "lnurl"}
+            class:shadow-yellow-400={invoiceType === "lnurl"}
             class:shadow-opacity-20={invoiceType === "lnurl"}
             class:border-white={invoiceType !== "lnurl"}
             class:border-opacity-20={invoiceType !== "lnurl"}
-            class:hover:border-dgen-aqua={invoiceType !== "lnurl"}
+            class:hover:border-yellow-400={invoiceType !== "lnurl"}
             class:hover:border-opacity-60={invoiceType !== "lnurl"}
             onclick={() => {
               // Show Lightning Address view
@@ -992,7 +992,7 @@
                 </div>
               </div>
               {#if invoiceType === "lnurl"}
-                <iconify-icon icon="ph:check-circle-fill" class="text-dgen-aqua flex-shrink-0" width="24"></iconify-icon>
+                <iconify-icon icon="ph:check-circle-fill" class="text-yellow-400 flex-shrink-0" width="24"></iconify-icon>
               {/if}
             </div>
           </button>
