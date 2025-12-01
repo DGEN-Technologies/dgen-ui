@@ -46,7 +46,7 @@ const config = {
           'https://api.simplesvg.com',
           'https://api.unisvg.com',
           'data:',
-          'https://widget2agent-657488364208.asia-southeast1.run.app'
+          'https://widget2agent-657488364208.asia-southeast1.run.app', // Chatbot endpoint
         ],
         'frame-ancestors': ['none'],
         'base-uri': ['self'],
