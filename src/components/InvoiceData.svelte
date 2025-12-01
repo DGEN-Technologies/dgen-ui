@@ -146,13 +146,15 @@
           width="24"
           class="text-yellow-400 mb-2"
         ></iconify-icon>
-        <p class="text-yellow-200 font-semibold leading-relaxed">
+        <p class="text-yellow-200 font-semibold leading-relaxed text-xl">
           {#if onchainLimits.receive?.minSat && onchainLimits.receive?.maxSat}
-            Amount must be between <span class="font-bold text-yellow-100">{btc(onchainLimits.receive.minSat)} BTC</span> and <span class="font-bold text-yellow-100">{btc(onchainLimits.receive.maxSat)} BTC</span>
+            Min: <span class="font-bold text-yellow-100 text-4xl">{sat(Math.max(28000, onchainLimits.receive.minSat))} sats</span>
+            <br />
+            Max: <span class="font-bold text-yellow-100 text-4xl">{sat(onchainLimits.receive.maxSat)} sats</span>
           {:else if onchainLimits.receive?.minSat}
-            Minimum amount: <span class="font-bold text-yellow-100">{btc(onchainLimits.receive.minSat)} BTC</span>
+            Minimum: <span class="font-bold text-yellow-100 text-4xl">{sat(Math.max(28000, onchainLimits.receive.minSat))} sats</span>
           {:else if onchainLimits.receive?.maxSat}
-            Maximum amount: <span class="font-bold text-yellow-100">{btc(onchainLimits.receive.maxSat)} BTC</span>
+            Maximum: <span class="font-bold text-yellow-100 text-4xl">{sat(onchainLimits.receive.maxSat)} sats</span>
           {:else}
             Bitcoin on-chain payments require network fees
           {/if}

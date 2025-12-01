@@ -18,23 +18,6 @@
   let unit = $state(currency); // Default to fiat currency display
   let isHovered = $state(false);
   let mounted = $state(false);
-  let isRefreshing = $state(false);
-
-  const refreshBalance = async () => {
-    isRefreshing = true;
-    try {
-      console.log('[Account] Refreshing balance...');
-      console.log('[Account] Current balance:', balance);
-      const { walletStore } = await import("$lib/stores/wallet");
-      await walletStore.refresh();
-      console.log('[Account] Balance refreshed successfully');
-      console.log('[Account] New balance:', $walletBalance);
-    } catch (e) {
-      console.error("[Account] Failed to refresh wallet balance:", e);
-    } finally {
-      isRefreshing = false;
-    }
-  };
 
   // Get individual asset balances
   let balances = $derived($assetBalances || []);
@@ -132,17 +115,6 @@
         ></div>
       {/each}
     {/if}
-
-    <!-- Refresh Button - Absolute Top Right of Card -->
-    <button
-      onclick={refreshBalance}
-      class="absolute top-2 right-2 sm:top-3 sm:right-3 z-30 p-1 rounded-full hover:bg-white/10 opacity-50 hover:opacity-100 transition-all"
-      class:animate-spin={isRefreshing}
-      disabled={isRefreshing}
-      title="Refresh balance"
-    >
-      <iconify-icon icon="ph:arrow-clockwise" width="16"></iconify-icon>
-    </button>
 
     <div class="relative z-10">
 

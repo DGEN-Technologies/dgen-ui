@@ -613,9 +613,9 @@
       return;
     }
 
-    // Check minimum for Bitcoin on-chain
-    if (invoiceType === types.bitcoin && newAmount < 25000) {
-      fail("Below minimum: 0.00025 BTC (25,000 sats)");
+    // Check minimum for Bitcoin on-chain (28k sats minimum)
+    if (invoiceType === types.bitcoin && newAmount < 28000) {
+      fail("Minimum: 0.00028 BTC (28,000 sats)");
       // Don't close dialog - keep user on numberpad until valid amount
       return;
     }

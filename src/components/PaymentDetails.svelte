@@ -3,16 +3,22 @@
   import { t } from "$lib/translations";
   import { format } from "date-fns";
   import locales from "$lib/locales";
+  import { PUBLIC_EXPLORER, PUBLIC_LIQUID_EXPLORER } from "$env/static/public";
 
   let { payment, user } = $props();
   let locale = $derived(user ? locales[user.language] : locales["en"]);
 
-  // Derive payment details - SDK uses tagged union, need to access based on tag
+  // Derive payment details - SDK uses tagged union with 'type' field
   let details = $derived(payment?.details || {});
+
+  // Payment type detection
+  let isBitcoinPayment = $derived(details?.type === 'bitcoin');
+  let isLightningPayment = $derived(details?.type === 'lightning');
+  let isLiquidPayment = $derived(details?.type === 'liquid');
 
   // Check if this is a USDT payment
   let isUSDT = $derived(
-    details?.type === 'liquid' &&
+    isLiquidPayment &&
     details?.assetId === 'ce091c998b83c78bb71a632313ba3760f1763d9cfcffae02258ffa9865a37bd2'
   );
 
@@ -26,32 +32,68 @@
     return payment?.amountSat || 0;
   });
 
+  // Top-level transaction ID from Payment object (Liquid tx)
+  let txId = $derived(payment?.txId || '');
+
+  // Bitcoin on-chain specific fields
+  let lockupTxId = $derived(isBitcoinPayment ? (details?.lockupTxId || '') : '');
+  let claimTxId = $derived(
+    isBitcoinPayment ? (details?.claimTxId || '') :
+    isLightningPayment ? (details?.claimTxId || '') : ''
+  );
+  let swapId = $derived(
+    isBitcoinPayment ? (details?.swapId || '') :
+    isLightningPayment ? (details?.swapId || '') : ''
+  );
+  let refundTxId = $derived(
+    isBitcoinPayment ? (details?.refundTxId || '') :
+    isLightningPayment ? (details?.refundTxId || '') : ''
+  );
+  let refundTxAmountSat = $derived(
+    isBitcoinPayment ? (details?.refundTxAmountSat || 0) :
+    isLightningPayment ? (details?.refundTxAmountSat || 0) : 0
+  );
+
   // Extract fields based on payment details type (Lightning, Bitcoin, or Liquid)
-  // The SDK returns details as a tagged union with a 'tag' field
-  let invoice = $derived(
-    details?.invoice ||
-    details?.data?.invoice ||
-    (details?.tag === 'lightning' ? details.invoice : '')
+  let invoice = $derived(isLightningPayment ? (details?.invoice || '') : '');
+  let paymentHash = $derived(isLightningPayment ? (details?.paymentHash || '') : '');
+  let preimage = $derived(isLightningPayment ? (details?.preimage || '') : '');
+  let destinationPubkey = $derived(isLightningPayment ? (details?.destinationPubkey || '') : '');
+  let destination = $derived(isLiquidPayment ? (details?.destination || '') : '');
+
+  // LNURL info (available on lightning and liquid)
+  let lnurlInfo = $derived(
+    (isLightningPayment || isLiquidPayment) ? (details?.lnurlInfo || null) : null
   );
-  let paymentHash = $derived(
-    details?.paymentHash ||
-    details?.data?.paymentHash ||
-    (details?.tag === 'lightning' ? details.paymentHash : '')
+
+  // BIP353 and payer note (available on lightning and liquid)
+  let bip353Address = $derived(
+    (isLightningPayment || isLiquidPayment) ? (details?.bip353Address || '') : ''
   );
-  let preimage = $derived(
-    details?.preimage ||
-    details?.data?.preimage ||
-    (details?.tag === 'lightning' ? details.preimage : '')
+  let payerNote = $derived(
+    (isLightningPayment || isLiquidPayment) ? (details?.payerNote || '') : ''
   );
-  let destination = $derived(
-    details?.destination ||
-    details?.destinationPubkey ||
-    details?.data?.destination ||
-    (details?.tag === 'lightning' ? details.destination : '')
-  );
-  let swapInfo = $derived(details?.swapInfo || details?.data?.swapInfo);
-  let lnurlInfo = $derived(details?.lnurlInfo || details?.data?.lnurlInfo);
-  let refundDetails = $derived(details?.refundDetails || details?.data?.refundDetails);
+
+  // Legacy swapInfo support (for backwards compatibility)
+  let swapInfo = $derived(details?.swapInfo || null);
+  let refundDetails = $derived(details?.refundDetails || null);
+
+  // Explorer URLs
+  let bitcoinExplorer = $derived(PUBLIC_EXPLORER || 'https://mempool.space');
+  let liquidExplorer = $derived(PUBLIC_LIQUID_EXPLORER || 'https://liquid.network');
+
+  // Unblinding data for Liquid transactions
+  let unblindingData = $derived(payment?.unblindingData || '');
+
+  // Format explorer URL with optional unblinding data
+  const formatLiquidTxUrl = (txid) => {
+    const blinded = unblindingData ? `#blinded=${unblindingData}` : '';
+    return `${liquidExplorer}/tx/${txid}${blinded}`;
+  };
+
+  const formatBitcoinTxUrl = (txid) => {
+    return `${bitcoinExplorer}/tx/${txid}`;
+  };
 
   // Helper to format timestamps
   const formatTime = (timestamp) => {
@@ -154,7 +196,7 @@
   </div>
 
   <!-- Lightning Details -->
-  {#if invoice || paymentHash || preimage}
+  {#if isLightningPayment && (invoice || paymentHash || preimage || destinationPubkey)}
     <div class="card bg-base-200/50 border border-white/10">
       <div class="card-body p-4">
         <h3 class="text-lg font-semibold mb-3">
@@ -181,25 +223,6 @@
             </div>
           {/if}
 
-          {#if paymentHash}
-            <div>
-              <span class="text-white/60 block mb-1">Payment Hash:</span>
-              <div
-                class="group relative font-mono text-xs break-words bg-base-300/50 p-3 rounded-lg cursor-pointer hover:bg-base-300 transition-all hover:ring-2 hover:ring-primary/50"
-                onclick={() => copyWithToast(paymentHash, 'Payment Hash')}
-                title="Click to copy"
-              >
-                <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                  <div class="bg-primary/90 text-primary-content px-2 py-1 rounded text-xs font-semibold flex items-center gap-1">
-                    <iconify-icon icon="ph:copy" width="12"></iconify-icon>
-                    Copy
-                  </div>
-                </div>
-                {paymentHash}
-              </div>
-            </div>
-          {/if}
-
           {#if preimage}
             <div>
               <span class="text-white/60 block mb-1">Preimage:</span>
@@ -219,12 +242,12 @@
             </div>
           {/if}
 
-          {#if destination}
+          {#if destinationPubkey}
             <div>
-              <span class="text-white/60 block mb-1">Destination:</span>
+              <span class="text-white/60 block mb-1">Destination Pubkey:</span>
               <div
                 class="group relative font-mono text-xs break-words bg-base-300/50 p-3 rounded-lg cursor-pointer hover:bg-base-300 transition-all hover:ring-2 hover:ring-primary/50"
-                onclick={() => copyWithToast(destination, 'Destination')}
+                onclick={() => copyWithToast(destinationPubkey, 'Destination Pubkey')}
                 title="Click to copy"
               >
                 <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
@@ -233,7 +256,7 @@
                     Copy
                   </div>
                 </div>
-                {destination}
+                {destinationPubkey}
               </div>
             </div>
           {/if}
@@ -294,7 +317,7 @@
   {/if}
 
   <!-- BIP353 Address -->
-  {#if details.bip353Address}
+  {#if bip353Address}
     <div class="card bg-base-200/50 border border-white/10">
       <div class="card-body p-4">
         <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
@@ -303,9 +326,9 @@
         </h3>
 
         <div class="flex items-center gap-2 group">
-          <div class="font-mono text-sm">{details.bip353Address}</div>
+          <div class="font-mono text-sm">{bip353Address}</div>
           <button
-            onclick={() => copyWithToast(details.bip353Address, 'BIP353 Address')}
+            onclick={() => copyWithToast(bip353Address, 'BIP353 Address')}
             class="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-white/10 rounded"
             title="Copy address"
           >
@@ -316,8 +339,120 @@
     </div>
   {/if}
 
-  <!-- Swap Details -->
-  {#if swapInfo}
+  <!-- Transaction Details - matches misty-breez payment_details_sheet.dart -->
+  <!-- Primary Transaction ID (Liquid) -->
+  {#if txId}
+    <div class="card bg-base-200/50 border border-white/10">
+      <div class="card-body p-4">
+        <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
+          <iconify-icon icon="ph:link-bold" width="20"></iconify-icon>
+          Transaction ID
+        </h3>
+
+        <div class="space-y-3 text-sm">
+          <div>
+            <div
+              class="group relative font-mono text-xs break-all bg-base-300/50 p-3 rounded-lg cursor-pointer hover:bg-base-300 transition-all hover:ring-2 hover:ring-primary/50"
+              onclick={() => copyWithToast(txId, 'Transaction ID')}
+              title="Click to copy"
+            >
+              <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                <div class="bg-primary/90 text-primary-content px-2 py-1 rounded text-xs font-semibold flex items-center gap-1">
+                  <iconify-icon icon="ph:copy" width="12"></iconify-icon>
+                  Copy
+                </div>
+              </div>
+              {txId}
+            </div>
+          </div>
+
+          <div>
+            <a
+              href={formatLiquidTxUrl(txId)}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="btn btn-sm btn-primary gap-2"
+            >
+              <iconify-icon icon="ph:arrow-square-out" width="16"></iconify-icon>
+              View on Liquid Explorer
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  {/if}
+
+  <!-- Bitcoin On-chain Transaction (claimTxId for Bitcoin swaps) -->
+  {#if claimTxId && claimTxId !== txId}
+    <div class="card bg-base-200/50 border border-white/10">
+      <div class="card-body p-4">
+        <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
+          <img src="/images/bitcoin.svg" class="w-5 h-5" alt="Bitcoin" />
+          {isBitcoinPayment && payment.paymentType === 'send' ? 'On-chain Transaction' : 'Claim Transaction'}
+        </h3>
+
+        <div class="space-y-3 text-sm">
+          <div>
+            <div
+              class="group relative font-mono text-xs break-all bg-base-300/50 p-3 rounded-lg cursor-pointer hover:bg-base-300 transition-all hover:ring-2 hover:ring-primary/50"
+              onclick={() => copyWithToast(claimTxId, 'Transaction ID')}
+              title="Click to copy"
+            >
+              <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                <div class="bg-primary/90 text-primary-content px-2 py-1 rounded text-xs font-semibold flex items-center gap-1">
+                  <iconify-icon icon="ph:copy" width="12"></iconify-icon>
+                  Copy
+                </div>
+              </div>
+              {claimTxId}
+            </div>
+          </div>
+
+          <div>
+            <a
+              href={isBitcoinPayment && payment.paymentType === 'send' ? formatBitcoinTxUrl(claimTxId) : formatLiquidTxUrl(claimTxId)}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="btn btn-sm btn-primary gap-2"
+            >
+              <iconify-icon icon="ph:arrow-square-out" width="16"></iconify-icon>
+              View on {isBitcoinPayment && payment.paymentType === 'send' ? 'Bitcoin' : 'Liquid'} Explorer
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  {/if}
+
+  <!-- Swap ID (for Bitcoin and Lightning swaps) -->
+  {#if swapId}
+    <div class="card bg-base-200/50 border border-white/10">
+      <div class="card-body p-4">
+        <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
+          <iconify-icon icon="ph:swap-bold" width="20"></iconify-icon>
+          Swap ID
+        </h3>
+
+        <div
+          class="group relative font-mono text-xs break-all bg-base-300/50 p-3 rounded-lg cursor-pointer hover:bg-base-300 transition-all hover:ring-2 hover:ring-primary/50"
+          onclick={() => copyWithToast(swapId, 'Swap ID')}
+          title="Click to copy"
+        >
+          <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+            <div class="bg-primary/90 text-primary-content px-2 py-1 rounded text-xs font-semibold flex items-center gap-1">
+              <iconify-icon icon="ph:copy" width="12"></iconify-icon>
+              Copy
+            </div>
+          </div>
+          {swapId}
+        </div>
+      </div>
+    </div>
+  {/if}
+
+
+  <!-- Legacy swapInfo support (backwards compatibility) -->
+  {#if swapInfo && !swapId}
     <div class="card bg-base-200/50 border border-white/10">
       <div class="card-body p-4">
         <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
@@ -355,111 +490,6 @@
               </div>
             </div>
           {/if}
-
-          {#if swapInfo.createdAt}
-            <div>
-              <span class="text-white/60">Created At:</span>
-              <div class="font-mono text-xs mt-1">{formatTime(swapInfo.createdAt)}</div>
-            </div>
-          {/if}
-
-          {#if swapInfo.paidSat}
-            <div>
-              <span class="text-white/60">Paid Amount:</span>
-              <div class="font-mono text-sm mt-1">{s(swapInfo.paidSat)} sats</div>
-            </div>
-          {/if}
-        </div>
-      </div>
-    </div>
-  {/if}
-
-  <!-- Refund Details -->
-  {#if refundDetails || (payment.status === 'failed' && swapInfo)}
-    <div class="card bg-warning/10 border-2 border-warning">
-      <div class="card-body p-4">
-        <h3 class="text-lg font-semibold mb-3 flex items-center gap-2 text-warning">
-          <iconify-icon icon="ph:warning-circle-bold" width="20"></iconify-icon>
-          Refund Information
-        </h3>
-
-        {#if refundDetails}
-          <div class="space-y-3 text-sm">
-            {#if refundDetails.refundTxId}
-              <div>
-                <span class="text-white/60">Refund Transaction ID:</span>
-                <div class="flex items-center gap-2 mt-1">
-                  <div class="font-mono text-xs">{refundDetails.refundTxId}</div>
-                  <button
-                    onclick={() => copyWithToast(refundDetails.refundTxId, 'Refund TX ID')}
-                    class="btn btn-ghost btn-sm"
-                  >
-                    <iconify-icon icon="ph:copy" width="16"></iconify-icon>
-                  </button>
-                </div>
-              </div>
-            {/if}
-
-            {#if refundDetails.refundTxAmountSat}
-              <div>
-                <span class="text-white/60">Refund Amount:</span>
-                <div class="font-mono text-sm mt-1">{s(refundDetails.refundTxAmountSat)} sats</div>
-              </div>
-            {/if}
-          </div>
-        {:else if payment.status === 'failed' && swapInfo}
-          <div class="text-sm">
-            <p class="mb-3">This payment has failed and can be refunded to your Bitcoin address.</p>
-            <a href={`/payment/${payment.id}/refund`} class="btn btn-warning btn-sm gap-2">
-              <iconify-icon icon="ph:arrow-u-up-left" width="16"></iconify-icon>
-              Initiate Refund
-            </a>
-          </div>
-        {/if}
-      </div>
-    </div>
-  {/if}
-
-  <!-- On-chain Details -->
-  {#if details.txId}
-    <div class="card bg-base-200/50 border border-white/10">
-      <div class="card-body p-4">
-        <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
-          <img src="/images/bitcoin.svg" class="w-5 h-5" alt="Bitcoin" />
-          On-chain Details
-        </h3>
-
-        <div class="space-y-3 text-sm">
-          <div>
-            <span class="text-white/60">Transaction ID:</span>
-            <div class="flex items-center gap-2 mt-1">
-              <div class="font-mono text-xs break-all">{details.txId}</div>
-              <button
-                onclick={() => copyWithToast(details.txId, 'Transaction ID')}
-                class="btn btn-ghost btn-sm"
-              >
-                <iconify-icon icon="ph:copy" width="16"></iconify-icon>
-              </button>
-            </div>
-          </div>
-
-          {#if details.confirmationTime}
-            <div>
-              <span class="text-white/60">Confirmation Time:</span>
-              <div class="font-mono text-xs mt-1">{formatTime(details.confirmationTime)}</div>
-            </div>
-          {/if}
-
-          <div>
-            <a
-              href={`https://mempool.space/tx/${details.txId}`}
-              target="_blank"
-              class="btn btn-sm btn-primary gap-2"
-            >
-              <iconify-icon icon="ph:arrow-square-out" width="16"></iconify-icon>
-              View on Explorer
-            </a>
-          </div>
         </div>
       </div>
     </div>
@@ -480,7 +510,7 @@
   {/if}
 
   <!-- Payer Note -->
-  {#if details.payerNote}
+  {#if payerNote}
     <div class="card bg-base-200/50 border border-white/10">
       <div class="card-body p-4">
         <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
@@ -488,7 +518,7 @@
           Payer Note
         </h3>
 
-        <div class="text-sm whitespace-pre-wrap">{details.payerNote}</div>
+        <div class="text-sm whitespace-pre-wrap">{payerNote}</div>
       </div>
     </div>
   {/if}

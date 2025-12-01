@@ -196,7 +196,7 @@
     await prepareOnchainPayment();
   }
   
-  let goBack = () => goto(`/send/bitcoin/${address}`);
+  let goBack = () => window.history.back();
 </script>
 
 <div

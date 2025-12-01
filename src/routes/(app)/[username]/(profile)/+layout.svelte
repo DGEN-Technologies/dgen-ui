@@ -139,12 +139,6 @@
           <div class="break-words">{display || username}</div>
           <iconify-icon noobserver icon="ph:list-bold" width="32"></iconify-icon>
         </button>
-        {#if subject.id === user?.id}
-          <a href="/settings/profile" class="btn contents" aria-label="Edit profile">
-            <iconify-icon noobserver icon="ph:pencil-bold" width="32"
-            ></iconify-icon>
-          </a>
-        {/if}
         <!-- <a href={`/${subject.pubkey}/notes`}> -->
         <!--   <iconify-icon noobserver icon="ph:note-bold" width="32"></iconify-icon> -->
         <!-- </a> -->
