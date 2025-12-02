@@ -1,4 +1,5 @@
 import { setLogger, type LogEntry } from '@breeztech/breez-sdk-liquid/web';
+import { appendLog } from './logStorage';
 
 // Log levels
 export enum LogLevel {
@@ -32,6 +33,15 @@ class BreezLogger {
       default:
         console.log(`${prefix}:`, entry.line);
     }
+
+    // Persist Breez log
+    void appendLog({
+      id: Date.now(), // good enough; you can improve later
+      timestamp,
+      source: 'breez',
+      level: entry.level.toUpperCase(),
+      message: entry.line,
+    });
   };
 }
 
@@ -50,28 +60,52 @@ export class Logger {
     return [`[${timestamp}] [${this.tag}] [${level}]`, ...args];
   }
 
+  private persist(level: string, ...args: any[]) {
+    const timestamp = new Date().toISOString();
+
+    const message = args
+      .map((arg) => (typeof arg === 'string' ? arg : JSON.stringify(arg)))
+      .join(' ');
+
+    void appendLog({
+      id: Date.now(),
+      timestamp,
+      source: 'app',
+      level,
+      tag: this.tag,
+      message,
+      context: args,
+    });
+  }
+
   trace(...args: any[]) {
     console.debug(...this.format('TRACE', ...args));
+    this.persist('TRACE', ...args);
   }
 
   debug(...args: any[]) {
     console.debug(...this.format('DEBUG', ...args));
+    this.persist('DEBUG', ...args);
   }
 
   info(...args: any[]) {
     console.info(...this.format('INFO', ...args));
+    this.persist('INFO', ...args);
   }
 
   warn(...args: any[]) {
     console.warn(...this.format('WARN', ...args));
+    this.persist('WARN', ...args);
   }
 
   error(...args: any[]) {
     console.error(...this.format('ERROR', ...args));
+    this.persist('ERROR', ...args);
   }
 
   log(...args: any[]) {
     console.log(...this.format('LOG', ...args));
+    this.persist('LOG', ...args);
   }
 }
 

@@ -10,6 +10,7 @@
   import { locale, t } from "$lib/translations";
   import { post, success, fail } from "$lib/utils";
   import { page } from "$app/stores";
+  import { getLogs, clearLogs } from "$lib/logStorage";
   // import { PUBLIC_VAPID_PUBKEY } from "$env/static/public";
 
   let { data } = $props();
@@ -113,6 +114,38 @@
       success('Browser notifications disabled');
     }
   }
+
+  async function exportLogs() {
+    if (!browser) return;
+
+    const logs = await getLogs();
+
+    if (!logs || logs.length === 0) {
+      success("No logs to export");
+      return;
+    }
+
+    const blob = new Blob([JSON.stringify(logs, null, 2)], {
+      type: "application/json"
+    });
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `dgen-logs-${new Date().toISOString()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    success("Logs exported (check your downloads folder)");
+  }
+
+  async function clearPersistedLogs() {
+    if (!browser) return;
+
+    await clearLogs();
+    success("Logs cleared from this device");
+  }
+
   // Push notifications (VAPID) disabled for now - using browser Notification API instead
   // let updateNotifications = async (push) => {
   //   if (!browser || !pm) return (push = false);
@@ -354,6 +387,47 @@
         </details>
       </div>
     {/if}
+  </div>
+
+  <!-- Logs Export -->
+  <div
+    class="premium-card backdrop-blur-xl bg-white/5 border-2 border-white/10 hover:border-blue-500/40 transition-all duration-500 animate-scaleIn"
+    style="animation-delay: 0.4s;"
+  >
+    <div class="flex flex-col gap-4">
+      <div>
+        <span class="font-bold text-lg gradient-text">Wallet Logs</span>
+        <p class="text-white/60 mt-1 text-sm">
+          Export technical logs from this device to share with support when troubleshooting issues.
+        </p>
+      </div>
+
+      <div class="flex gap-3">
+        <!-- Export Logs -->
+        <button
+          type="button"
+          class="flex-1 p-4 rounded-xl border-2 transition-all duration-300 border-blue-500/40 bg-blue-500/20 hover:border-blue-400"
+          onclick={exportLogs}
+        >
+          <div class="flex items-center justify-center gap-2">
+            <iconify-icon icon="ph:export-bold" class="text-blue-300" width="24"></iconify-icon>
+            <span class="font-semibold">Export Logs</span>
+          </div>
+        </button>
+
+        <!-- Clear Logs -->
+        <button
+          type="button"
+          class="flex-1 p-4 rounded-xl border-2 transition-all duration-300 border-red-500/40 bg-red-500/20 hover:border-red-400"
+          onclick={clearPersistedLogs}
+        >
+          <div class="flex items-center justify-center gap-2">
+            <iconify-icon icon="ph:trash-bold" class="text-red-300" width="24"></iconify-icon>
+            <span class="font-semibold">Clear Logs</span>
+          </div>
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- Tip Prompt Settings (temporarily disabled) -->
