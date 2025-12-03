@@ -10,13 +10,21 @@ export enum LogLevel {
   ERROR = 'ERROR'
 }
 
+function shouldPersist(level: string): boolean {
+  if (import.meta.env.PROD) {
+    return level === 'INFO' || level === 'WARN' || level === 'ERROR';
+  }
+  return true
+}
+
 // Logger class for Breez SDK
 class BreezLogger {
   log = (entry: LogEntry) => {
     const timestamp = new Date().toISOString();
-    const prefix = `[${timestamp}] [Breez SDK] [${entry.level}]`;
+    const level = entry.level.toUpperCase();
+    const prefix = `[${timestamp}] [Breez SDK] [${level}]`;
 
-    switch (entry.level.toUpperCase()) {
+    switch (level) {
       case 'ERROR':
         console.error(`${prefix}:`, entry.line);
         break;
@@ -35,13 +43,14 @@ class BreezLogger {
     }
 
     // Persist Breez log
-    void appendLog({
-      id: Date.now(), // good enough; you can improve later
-      timestamp,
-      source: 'breez',
-      level: entry.level.toUpperCase(),
-      message: entry.line,
-    });
+    if (shouldPersist(level)) {
+      void appendLog({
+        timestamp,
+        source: 'breez',
+        level,
+        message: entry.line,
+      });
+    }
   };
 }
 
@@ -61,6 +70,8 @@ export class Logger {
   }
 
   private persist(level: string, ...args: any[]) {
+    if (!shouldPersist(level)) return;
+
     const timestamp = new Date().toISOString();
 
     const message = args
@@ -68,7 +79,6 @@ export class Logger {
       .join(' ');
 
     void appendLog({
-      id: Date.now(),
       timestamp,
       source: 'app',
       level,

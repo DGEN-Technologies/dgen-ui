@@ -1,7 +1,6 @@
 import { openDB, type IDBPDatabase, type DBSchema } from 'idb';
 
 export type PersistedLogEntry = {
-  id: number;
   timestamp: string;
   source: 'breez' | 'app';
   level: string;
@@ -42,6 +41,7 @@ async function getDB(): Promise<IDBPDatabase<LogDB>> {
         if (!db.objectStoreNames.contains(STORE_NAME)) {
           const store = db.createObjectStore(STORE_NAME, {
             keyPath: 'id',
+            autoIncrement: true,
           });
           store.createIndex('by-timestamp', 'timestamp');
         }
