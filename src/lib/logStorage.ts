@@ -6,6 +6,7 @@ const STORE_NAME = 'logs';
 
 const MAX_LOGS = 5000;          
 const CLEANUP_INTERVAL = 100;
+const CLEANUP_BUFFER = 100;
 
 let dbPromise: Promise<IDBPDatabase> | null = null;
 let writesSinceCleanup = 0;
@@ -55,22 +56,16 @@ export async function appendLog(line: string): Promise<void> {
 async function enforceRetention(): Promise<void> {
   const db = await getDB();
   const count = await db.count(STORE_NAME);
-  if (count <= MAX_LOGS) return;
+
+  if (count <= MAX_LOGS + CLEANUP_BUFFER) return;
 
   const toDelete = count - MAX_LOGS;
   const tx = db.transaction(STORE_NAME, 'readwrite');
-  const store = tx.store;
+  const keys = await tx.store.getAllKeys(undefined, toDelete);
 
-  let remaining = toDelete;
-  let cursor = await store.openCursor();
-
-  while (cursor && remaining > 0) {
-    await cursor.delete();
-    remaining -= 1;
-    cursor = await cursor.continue();
-  }
-
-  await tx.done;
+  const deleteTx = db.transaction(STORE_NAME, 'readwrite');
+  await Promise.all(keys.map(key => deleteTx.store.delete(key)));
+  await deleteTx.done;
 }
 
 /**
