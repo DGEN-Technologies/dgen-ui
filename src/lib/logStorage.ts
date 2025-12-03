@@ -1,127 +1,92 @@
-import { openDB, type IDBPDatabase, type DBSchema } from 'idb';
-
-export type PersistedLogEntry = {
-  timestamp: string;
-  source: 'breez' | 'app';
-  level: string;
-  message: string;
-  tag?: string;
-  context?: unknown;
-};
-
-interface LogDB extends DBSchema {
-  logs: {
-    key: number;
-    value: PersistedLogEntry;
-    indexes: {
-      'by-timestamp': string;
-    };
-  };
-}
+import { openDB, type IDBPDatabase } from 'idb';
 
 const DB_NAME = 'dgen-logs';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = 'logs';
-const MAX_LOGS = 5000; // retention: keep last 5000 entries
 
-let dbPromise: Promise<IDBPDatabase<LogDB>> | null = null;
+const MAX_LOGS = 5000;          
+const CLEANUP_INTERVAL = 100;
 
-function isBrowser(): boolean {
-  return typeof window !== 'undefined' && typeof indexedDB !== 'undefined';
-}
+let dbPromise: Promise<IDBPDatabase> | null = null;
+let writesSinceCleanup = 0;
 
-async function getDB(): Promise<IDBPDatabase<LogDB>> {
-  if (!isBrowser()) {
-    throw new Error('IndexedDB is not available (non-browser environment)');
-  }
-
+async function getDB(): Promise<IDBPDatabase> {
   if (!dbPromise) {
-    dbPromise = openDB<LogDB>(DB_NAME, DB_VERSION, {
-      upgrade(db) {
-        if (!db.objectStoreNames.contains(STORE_NAME)) {
-          const store = db.createObjectStore(STORE_NAME, {
-            keyPath: 'id',
-            autoIncrement: true,
-          });
-          store.createIndex('by-timestamp', 'timestamp');
+    dbPromise = openDB(DB_NAME, DB_VERSION, {
+      upgrade(db, oldVersion) {
+        if (db.objectStoreNames.contains(STORE_NAME)) {
+          db.deleteObjectStore(STORE_NAME);
         }
+
+        db.createObjectStore(STORE_NAME, {
+          autoIncrement: true,
+        });
       },
     });
   }
-
   return dbPromise;
 }
 
 /**
- * Append a log entry to IndexedDB.
- * Enforces a simple retention policy: keep only the last MAX_LOGS entries.
+ * Append a single log line as plain text.
  */
-export async function appendLog(entry: PersistedLogEntry): Promise<void> {
-  if (!isBrowser()) return;
-
+export async function appendLog(line: string): Promise<void> {
   try {
     const db = await getDB();
-
     const tx = db.transaction(STORE_NAME, 'readwrite');
-    const store = tx.store;
+    await tx.store.add(line);
+    await tx.done;
 
-    await store.put(entry);
-
-    // Enforce retention: delete oldest when over MAX_LOGS
-    const count = await store.count();
-    if (count > MAX_LOGS) {
-      const toDelete = count - MAX_LOGS;
-      let deleted = 0;
-
-      // Iterate in key order (timestamp-like ids) and delete the oldest
-      let cursor = await store.openCursor();
-      while (cursor && deleted < toDelete) {
-        await cursor.delete();
-        deleted++;
-        cursor = await cursor.continue();
-      }
+    writesSinceCleanup += 1;
+    if (writesSinceCleanup >= CLEANUP_INTERVAL) {
+      writesSinceCleanup = 0;
+      void enforceRetention().catch((err) => {
+        console.warn('[logStorage] Failed to enforce retention:', err);
+      });
     }
-
-    await tx.done;
   } catch (err) {
-    console.warn('[logStorage] Failed to append log entry:', err);
+    console.error('[logStorage] Failed to append log line:', err);
   }
 }
 
 /**
- * Retrieve all logs from IndexedDB, sorted by id (oldest first).
+ * Retention policy: keep at most MAX_LOGS newest entries.
  */
-export async function getLogs(): Promise<PersistedLogEntry[]> {
-  if (!isBrowser()) return [];
+async function enforceRetention(): Promise<void> {
+  const db = await getDB();
+  const count = await db.count(STORE_NAME);
+  if (count <= MAX_LOGS) return;
 
-  try {
-    const db = await getDB();
-    const tx = db.transaction(STORE_NAME, 'readonly');
-    const store = tx.store;
+  const toDelete = count - MAX_LOGS;
+  const tx = db.transaction(STORE_NAME, 'readwrite');
+  const store = tx.store;
 
-    const logs = await store.getAll();
-    await tx.done;
+  let remaining = toDelete;
+  let cursor = await store.openCursor();
 
-    // Ensure deterministic order
-    return logs.sort((a, b) => a.id - b.id);
-  } catch (err) {
-    console.warn('[logStorage] Failed to get logs:', err);
-    return [];
+  while (cursor && remaining > 0) {
+    await cursor.delete();
+    remaining -= 1;
+    cursor = await cursor.continue();
   }
+
+  await tx.done;
 }
 
 /**
- * Clear all logs from IndexedDB.
+ * Get all log lines, ordered by insertion.
+ */
+export async function getLogs(): Promise<string[]> {
+  const db = await getDB();
+  return db.getAll(STORE_NAME);
+}
+
+/**
+ * Clear all persisted logs.
  */
 export async function clearLogs(): Promise<void> {
-  if (!isBrowser()) return;
-
-  try {
-    const db = await getDB();
-    const tx = db.transaction(STORE_NAME, 'readwrite');
-    await tx.store.clear();
-    await tx.done;
-  } catch (err) {
-    console.warn('[logStorage] Failed to clear logs:', err);
-  }
+  const db = await getDB();
+  const tx = db.transaction(STORE_NAME, 'readwrite');
+  await tx.store.clear();
+  await tx.done;
 }

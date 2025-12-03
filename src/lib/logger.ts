@@ -44,12 +44,7 @@ class BreezLogger {
 
     // Persist Breez log
     if (shouldPersist(level)) {
-      void appendLog({
-        timestamp,
-        source: 'breez',
-        level,
-        message: entry.line,
-      });
+      void appendLog(`${prefix}: ${entry.line}`);
     }
   };
 }
@@ -72,20 +67,11 @@ export class Logger {
   private persist(level: string, ...args: any[]) {
     if (!shouldPersist(level)) return;
 
-    const timestamp = new Date().toISOString();
+    const [prefix, ...rest] = this.format(level, ...args);
+    const line = `${prefix}: ${rest.join(" ")}`;
 
-    const message = args
-      .map((arg) => (typeof arg === 'string' ? arg : JSON.stringify(arg)))
-      .join(' ');
+    void appendLog(line);
 
-    void appendLog({
-      timestamp,
-      source: 'app',
-      level,
-      tag: this.tag,
-      message,
-      context: args,
-    });
   }
 
   trace(...args: any[]) {

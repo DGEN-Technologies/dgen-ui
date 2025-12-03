@@ -8,7 +8,7 @@
   import LocaleSelector from "$comp/LocaleSelector.svelte";
   import Toggle from "$comp/Toggle.svelte";
   import { locale, t } from "$lib/translations";
-  import { post, success, fail } from "$lib/utils";
+  import { post, success, fail, info } from "$lib/utils";
   import { page } from "$app/stores";
   import { getLogs, clearLogs } from "$lib/logStorage";
   // import { PUBLIC_VAPID_PUBKEY } from "$env/static/public";
@@ -115,28 +115,30 @@
     }
   }
 
-  async function exportLogs() {
-    if (!browser) return;
+  export async function exportLogs() {
+    try {
+      const logs = await getLogs();
 
-    const logs = await getLogs();
+      if (!logs || logs.length === 0) {
+        info("No logs to export");
+        return;
+      }
 
-    if (!logs || logs.length === 0) {
-      success("No logs to export");
-      return;
+      const logText = logs.join("\n");
+      const blob = new Blob([logText], { type: "text/plain" });
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `dgen_logs_${Date.now()}.log`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      success("Logs exported");
+    } catch (err) {
+      console.error("Export failed:", err);
+      fail("Failed to export logs");
     }
-
-    const blob = new Blob([JSON.stringify(logs, null, 2)], {
-      type: "application/json"
-    });
-
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `dgen-logs-${new Date().toISOString()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-
-    success("Logs exported (check your downloads folder)");
   }
 
   async function clearPersistedLogs() {
@@ -396,7 +398,7 @@
   >
     <div class="flex flex-col gap-4">
       <div>
-        <span class="font-bold text-lg gradient-text">Wallet Logs</span>
+        <span class="font-bold text-lg gradient-text">Application Logs</span>
         <p class="text-white/60 mt-1 text-sm">
           Export technical logs from this device to share with support when troubleshooting issues.
         </p>
@@ -416,7 +418,7 @@
         </button>
 
         <!-- Clear Logs -->
-        <button
+        <!-- <button
           type="button"
           class="flex-1 p-4 rounded-xl border-2 transition-all duration-300 border-red-500/40 bg-red-500/20 hover:border-red-400"
           onclick={clearPersistedLogs}
@@ -424,8 +426,9 @@
           <div class="flex items-center justify-center gap-2">
             <iconify-icon icon="ph:trash-bold" class="text-red-300" width="24"></iconify-icon>
             <span class="font-semibold">Clear Logs</span>
-          </div>
-        </button>
+            </div>
+            <p class="text-xs text-white/60 mt-1">(not recommended for most users)</p>
+        </button> -->
       </div>
     </div>
   </div>
