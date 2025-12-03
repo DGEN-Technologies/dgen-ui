@@ -118,20 +118,24 @@
   export async function exportLogs() {
     try {
       const logs = await getLogs();
-
       if (!logs || logs.length === 0) {
         info("No logs to export");
         return;
       }
-
-      const logText = logs.join("\n");
-      const blob = new Blob([logText], { type: "text/plain" });
-
+      
+      const blob = new Blob(
+        logs.flatMap(log => [log, '\n']), 
+        { type: "text/plain" }
+      );
+      
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `dgen_logs_${Date.now()}.log`;
+      
+      const date = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+      a.download = `dgen_logs_${date}.log`;
       a.click();
+      
       URL.revokeObjectURL(url);
 
       success("Logs exported");
@@ -139,13 +143,6 @@
       console.error("Export failed:", err);
       fail("Failed to export logs");
     }
-  }
-
-  async function clearPersistedLogs() {
-    if (!browser) return;
-
-    await clearLogs();
-    success("Logs cleared from this device");
   }
 
   // Push notifications (VAPID) disabled for now - using browser Notification API instead
