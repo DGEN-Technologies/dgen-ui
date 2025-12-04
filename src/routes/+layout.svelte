@@ -1,7 +1,7 @@
 <script>
   import { run } from "svelte/legacy";
   import { browser } from "$app/environment";
-  import { PUBLIC_DOMAIN } from "$env/static/public";
+  import { PUBLIC_DOMAIN, PUBLIC_WIDGET_API_BASE, PUBLIC_ORG_ID} from "$env/static/public";
   import "../app-modern.css";
   import { loading, t } from "$lib/translations";
   import { onMount } from "svelte";
@@ -121,8 +121,8 @@
 <!-- Chat Widget - loads after initial render -->
 {#if showChatWidget}
   <ChatWidget 
-    apiBase="https://widget2agent-657488364208.asia-southeast1.run.app"
-    orgId="dgen-production"
+    apiBase={PUBLIC_WIDGET_API_BASE}
+    orgId={PUBLIC_ORG_ID}
     userId={userId}
   />
 {/if}
