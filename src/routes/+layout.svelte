@@ -7,6 +7,7 @@
   import { onMount } from "svelte";
   import { installPrompt, theme as themeStore, proMode } from "$lib/store";
   import { domSecurityMonitor } from "$lib/security/domMonitor";
+  import ChatWidget from "$comp/ChatWidget.svelte";
 
   let { data, children } = $props();
   let { pathname, theme } = $state(data);
@@ -15,6 +16,10 @@
 
   // Fallback to ensure app renders even if translations are slow/stuck
   let forceRender = $state(false);
+
+  // Chat widget state
+  let showChatWidget = $state(false);
+  let userId = $state("anonymous");
 
   let host = PUBLIC_DOMAIN.includes("localhost")
     ? `http://${PUBLIC_DOMAIN}`
@@ -25,14 +30,19 @@
       navigator.clearAppBadge().catch(() => {});
     }
   }
+
   onMount(() => {
     if (!browser) return;
 
     // Force render after 2 seconds to prevent white screen issues
-    // This ensures the app always loads even if translations are stuck
     setTimeout(() => {
       forceRender = true;
     }, 2000);
+
+    // Enable chat widget after initial load
+    setTimeout(() => {
+      showChatWidget = true;
+    }, 1000);
 
     // Start security monitoring for suspicious DOM access
     domSecurityMonitor.startMonitoring();
@@ -75,6 +85,13 @@
       );
     }
   });
+
+  // Update userId when user data changes
+  $effect(() => {
+    if (data.user) {
+      userId = data.user.id || data.user.username || "anonymous";
+    }
+  });
 </script>
 
 <svelte:head>
@@ -99,6 +116,15 @@
   <main data-theme={theme} class:pro-mode={$proMode}>
     {@render children?.()}
   </main>
+{/if}
+
+<!-- Chat Widget - loads after initial render -->
+{#if showChatWidget}
+  <ChatWidget 
+    apiBase="https://widget2agent-657488364208.asia-southeast1.run.app"
+    orgId="dgen-production"
+    userId={userId}
+  />
 {/if}
 
 <style global>
