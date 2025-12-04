@@ -16,7 +16,7 @@ function shouldPersist(level: string): boolean {
   if (import.meta.env.PROD) {
     return PERSIST_LEVELS_PROD.includes(level as any);
   }
-  return true
+  return true;
 }
 
 // Logger class for Breez SDK

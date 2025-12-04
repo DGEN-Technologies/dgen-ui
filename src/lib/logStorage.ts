@@ -4,7 +4,7 @@ const DB_NAME = 'dgen-logs';
 const DB_VERSION = 2;
 const STORE_NAME = 'logs';
 
-const MAX_LOGS = 5000;          
+const MAX_LOGS = 5000;
 const CLEANUP_INTERVAL = 100;
 const CLEANUP_BUFFER = 100;
 
@@ -28,10 +28,16 @@ async function getDB(): Promise<IDBPDatabase> {
   return dbPromise;
 }
 
+function isBrowser(): boolean {
+  return typeof window !== 'undefined' && typeof indexedDB !== 'undefined';
+}
+
 /**
  * Append a single log line as plain text.
  */
 export async function appendLog(line: string): Promise<void> {
+  if (!isBrowser()) return;
+
   try {
     const db = await getDB();
     const tx = db.transaction(STORE_NAME, 'readwrite');
@@ -62,16 +68,20 @@ async function enforceRetention(): Promise<void> {
   const toDelete = count - MAX_LOGS;
   const tx = db.transaction(STORE_NAME, 'readwrite');
   const keys = await tx.store.getAllKeys(undefined, toDelete);
-
-  const deleteTx = db.transaction(STORE_NAME, 'readwrite');
-  await Promise.all(keys.map(key => deleteTx.store.delete(key)));
-  await deleteTx.done;
+  await Promise.all(keys.map(key => tx.store.delete(key)));
+  await tx.done;
 }
 
 /**
  * Get all log lines, ordered by insertion.
  */
 export async function getLogs(): Promise<string[]> {
-  const db = await getDB();
-  return db.getAll(STORE_NAME);
+  if (!isBrowser()) return [];
+  try {
+    const db = await getDB();
+    return db.getAll(STORE_NAME);
+  } catch (err) {
+    console.error('[logStorage] Failed to get logs:', err);
+    return [];
+  }
 }
