@@ -18,6 +18,11 @@
 
   let { apiBase, orgId, userId }: Props = $props();
 
+  // Config
+  const MAX_MESSAGE_LENGTH = 1000;          
+  const SEND_COOLDOWN_MS = 300;           
+  let lastSendTime = 0;
+
   // State
   let isOpen = $state(false);
   let sessionId = $state("");
@@ -28,7 +33,7 @@
   let bottomRef: HTMLDivElement;
   let textareaRef: HTMLTextAreaElement;
 
-  // Helpers
+  // Helpers for storage keys
   const buildKey = (suffix: string, orgId: string, userId?: string) =>
     `dgen_${suffix}_${orgId}_${userId ?? "anon"}`;
 
@@ -41,7 +46,7 @@
   function generateSessionId(): string {
     const array = new Uint8Array(16);
     crypto.getRandomValues(array);
-    return Array.from(array, byte => 
+    return Array.from(array, (byte) =>
       byte.toString(16).padStart(2, '0')
     ).join('');
   }
@@ -92,8 +97,16 @@
   }
 
   async function sendMessage() {
+    // Cooldown
+    const now = Date.now();
+    if (now - lastSendTime < SEND_COOLDOWN_MS) {
+      // cooldown: ignore rapid-fire sends
+      return;
+    }
+    lastSendTime = now;
+
     const text = input.trim();
-    if (!text || !sessionId) return;
+    if (!text || !sessionId || isSending) return;
 
     error = null;
     isSending = true;
@@ -140,10 +153,12 @@
         }
       }
 
+      const answer: string = data.answer ?? "";
+
       const assistantMessage: ChatMessage = {
         id: `assistant-${Date.now()}`,
         role: "assistant",
-        content: data.answer,
+        content: answer,
         createdAt: Date.now(),
       };
       messages = [...messages, assistantMessage];
@@ -164,6 +179,14 @@
 
   function handleInput(e: Event) {
     const target = e.target as HTMLTextAreaElement;
+    let value = target.value;
+
+    if (value.length > MAX_MESSAGE_LENGTH) {
+      value = value.slice(0, MAX_MESSAGE_LENGTH);
+    }
+
+    input = value;
+    target.value = value;
     target.style.height = "auto";
     target.style.height = `${target.scrollHeight}px`;
   }
