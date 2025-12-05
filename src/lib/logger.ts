@@ -68,12 +68,12 @@ export class Logger {
 
   private persist(level: string, ...args: any[]) {
     if (!shouldPersist(level)) return;
+
     const [prefix, ...rest] = this.format(level, ...args);
     const line = `${prefix}: ${rest.map(arg =>
       typeof arg === 'object' ? JSON.stringify(arg) : arg
     ).join(" ")}`;
     void appendLog(line);
-
   }
 
   trace(...args: any[]) {
