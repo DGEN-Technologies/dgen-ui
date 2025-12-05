@@ -129,10 +129,6 @@
           message: text,
           org_id: orgId,
           user_id: userId || undefined,
-          metadata: {
-            url: window.location.href,
-            user_agent: navigator.userAgent,
-          },
         }),
       });
 
