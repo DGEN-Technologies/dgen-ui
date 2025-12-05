@@ -1,4 +1,5 @@
 import { setLogger, type LogEntry } from '@breeztech/breez-sdk-liquid/web';
+import { appendLog } from './logStorage';
 
 // Log levels
 export enum LogLevel {
@@ -9,13 +10,23 @@ export enum LogLevel {
   ERROR = 'ERROR'
 }
 
+const PERSIST_LEVELS_PROD = ['INFO', 'WARN', 'ERROR', 'LOG'] as const;
+
+function shouldPersist(level: string): boolean {
+  if (import.meta.env.PROD) {
+    return PERSIST_LEVELS_PROD.includes(level as any);
+  }
+  return true;
+}
+
 // Logger class for Breez SDK
 class BreezLogger {
   log = (entry: LogEntry) => {
     const timestamp = new Date().toISOString();
-    const prefix = `[${timestamp}] [Breez SDK] [${entry.level}]`;
+    const level = entry.level.toUpperCase();
+    const prefix = `[${timestamp}] [Breez SDK] [${level}]`;
 
-    switch (entry.level.toUpperCase()) {
+    switch (level) {
       case 'ERROR':
         console.error(`${prefix}:`, entry.line);
         break;
@@ -32,6 +43,11 @@ class BreezLogger {
       default:
         console.log(`${prefix}:`, entry.line);
     }
+
+    // Persist Breez log
+    if (shouldPersist(level)) {
+      void appendLog(`${prefix}: ${entry.line}`);
+    }
   };
 }
 
@@ -43,35 +59,51 @@ export const initBreezLogger = () => {
 
 // Custom application logger with tags
 export class Logger {
-  constructor(private tag: string) {}
+  constructor(private tag: string) { }
 
   private format(level: string, ...args: any[]): any[] {
     const timestamp = new Date().toISOString();
     return [`[${timestamp}] [${this.tag}] [${level}]`, ...args];
   }
 
+  private persist(level: string, ...args: any[]) {
+    if (!shouldPersist(level)) return;
+
+    const [prefix, ...rest] = this.format(level, ...args);
+    const line = `${prefix}: ${rest.map(arg =>
+      typeof arg === 'object' ? JSON.stringify(arg) : arg
+    ).join(" ")}`;
+    void appendLog(line);
+  }
+
   trace(...args: any[]) {
     console.debug(...this.format('TRACE', ...args));
+    this.persist('TRACE', ...args);
   }
 
   debug(...args: any[]) {
     console.debug(...this.format('DEBUG', ...args));
+    this.persist('DEBUG', ...args);
   }
 
   info(...args: any[]) {
     console.info(...this.format('INFO', ...args));
+    this.persist('INFO', ...args);
   }
 
   warn(...args: any[]) {
     console.warn(...this.format('WARN', ...args));
+    this.persist('WARN', ...args);
   }
 
   error(...args: any[]) {
     console.error(...this.format('ERROR', ...args));
+    this.persist('ERROR', ...args);
   }
 
   log(...args: any[]) {
     console.log(...this.format('LOG', ...args));
+    this.persist('LOG', ...args);
   }
 }
 

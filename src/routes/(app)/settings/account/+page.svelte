@@ -8,8 +8,9 @@
   import LocaleSelector from "$comp/LocaleSelector.svelte";
   import Toggle from "$comp/Toggle.svelte";
   import { locale, t } from "$lib/translations";
-  import { post, success, fail } from "$lib/utils";
+  import { post, success, fail, info } from "$lib/utils";
   import { page } from "$app/stores";
+  import { getLogs } from "$lib/logStorage";
   // import { PUBLIC_VAPID_PUBKEY } from "$env/static/public";
 
   let { data } = $props();
@@ -113,6 +114,35 @@
       success('Browser notifications disabled');
     }
   }
+
+  async function exportLogs() {
+    try {
+      const logs = await getLogs();
+      if (!logs || logs.length === 0) {
+        info("No logs to export");
+        return;
+      }
+      
+      const text = [logs.join('\n')];
+      const blob = new Blob(text, { type: 'text/plain' });
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      
+      const date = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+      a.download = `dgen_logs_${date}.log`;
+      a.click();
+      
+      URL.revokeObjectURL(url);
+
+      success("Exporting logs");
+    } catch (err) {
+      console.error("Export failed:", err);
+      fail("Failed to export logs");
+    }
+  }
+
   // Push notifications (VAPID) disabled for now - using browser Notification API instead
   // let updateNotifications = async (push) => {
   //   if (!browser || !pm) return (push = false);
@@ -354,6 +384,35 @@
         </details>
       </div>
     {/if}
+  </div>
+
+  <!-- Logs Export -->
+  <div
+    class="premium-card backdrop-blur-xl bg-white/5 border-2 border-white/10 hover:border-blue-500/40 transition-all duration-500 animate-scaleIn"
+    style="animation-delay: 0.4s;"
+  >
+    <div class="flex flex-col gap-4">
+      <div>
+        <span class="font-bold text-lg gradient-text">Application Logs</span>
+        <p class="text-white/60 mt-1 text-sm">
+          Export technical logs from this device to share with support when troubleshooting issues.
+        </p>
+      </div>
+
+      <div class="flex gap-3">
+        <!-- Export Logs -->
+        <button
+          type="button"
+          class="flex-1 p-4 rounded-xl border-2 transition-all duration-300 border-blue-500/40 bg-blue-500/20 hover:border-blue-400"
+          onclick={exportLogs}
+        >
+          <div class="flex items-center justify-center gap-2">
+            <iconify-icon icon="ph:export-bold" class="text-blue-300" width="24"></iconify-icon>
+            <span class="font-semibold">Export Logs</span>
+          </div>
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- Tip Prompt Settings (temporarily disabled) -->
