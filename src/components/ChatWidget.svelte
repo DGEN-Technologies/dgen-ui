@@ -19,8 +19,8 @@
   let { apiBase, orgId, userId }: Props = $props();
 
   // Config
-  const MAX_MESSAGE_LENGTH = 1000;          
-  const SEND_COOLDOWN_MS = 300;           
+  const MAX_MESSAGE_LENGTH = 1000;
+  const SEND_COOLDOWN_MS = 300;
   let lastSendTime = 0;
 
   // State
@@ -100,7 +100,6 @@
     // Cooldown
     const now = Date.now();
     if (now - lastSendTime < SEND_COOLDOWN_MS) {
-      // cooldown: ignore rapid-fire sends
       return;
     }
     lastSendTime = now;
@@ -167,16 +166,10 @@
 
       if (err instanceof TypeError) {
         error = "Network error - please check your connection and try again.";
-      } else if (
-        err instanceof Error &&
-        err.message.startsWith("HTTP_5")
-      ) {
+      } else if (err instanceof Error && err.message.startsWith("HTTP_5")) {
         error =
           "Our server had a problem processing your request. Please try again in a moment.";
-      } else if (
-        err instanceof Error &&
-        err.message.startsWith("HTTP_4")
-      ) {
+      } else if (err instanceof Error && err.message.startsWith("HTTP_4")) {
         error =
           "There was a problem with this request. Please double-check and try again.";
       } else {
@@ -204,6 +197,7 @@
 
     input = value;
     target.value = value;
+
     target.style.height = "auto";
     target.style.height = `${target.scrollHeight}px`;
   }
@@ -288,16 +282,32 @@
 {/if}
 
 <style>
+  :root {
+    --widget-floating-bottom: 60px;
+    --widget-floating-right: 27px;
+    --widget-floating-size: 52px;
+
+    --widget-container-width: 320px;
+    --widget-container-height: 500px;
+
+    --widget-bg: #111827;
+    --widget-bg-assistant: #1f2937;
+    --widget-bg-input: #030712;
+    --widget-bg-user: #2563eb;
+
+    --widget-text-color: #f9fafb;
+  }
+
   .floating-button {
     position: fixed;
-    bottom: 60px;
-    right: 27px;
-    width: 52px;
-    height: 52px;
+    bottom: var(--widget-floating-bottom);
+    right: var(--widget-floating-right);
+    width: var(--widget-floating-size);
+    height: var(--widget-floating-size);
     border-radius: 999px;
     border: none;
-    background: #111827;
-    color: #f9fafb;
+    background: var(--widget-bg);
+    color: var(--widget-text-color);
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
     cursor: pointer;
     font-size: 22px;
@@ -309,12 +319,14 @@
 
   .widget-container {
     position: fixed;
-    bottom: 90px;
-    right: 24px;
-    width: 320px;
-    height: 500px;
-    background: #111827;
-    color: #f9fafb;
+    bottom: calc(
+      var(--widget-floating-bottom) + var(--widget-floating-size) + 10px
+    );
+    right: var(--widget-floating-right);
+    width: var(--widget-container-width);
+    height: var(--widget-container-height);
+    background: var(--widget-bg);
+    color: var(--widget-text-color);
     border-radius: 16px;
     box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
     display: flex;
@@ -322,7 +334,8 @@
     overflow: hidden;
     z-index: 999998;
     transition: all 0.25s ease;
-    font-family: -apple-system, BlinkMacSystemFont, system-ui, "SF Pro Text", sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, system-ui, "SF Pro Text",
+      sans-serif;
   }
 
   .header {
@@ -365,12 +378,12 @@
   }
 
   .bubble.user {
-    background: #2563eb;
-    color: #f9fafb;
+    background: var(--widget-bg-user);
+    color: var(--widget-text-color);
   }
 
   .bubble.assistant {
-    background: #1f2937;
+    background: var(--widget-bg-assistant);
     color: #e5e7eb;
   }
 
@@ -403,12 +416,14 @@
     border: none;
     outline: none;
     font-size: 14px;
-    background: #030712;
-    color: #f9fafb;
+    background: var(--widget-bg-input);
+    color: var(--widget-text-color);
     resize: none;
     overflow: hidden;
     line-height: 1.4;
     font-family: inherit;
+    max-height: 100px;
+    overflow-y: auto;
   }
 
   .send-button {
@@ -416,12 +431,27 @@
     border: none;
     padding: 8px 12px;
     font-size: 14px;
-    background: #2563eb;
-    color: #f9fafb;
+    background: var(--widget-bg-user);
+    color: var(--widget-text-color);
     cursor: pointer;
   }
 
   .send-button:disabled {
     cursor: not-allowed;
+  }
+
+  @media (max-width: 480px) {
+    .widget-container {
+      right: 12px;
+      left: 12px;
+      width: auto;
+      max-width: 100%;
+      height: 60vh;
+    }
+
+    .floating-button {
+      bottom: 16px;
+      right: 16px;
+    }
   }
 </style>
