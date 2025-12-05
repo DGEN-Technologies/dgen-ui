@@ -1,6 +1,11 @@
 import adapter from "@sveltejs/adapter-netlify";
 import { vitePreprocess } from "@sveltejs/vite-plugin-svelte";
 
+const widgetApiBase = process.env.PUBLIC_WIDGET_API_BASE || ''
+if (!widgetApiBase) {
+  console.warn('[CSP] PUBLIC_WIDGET_API_BASE not set. Widget may not function.');
+}
+
 const config = {
   preprocess: vitePreprocess(),
   kit: {
@@ -46,7 +51,7 @@ const config = {
           'https://api.simplesvg.com',
           'https://api.unisvg.com',
           'data:',
-          'https://widget2agent-657488364208.asia-southeast1.run.app', // Chatbot endpoint
+          widgetApiBase,
         ],
         'frame-ancestors': ['none'],
         'base-uri': ['self'],
