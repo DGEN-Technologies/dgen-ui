@@ -139,7 +139,7 @@
 
       if (!res.ok) {
         const body = await res.text();
-        throw new Error(`HTTP ${res.status}: ${body}`);
+        throw new Error(`HTTP_${res.status}: ${body}`);
       }
 
       const data = await res.json();
@@ -164,7 +164,24 @@
       messages = [...messages, assistantMessage];
     } catch (err) {
       console.error(err);
-      error = "Something went wrong. Please try again.";
+
+      if (err instanceof TypeError) {
+        error = "Network error - please check your connection and try again.";
+      } else if (
+        err instanceof Error &&
+        err.message.startsWith("HTTP_5")
+      ) {
+        error =
+          "Our server had a problem processing your request. Please try again in a moment.";
+      } else if (
+        err instanceof Error &&
+        err.message.startsWith("HTTP_4")
+      ) {
+        error =
+          "There was a problem with this request. Please double-check and try again.";
+      } else {
+        error = "Something unexpected went wrong. Please try again.";
+      }
     } finally {
       isSending = false;
     }
