@@ -135,8 +135,6 @@
       a.click();
       
       URL.revokeObjectURL(url);
-
-      success("Exporting logs");
     } catch (err) {
       console.error("Export failed:", err);
       fail("Failed to export logs");

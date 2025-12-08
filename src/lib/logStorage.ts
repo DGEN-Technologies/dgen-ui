@@ -11,6 +11,13 @@ const CLEANUP_BUFFER = 100;
 let dbPromise: Promise<IDBPDatabase> | null = null;
 let writesSinceCleanup = 0;
 
+const WRITE_BATCH_SIZE = 20;
+const WRITE_FLUSH_INTERVAL_MS = 500;
+
+let pendingLines: string[] = [];
+let flushTimeout: number | null = null;
+let isFlushing = false;
+
 async function getDB(): Promise<IDBPDatabase> {
   if (!dbPromise) {
     dbPromise = openDB(DB_NAME, DB_VERSION, {
@@ -23,6 +30,10 @@ async function getDB(): Promise<IDBPDatabase> {
         }
         // Future migrations: if (oldVersion < 2) { ... }
       },
+    }).catch(err => {
+      dbPromise = null;
+      console.error('[logStorage] Failed to open database:', err);
+      throw err;
     });
   }
   return dbPromise;
@@ -32,19 +43,28 @@ function isBrowser(): boolean {
   return typeof window !== 'undefined' && typeof indexedDB !== 'undefined';
 }
 
-/**
- * Append a single log line as plain text.
- */
-export async function appendLog(line: string): Promise<void> {
+async function flushPendingLines(): Promise<void> {
   if (!isBrowser()) return;
+  if (isFlushing) return;
+  if (pendingLines.length === 0) return;
+
+  isFlushing = true;
+
+  const batch = pendingLines;
+  pendingLines = [];
 
   try {
     const db = await getDB();
     const tx = db.transaction(STORE_NAME, 'readwrite');
-    await tx.store.add(line);
+    const store = tx.store;
+
+    for (const line of batch) {
+      await store.add(line);
+    }
+
     await tx.done;
 
-    writesSinceCleanup += 1;
+    writesSinceCleanup += batch.length;
     if (writesSinceCleanup >= CLEANUP_INTERVAL) {
       writesSinceCleanup = 0;
       void enforceRetention().catch((err) => {
@@ -52,13 +72,38 @@ export async function appendLog(line: string): Promise<void> {
       });
     }
   } catch (err) {
-    console.error('[logStorage] Failed to append log line:', err);
+    console.error('[logStorage] Failed to flush logs batch:', err);
+  } finally {
+    isFlushing = false;
   }
 }
 
-/**
- * Retention policy: keep at most MAX_LOGS newest entries.
- */
+if (isBrowser()) {
+  window.addEventListener('beforeunload', () => {
+    void flushPendingLines();
+  });
+}
+
+
+export async function appendLog(line: string): Promise<void> {
+  if (!isBrowser()) return;
+
+  pendingLines.push(line);
+
+  if (pendingLines.length >= WRITE_BATCH_SIZE) {
+    void flushPendingLines();
+    return;
+  }
+
+  if (flushTimeout === null) {
+    flushTimeout = window.setTimeout(() => {
+      flushTimeout = null;
+      void flushPendingLines();
+    }, WRITE_FLUSH_INTERVAL_MS);
+  }
+}
+
+
 async function enforceRetention(): Promise<void> {
   const db = await getDB();
   const count = await db.count(STORE_NAME);
@@ -67,16 +112,19 @@ async function enforceRetention(): Promise<void> {
 
   const toDelete = count - MAX_LOGS;
   const tx = db.transaction(STORE_NAME, 'readwrite');
-  const keys = await tx.store.getAllKeys(undefined, toDelete);
-  for (const key of keys) {
-    tx.store.delete(key);
+
+  let deleted = 0;
+  let cursor = await tx.store.openCursor();
+
+  while (cursor && deleted < toDelete) {
+    await cursor.delete();
+    deleted++;
+    cursor = await cursor.continue();
   }
+
   await tx.done;
 }
 
-/**
- * Get all log lines, ordered by insertion.
- */
 export async function getLogs(): Promise<string[]> {
   if (!isBrowser()) return [];
 
@@ -89,16 +137,13 @@ export async function getLogs(): Promise<string[]> {
   }
 }
 
-/**
- * Clear all logs
- */
 export async function clearLogs(): Promise<void> {
   if (!isBrowser()) return;
 
   try {
     const db = await getDB();
     const tx = db.transaction(STORE_NAME, 'readwrite');
-    tx.store.clear();
+    await tx.store.clear();
     await tx.done;
   } catch (err) {
     console.error('[logStorage] Failed to clear logs:', err);

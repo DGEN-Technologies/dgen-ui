@@ -14,7 +14,7 @@ const PERSIST_LEVELS_PROD = ['INFO', 'WARN', 'ERROR', 'LOG'] as const;
 
 function shouldPersist(level: string): boolean {
   if (import.meta.env.PROD) {
-    return PERSIST_LEVELS_PROD.includes(level as any);
+    return (PERSIST_LEVELS_PROD as readonly string[]).includes(level);
   }
   return true;
 }
@@ -70,9 +70,16 @@ export class Logger {
     if (!shouldPersist(level)) return;
 
     const [prefix, ...rest] = this.format(level, ...args);
-    const line = `${prefix}: ${rest.map(arg =>
-      typeof arg === 'object' ? JSON.stringify(arg) : arg
-    ).join(" ")}`;
+    const line = `${prefix}: ${rest.map(arg => {
+      try {
+        if (typeof arg === 'object' && arg !== null) {
+          return JSON.stringify(arg);
+        }
+        return String(arg);
+      } catch {
+        return '[unserializable object]';
+      }
+    }).join(" ")}`;
     void appendLog(line);
   }
 
