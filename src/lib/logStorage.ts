@@ -122,24 +122,29 @@ export async function appendLog(line: string): Promise<void> {
 async function enforceRetention(): Promise<void> {
   if (!isBrowser()) return;
 
-  const db = await getDB();
-  const count = await db.count(STORE_NAME);
+  try {
+    const db = await getDB();
+    const count = await db.count(STORE_NAME);
 
-  if (count <= MAX_LOGS + CLEANUP_BUFFER) return;
+    if (count <= MAX_LOGS + CLEANUP_BUFFER) return;
 
-  const toDelete = count - MAX_LOGS;
-  const tx = db.transaction(STORE_NAME, 'readwrite');
+    const toDelete = count - MAX_LOGS;
+    const tx = db.transaction(STORE_NAME, 'readwrite');
 
-  let deleted = 0;
-  let cursor = await tx.store.openCursor();
+    let deleted = 0;
+    let cursor = await tx.store.openCursor();
 
-  while (cursor && deleted < toDelete) {
-    await cursor.delete();
-    deleted++;
-    cursor = await cursor.continue();
+    while (cursor && deleted < toDelete) {
+      await cursor.delete();
+      deleted++;
+      cursor = await cursor.continue();
+    }
+
+    await tx.done;
+
+  } catch (err) {
+    console.warn('[logStorage] Retention cleanup failed:', err);
   }
-
-  await tx.done;
 }
 
 export async function getLogs(): Promise<string[]> {
