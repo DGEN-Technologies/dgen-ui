@@ -107,7 +107,7 @@
         (window as any).cancelIdleCallback(idleCallbackId);
       }
 
-      domSecurityMonitor.stopMonitoring?.();
+      domSecurityMonitor.stopMonitoring();
 
       // remove listeners
       window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
