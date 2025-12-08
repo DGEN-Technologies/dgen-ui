@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { run } from "svelte/legacy";
   import { browser } from "$app/environment";
   import { PUBLIC_DOMAIN, PUBLIC_WIDGET_API_BASE, PUBLIC_ORG_ID} from "$env/static/public";
@@ -19,7 +19,7 @@
 
   // Chat widget state
   let showChatWidget = $state(false);
-  let userId = $state("anonymous");
+  let userId = $state<string | undefined>(undefined);
 
   let host = PUBLIC_DOMAIN.includes("localhost")
     ? `http://${PUBLIC_DOMAIN}`
@@ -93,6 +93,26 @@
         },
       );
     }
+
+    // Cleanup on unmount
+    return () => {
+      // cancel timeouts / idle callbacks
+      if (forceRenderTimeoutId) {
+        clearTimeout(forceRenderTimeoutId);
+      }
+      if (widgetTimeoutId) {
+        clearTimeout(widgetTimeoutId);
+      }
+      if (idleCallbackId !== null && "cancelIdleCallback" in window) {
+        (window as any).cancelIdleCallback(idleCallbackId);
+      }
+
+      domSecurityMonitor.stopMonitoring?.();
+
+      // remove listeners
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   });
 
   // Update userId when user data changes
