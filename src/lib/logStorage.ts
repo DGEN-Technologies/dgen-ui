@@ -147,18 +147,7 @@ export async function getLogs(): Promise<string[]> {
 
   try {
     const db = await getDB();
-    const tx = db.transaction(STORE_NAME, 'readonly');
-
-    const logs: string[] = [];
-    let cursor = await tx.store.openCursor();
-
-    while (cursor) {
-      logs.push(cursor.value);
-      cursor = await cursor.continue();
-    }
-
-    await tx.done;
-    return logs;
+    return db.getAll(STORE_NAME);
   } catch (err) {
     console.error('[logStorage] Failed to get logs:', err);
     return [];
@@ -182,23 +171,30 @@ export async function clearLogs(): Promise<void> {
 export async function buildLogsBlob(): Promise<Blob | null> {
   if (!isBrowser()) return null;
 
-  const db = await getDB();
-  const tx = db.transaction(STORE_NAME, 'readonly');
-  const store = tx.store;
+  try {
+    const db = await getDB();
+    const tx = db.transaction(STORE_NAME, 'readonly');
+    const store = tx.store;
 
-  let cursor = await store.openCursor();
-  if (!cursor) {
+    const parts: string[] = [];
+    let cursor = await store.openCursor();
+    let hasLogs = false;
+
+    while (cursor) {
+      hasLogs = true;
+      parts.push(cursor.value as string, '\n');
+      cursor = await cursor.continue();
+    }
+
     await tx.done;
-    return null;
-  }
 
-  const parts: string[] = [];
-  while (cursor) {
-    parts.push(cursor.value);
-    parts.push('\n');
-    cursor = await cursor.continue();
-  }
+    if (!hasLogs) {
+      return null;
+    }
 
-  await tx.done;
-  return new Blob(parts, { type: 'text/plain' });
+    return new Blob(parts, { type: 'text/plain' });
+  } catch (err) {
+    console.error('[logStorage] Failed to build logs blob:', err);
+    throw err;
+  }
 }

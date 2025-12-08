@@ -10,7 +10,7 @@
   import { locale, t } from "$lib/translations";
   import { post, success, fail, info } from "$lib/utils";
   import { page } from "$app/stores";
-  import { getLogs, clearLogs } from "$lib/logStorage";
+  import { buildLogsBlob, getLogs, clearLogs } from "$lib/logStorage";
   // import { PUBLIC_VAPID_PUBKEY } from "$env/static/public";
 
   let { data } = $props();
@@ -122,15 +122,12 @@
     isExporting = true;
 
     try {
-      const logs = await getLogs();
-      if (!logs || logs.length === 0) {
+      const blob = await buildLogsBlob();
+      if (!blob) {
         info("No logs to export");
         return;
       }
       
-      const text = [logs.join('\n')];
-      const blob = new Blob(text, { type: 'text/plain' });
-
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
