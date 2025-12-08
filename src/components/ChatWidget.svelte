@@ -28,6 +28,7 @@
   let sessionId = $state("");
   let messages = $state<ChatMessage[]>([]);
   let input = $state("");
+  let isReady = $state(false);
   let isSending = $state(false);
   let error = $state<string | null>(null);
   let bottomRef: HTMLDivElement;
@@ -75,6 +76,11 @@
       }
     }
 
+    // Mark ready after brief delay
+    setTimeout(() => {
+      isReady = true;
+    }, 200);
+
     window.addEventListener("keydown", handleGlobalKeydown);
 
     return () => {
@@ -116,6 +122,8 @@
   }
 
   async function sendMessage() {
+    if (!isReady) return;
+  
     // Cooldown
     const now = Date.now();
     if (now - lastSendTime < SEND_COOLDOWN_MS) {
@@ -259,7 +267,7 @@
     <!-- Messages -->
     <div class="messages-container">
       {#if messages.length === 0}
-        <div class="empty-state">
+        <div class="empty-state" class:ready={isReady}>
           👋 Hi! I'm your AI assistant.<br />
           Ask me a question to get started.
         </div>
@@ -299,15 +307,16 @@
         bind:value={input}
         onkeydown={handleKeyDown}
         oninput={handleInput}
-        placeholder="Type your message..."
+        placeholder={isReady ? "Type your message..." : "Initializing..."}
         rows="1"
         class="textarea"
+        disabled={!isReady}
       ></textarea>
       <button
         onclick={sendMessage}
-        disabled={isSending || !input.trim()}
+        disabled={!isReady || isSending || !input.trim()}
         class="send-button"
-        style="opacity: {isSending || !input.trim() ? 0.5 : 1};"
+        style="opacity: {!isReady || isSending || !input.trim() ? 0.5 : 1};"
       >
         ➤
       </button>
@@ -487,5 +496,21 @@
       bottom: 16px;
       right: 16px;
     }
+  }
+
+  .empty-state {
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+
+  .empty-state.ready {
+    opacity: 0.8;
+    transform: translateY(0);
+  }
+  
+  .textarea:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 </style>
