@@ -93,25 +93,10 @@
         },
       );
     }
-
+    
     // Cleanup on unmount
     return () => {
-      // cancel timeouts / idle callbacks
-      if (forceRenderTimeoutId) {
-        clearTimeout(forceRenderTimeoutId);
-      }
-      if (widgetTimeoutId) {
-        clearTimeout(widgetTimeoutId);
-      }
-      if (idleCallbackId !== null && "cancelIdleCallback" in window) {
-        (window as any).cancelIdleCallback(idleCallbackId);
-      }
-
       domSecurityMonitor.stopMonitoring();
-
-      // remove listeners
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
-      document.removeEventListener("visibilitychange", handleVisibility);
     };
   });
 
