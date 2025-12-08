@@ -10,6 +10,7 @@
   import { locale, t } from "$lib/translations";
   import { post, success, fail, info } from "$lib/utils";
   import { page } from "$app/stores";
+  import { goto } from "$app/navigation";
   import { buildLogsBlob, getLogs, clearLogs } from "$lib/logStorage";
   // import { PUBLIC_VAPID_PUBKEY } from "$env/static/public";
 
@@ -57,6 +58,7 @@
   let showNotificationHelp = $state(false);
   let showClearConfirm = $state(false);
   let isExporting = $state(false);
+  const showPushRequests = false;
 
   onMount(async () => {
     if (!browser) return;
@@ -198,6 +200,37 @@
 </script>
 
 <div class="space-y-2.5 md:space-y-4">
+  <div
+    class="premium-card backdrop-blur-xl bg-white/5 border border-white/10 hover:border-cyan-500/40 transition-all duration-500 animate-scaleIn p-2.5 md:p-3.5 rounded-lg md:rounded-xl"
+  >
+    <div
+      class="flex flex-col md:flex-row md:items-center md:justify-between gap-3"
+    >
+      <div>
+        <span class="font-bold text-xs md:text-sm gradient-text"
+          >Terms & Conditions</span
+        >
+        <p class="text-white/60 text-[10px] md:text-xs mt-0.5">
+          Review the terms governing access to the DGEN web application.
+        </p>
+      </div>
+      <button
+        type="button"
+        class="px-4 py-2 rounded-xl md:rounded-2xl text-xs md:text-sm font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group flex items-center gap-2"
+        style="background: linear-gradient(135deg, #74EBD5 0%, #9688DD 100%); color: white;"
+        onclick={() =>
+          goto("/terms?return=" + encodeURIComponent("/settings/account"))}
+      >
+        <div
+          class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+          style="background: linear-gradient(135deg, #9688DD 0%, #74EBD5 100%);"
+        ></div>
+        <iconify-icon icon="ph:scroll" width="16" class="relative z-10"
+        ></iconify-icon>
+        <span class="relative z-10">Review Terms & Conditions</span>
+      </button>
+    </div>
+  </div>
   <!-- Language Settings -->
   <div
     class="premium-card backdrop-blur-xl bg-white/5 border border-white/10 hover:border-purple-500/40 transition-all duration-500 animate-scaleIn p-2.5 md:p-3.5 rounded-lg md:rounded-xl"
@@ -308,175 +341,258 @@
     </div>
   </div> -->
 
-  <!-- Browser Notifications -->
-  <div
-    class="premium-card backdrop-blur-xl bg-white/5 border border-white/10 hover:border-yellow-500/40 transition-all duration-500 animate-scaleIn p-2.5 md:p-3.5 rounded-lg md:rounded-xl"
-    style="animation-delay: 0.3s;"
-  >
+  {#if showPushRequests}
+    <!-- Browser Notifications -->
     <div
-      class="flex flex-col md:flex-row md:justify-between md:items-center gap-2"
+      class="premium-card backdrop-blur-xl bg-white/5 border border-white/10 hover:border-yellow-500/40 transition-all duration-500 animate-scaleIn p-2.5 md:p-3.5 rounded-lg md:rounded-xl"
+      style="animation-delay: 0.3s;"
     >
-      <div>
-        <span class="font-bold text-xs md:text-sm gradient-text"
-          >Browser Notifications</span
-        >
-        <p class="text-white/60 mt-0.5 text-[10px] md:text-xs">
-          {#if permission === "denied"}
-            Notifications are blocked. Enable them in your browser settings.
-          {:else}
-            Get notified when you receive payments
-          {/if}
-        </p>
+      <div
+        class="flex flex-col md:flex-row md:justify-between md:items-center gap-2"
+      >
+        <div>
+          <span class="font-bold text-xs md:text-sm gradient-text"
+            >Browser Notifications</span
+          >
+          <p class="text-white/60 mt-0.5 text-[10px] md:text-xs">
+            {#if permission === "denied"}
+              Notifications are blocked. Enable them in your browser settings.
+            {:else}
+              Get notified when you receive payments
+            {/if}
+          </p>
+        </div>
+        {#if permission !== "denied"}
+          <Toggle
+            id="notifications"
+            bind:value={notificationsEnabled}
+            onclick={handleNotificationToggle}
+          />
+        {:else}
+          <button
+            type="button"
+            class="px-2.5 md:px-3 py-1.5 md:py-2 rounded-md md:rounded-lg bg-yellow-500/20 border border-yellow-500/50 text-yellow-400 text-[10px] md:text-xs hover:bg-yellow-500/30 transition-all flex items-center justify-center gap-1.5 w-full md:w-auto"
+            onclick={() => (showNotificationHelp = !showNotificationHelp)}
+          >
+            {showNotificationHelp ? "Hide" : "Show"} Instructions
+            <iconify-icon
+              icon={showNotificationHelp
+                ? "ph:caret-up-bold"
+                : "ph:caret-down-bold"}
+              width="12"
+            ></iconify-icon>
+          </button>
+        {/if}
       </div>
-      {#if permission !== "denied"}
-        <Toggle
-          id="notifications"
-          bind:value={notificationsEnabled}
-          onclick={handleNotificationToggle}
-        />
-      {:else}
-        <button
-          type="button"
-          class="px-2.5 md:px-3 py-1.5 md:py-2 rounded-md md:rounded-lg bg-yellow-500/20 border border-yellow-500/50 text-yellow-400 text-[10px] md:text-xs hover:bg-yellow-500/30 transition-all flex items-center justify-center gap-1.5 w-full md:w-auto"
-          onclick={() => (showNotificationHelp = !showNotificationHelp)}
+
+      {#if permission === "denied" && showNotificationHelp}
+        <div
+          class="mt-2.5 md:mt-3 space-y-2 border-t border-white/10 pt-2.5 md:pt-3"
         >
-          {showNotificationHelp ? "Hide" : "Show"} Instructions
-          <iconify-icon
-            icon={showNotificationHelp
-              ? "ph:caret-up-bold"
-              : "ph:caret-down-bold"}
-            width="12"
-          ></iconify-icon>
-        </button>
+          <!-- Chrome Instructions -->
+          <details class="group">
+            <summary
+              class="cursor-pointer p-2 md:p-2.5 rounded-md md:rounded-lg bg-white/5 hover:bg-white/10 transition-all flex items-center justify-between text-xs md:text-sm"
+            >
+              <div class="flex items-center gap-1.5">
+                <iconify-icon icon="logos:chrome" width="14"></iconify-icon>
+                <span class="font-semibold">Google Chrome</span>
+              </div>
+              <iconify-icon
+                icon="ph:caret-down-bold"
+                width="12"
+                class="group-open:rotate-180 transition-transform"
+              ></iconify-icon>
+            </summary>
+            <ol
+              class="mt-1.5 ml-5 md:ml-6 space-y-0.5 text-[10px] md:text-xs text-white/80 list-decimal list-inside"
+            >
+              <li>
+                Click the <span
+                  class="inline-flex items-center gap-0.5 whitespace-nowrap"
+                  >lock icon <iconify-icon icon="ph:lock-fill" width="10"
+                  ></iconify-icon></span
+                > in the address bar
+              </li>
+              <li>Find "Notifications" in the permissions list</li>
+              <li>Change it from "Block" to "Allow"</li>
+              <li>Refresh this page and toggle notifications on</li>
+            </ol>
+          </details>
+
+          <!-- Edge Instructions -->
+          <details class="group">
+            <summary
+              class="cursor-pointer p-2 md:p-2.5 rounded-md md:rounded-lg bg-white/5 hover:bg-white/10 transition-all flex items-center justify-between text-xs md:text-sm"
+            >
+              <div class="flex items-center gap-1.5">
+                <iconify-icon icon="logos:microsoft-edge" width="14"
+                ></iconify-icon>
+                <span class="font-semibold">Microsoft Edge</span>
+              </div>
+              <iconify-icon
+                icon="ph:caret-down-bold"
+                width="12"
+                class="group-open:rotate-180 transition-transform"
+              ></iconify-icon>
+            </summary>
+            <ol
+              class="mt-1.5 ml-5 md:ml-6 space-y-0.5 text-[10px] md:text-xs text-white/80 list-decimal list-inside"
+            >
+              <li>
+                Click the <span
+                  class="inline-flex items-center gap-0.5 whitespace-nowrap"
+                  >lock icon <iconify-icon icon="ph:lock-fill" width="10"
+                  ></iconify-icon></span
+                > in the address bar
+              </li>
+              <li>Click "Permissions for this site"</li>
+              <li>Find "Notifications" and change to "Allow"</li>
+              <li>Refresh this page and toggle notifications on</li>
+            </ol>
+          </details>
+
+          <!-- Firefox Instructions -->
+          <details class="group">
+            <summary
+              class="cursor-pointer p-2 md:p-2.5 rounded-md md:rounded-lg bg-white/5 hover:bg-white/10 transition-all flex items-center justify-between text-xs md:text-sm"
+            >
+              <div class="flex items-center gap-1.5">
+                <iconify-icon icon="logos:firefox" width="14"></iconify-icon>
+                <span class="font-semibold">Firefox</span>
+              </div>
+              <iconify-icon
+                icon="ph:caret-down-bold"
+                width="12"
+                class="group-open:rotate-180 transition-transform"
+              ></iconify-icon>
+            </summary>
+            <ol
+              class="mt-1.5 ml-5 md:ml-6 space-y-0.5 text-[10px] md:text-xs text-white/80 list-decimal list-inside"
+            >
+              <li>
+                Click the <span
+                  class="inline-flex items-center gap-0.5 whitespace-nowrap"
+                  >lock icon <iconify-icon icon="ph:lock-fill" width="10"
+                  ></iconify-icon></span
+                > in the address bar
+              </li>
+              <li>Click the arrow next to "Blocked" under Permissions</li>
+              <li>
+                Find "Receive Notifications" and click the X to remove the block
+              </li>
+              <li>Refresh this page and toggle notifications on</li>
+            </ol>
+          </details>
+
+          <!-- Safari Instructions -->
+          <details class="group">
+            <summary
+              class="cursor-pointer p-2 md:p-2.5 rounded-md md:rounded-lg bg-white/5 hover:bg-white/10 transition-all flex items-center justify-between text-xs md:text-sm"
+            >
+              <div class="flex items-center gap-1.5">
+                <iconify-icon icon="logos:safari" width="14"></iconify-icon>
+                <span class="font-semibold">Safari</span>
+              </div>
+              <iconify-icon
+                icon="ph:caret-down-bold"
+                width="12"
+                class="group-open:rotate-180 transition-transform"
+              ></iconify-icon>
+            </summary>
+            <ol
+              class="mt-1.5 ml-5 md:ml-6 space-y-0.5 text-[10px] md:text-xs text-white/80 list-decimal list-inside"
+            >
+              <li>Go to Safari → Settings → Websites</li>
+              <li>Click "Notifications" in the left sidebar</li>
+              <li>Find this website and change to "Allow"</li>
+              <li>Refresh this page and toggle notifications on</li>
+            </ol>
+          </details>
+        </div>
       {/if}
     </div>
+  {/if}
 
-    {#if permission === "denied" && showNotificationHelp}
-      <div
-        class="mt-2.5 md:mt-3 space-y-2 border-t border-white/10 pt-2.5 md:pt-3"
-      >
-        <!-- Chrome Instructions -->
-        <details class="group">
-          <summary
-            class="cursor-pointer p-2 md:p-2.5 rounded-md md:rounded-lg bg-white/5 hover:bg-white/10 transition-all flex items-center justify-between text-xs md:text-sm"
-          >
-            <div class="flex items-center gap-1.5">
-              <iconify-icon icon="logos:chrome" width="14"></iconify-icon>
-              <span class="font-semibold">Google Chrome</span>
-            </div>
-            <iconify-icon
-              icon="ph:caret-down-bold"
-              width="12"
-              class="group-open:rotate-180 transition-transform"
-            ></iconify-icon>
-          </summary>
-          <ol
-            class="mt-1.5 ml-5 md:ml-6 space-y-0.5 text-[10px] md:text-xs text-white/80 list-decimal list-inside"
-          >
-            <li>
-              Click the <span
-                class="inline-flex items-center gap-0.5 whitespace-nowrap"
-                >lock icon <iconify-icon icon="ph:lock-fill" width="10"
-                ></iconify-icon></span
-              > in the address bar
-            </li>
-            <li>Find "Notifications" in the permissions list</li>
-            <li>Change it from "Block" to "Allow"</li>
-            <li>Refresh this page and toggle notifications on</li>
-          </ol>
-        </details>
-
-        <!-- Edge Instructions -->
-        <details class="group">
-          <summary
-            class="cursor-pointer p-2 md:p-2.5 rounded-md md:rounded-lg bg-white/5 hover:bg-white/10 transition-all flex items-center justify-between text-xs md:text-sm"
-          >
-            <div class="flex items-center gap-1.5">
-              <iconify-icon icon="logos:microsoft-edge" width="14"
-              ></iconify-icon>
-              <span class="font-semibold">Microsoft Edge</span>
-            </div>
-            <iconify-icon
-              icon="ph:caret-down-bold"
-              width="12"
-              class="group-open:rotate-180 transition-transform"
-            ></iconify-icon>
-          </summary>
-          <ol
-            class="mt-1.5 ml-5 md:ml-6 space-y-0.5 text-[10px] md:text-xs text-white/80 list-decimal list-inside"
-          >
-            <li>
-              Click the <span
-                class="inline-flex items-center gap-0.5 whitespace-nowrap"
-                >lock icon <iconify-icon icon="ph:lock-fill" width="10"
-                ></iconify-icon></span
-              > in the address bar
-            </li>
-            <li>Click "Permissions for this site"</li>
-            <li>Find "Notifications" and change to "Allow"</li>
-            <li>Refresh this page and toggle notifications on</li>
-          </ol>
-        </details>
-
-        <!-- Firefox Instructions -->
-        <details class="group">
-          <summary
-            class="cursor-pointer p-2 md:p-2.5 rounded-md md:rounded-lg bg-white/5 hover:bg-white/10 transition-all flex items-center justify-between text-xs md:text-sm"
-          >
-            <div class="flex items-center gap-1.5">
-              <iconify-icon icon="logos:firefox" width="14"></iconify-icon>
-              <span class="font-semibold">Firefox</span>
-            </div>
-            <iconify-icon
-              icon="ph:caret-down-bold"
-              width="12"
-              class="group-open:rotate-180 transition-transform"
-            ></iconify-icon>
-          </summary>
-          <ol
-            class="mt-1.5 ml-5 md:ml-6 space-y-0.5 text-[10px] md:text-xs text-white/80 list-decimal list-inside"
-          >
-            <li>
-              Click the <span
-                class="inline-flex items-center gap-0.5 whitespace-nowrap"
-                >lock icon <iconify-icon icon="ph:lock-fill" width="10"
-                ></iconify-icon></span
-              > in the address bar
-            </li>
-            <li>Click the arrow next to "Blocked" under Permissions</li>
-            <li>
-              Find "Receive Notifications" and click the X to remove the block
-            </li>
-            <li>Refresh this page and toggle notifications on</li>
-          </ol>
-        </details>
-
-        <!-- Safari Instructions -->
-        <details class="group">
-          <summary
-            class="cursor-pointer p-2 md:p-2.5 rounded-md md:rounded-lg bg-white/5 hover:bg-white/10 transition-all flex items-center justify-between text-xs md:text-sm"
-          >
-            <div class="flex items-center gap-1.5">
-              <iconify-icon icon="logos:safari" width="14"></iconify-icon>
-              <span class="font-semibold">Safari</span>
-            </div>
-            <iconify-icon
-              icon="ph:caret-down-bold"
-              width="12"
-              class="group-open:rotate-180 transition-transform"
-            ></iconify-icon>
-          </summary>
-          <ol
-            class="mt-1.5 ml-5 md:ml-6 space-y-0.5 text-[10px] md:text-xs text-white/80 list-decimal list-inside"
-          >
-            <li>Go to Safari → Settings → Websites</li>
-            <li>Click "Notifications" in the left sidebar</li>
-            <li>Find this website and change to "Allow"</li>
-            <li>Refresh this page and toggle notifications on</li>
-          </ol>
-        </details>
+  <!-- Logs Export -->
+  <div
+    class="premium-card backdrop-blur-xl bg-white/5 border border-white/10 hover:border-blue-500/40 transition-all duration-500 animate-scaleIn p-2.5 md:p-3.5 rounded-lg md:rounded-xl"
+    style="animation-delay: 0.4s;"
+  >
+    <div class="flex flex-col gap-2.5 md:gap-3">
+      <div>
+        <span class="font-bold text-xs md:text-sm gradient-text"
+          >Application Logs</span
+        >
+        <p class="text-white/60 mt-0.5 text-[10px] md:text-xs">
+          Export technical logs from this device to share with support when
+          troubleshooting issues.
+        </p>
       </div>
-    {/if}
+
+      <div class="flex gap-2 items-center">
+        <!-- Export Logs -->
+        <button
+          type="button"
+          class="flex-1 p-2.5 md:p-3 rounded-lg md:rounded-xl border border-blue-500/40 bg-blue-500/20 hover:border-blue-400 transition-all duration-300"
+          onclick={exportLogs}
+          disabled={isExporting}
+        >
+          <div class="flex items-center justify-center gap-1.5">
+            <iconify-icon icon="ph:export-bold" class="text-blue-300" width="16"
+            ></iconify-icon>
+            <span class="font-semibold text-xs md:text-sm">
+              {#if isExporting}
+                Exporting…
+              {:else}
+                Export Logs
+              {/if}
+            </span>
+          </div>
+        </button>
+
+        <!-- Clear Logs -->
+        <button
+          type="button"
+          class="px-2.5 md:px-3 p-2.5 md:p-3 rounded-lg md:rounded-xl border border-red-500/50 bg-red-500/10
+                text-red-300 text-[10px] md:text-xs
+                hover:bg-red-500/20 hover:border-red-400
+                transition-all flex items-center justify-center gap-1.5 flex-none"
+          onclick={() => (showClearConfirm = true)}
+        >
+          <iconify-icon icon="ph:trash-bold" class="text-red-300" width="14"
+          ></iconify-icon>
+          <span>Clear Logs</span>
+        </button>
+      </div>
+
+      {#if showClearConfirm}
+        <div
+          class="mt-1.5 p-2 md:p-2.5 rounded-lg md:rounded-xl border border-red-500/40 bg-red-500/10 text-[10px] md:text-xs text-red-100 space-y-1.5"
+        >
+          <p class="font-semibold">Clear all logs from this device?</p>
+          <p class="text-[9px] md:text-[11px] text-red-200/80">
+            This only deletes logs stored in this browser. It cannot be undone.
+          </p>
+          <div class="flex justify-end gap-1.5 mt-0.5">
+            <button
+              type="button"
+              class="px-2 md:px-2.5 py-1 md:py-1.5 rounded-md border border-white/20 text-[10px] md:text-xs hover:bg-white/5"
+              onclick={() => (showClearConfirm = false)}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              class="px-2 md:px-2.5 py-1 md:py-1.5 rounded-md border border-red-500/60 bg-red-500/40 text-[10px] md:text-xs font-semibold hover:bg-red-500/60"
+              onclick={handleClearLogs}
+            >
+              Confirm clear
+            </button>
+          </div>
+        </div>
+      {/if}
+    </div>
   </div>
 
   <!-- Logs Export -->

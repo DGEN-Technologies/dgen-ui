@@ -113,7 +113,7 @@
       const userId = user.id || user.username;
 
       // Get password from session token (no user input needed)
-      const walletPassword = walletService.getWalletPassword(userId);
+      const walletPassword = await walletService.getWalletPassword(userId);
 
       if (!walletPassword) {
         const { fail } = await import("$lib/utils");
@@ -184,7 +184,7 @@
       try {
         const walletService = await import("$lib/walletService");
         const userId = user?.id || user?.username;
-        const password = walletService.getWalletPassword(userId);
+        const password = await walletService.getWalletPassword(userId);
         if (password) {
           await walletService.clearMnemonic(password, userId);
         }

@@ -461,7 +461,7 @@
         {/if}
 
         <!-- Pending Transactions -->
-        {#if $walletInfo?.walletInfo?.pendingReceiveSat || $walletInfo?.walletInfo?.pendingSendSat}
+        <!-- {#if $walletInfo?.walletInfo?.pendingReceiveSat || $walletInfo?.walletInfo?.pendingSendSat}
           <div class="mt-4 pt-3 border-t border-dgen-aqua/30">
             {#if $walletInfo.walletInfo.pendingReceiveSat > 0}
               <div class="flex justify-between items-center mb-2 px-1">
@@ -482,7 +482,7 @@
               </div>
             {/if}
           </div>
-        {/if}
+        {/if} -->
       </div>
     </div>
 

@@ -1,5 +1,6 @@
 import * as breezSdk from "@breeztech/breez-sdk-liquid/web";
 import init from "@breeztech/breez-sdk-liquid/web";
+import { env as publicEnv } from "$env/dynamic/public";
 import * as bip39 from "bip39";
 import { SecureStorage } from "./secureStorage";
 import { initBreezLogger, sdkLogger, lightningAddressLogger } from "./logger";
@@ -17,6 +18,43 @@ let isConnecting = false; // Prevent concurrent connections
 // Secure storage instance
 const secureStorage = SecureStorage.getInstance();
 
+const normalizeExplorerUrl = (value?: string): string | null => {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const base =
+    publicEnv.PUBLIC_DGEN_URL ||
+    (typeof window !== "undefined"
+      ? window.location.origin
+      : "http://localhost");
+
+  try {
+    const parsed = new URL(trimmed, base);
+    const isLocalhost =
+      parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1";
+    if (parsed.protocol !== "https:" && !isLocalhost) {
+      sdkLogger.warn("Explorer URL must use https:", parsed.toString());
+      return null;
+    }
+    return parsed.toString().replace(/\/$/, "");
+  } catch {
+    sdkLogger.warn("Invalid explorer URL:", trimmed);
+    return null;
+  }
+};
+
+const buildBackendExplorerUrl = (networkPath: string): string | null => {
+  const base = publicEnv.PUBLIC_DGEN_URL;
+  if (!base) return null;
+  try {
+    const url = new URL(`/api/esplora/${networkPath}`, base);
+    return normalizeExplorerUrl(url.toString());
+  } catch {
+    return null;
+  }
+};
+
 /**
  * Gets or generates a persistent encryption password for the user's wallet.
  * This key is:
@@ -30,7 +68,7 @@ const secureStorage = SecureStorage.getInstance();
  */
 export async function getWalletPassword(userId: string): Promise<string> {
   if (typeof window === "undefined") {
-    return `wallet-key-${userId}`;
+    throw new Error("Secure wallet storage unavailable on server");
   }
 
   const storageKey = `walletEncryptionKey_${userId}`;
@@ -49,11 +87,11 @@ export async function getWalletPassword(userId: string): Promise<string> {
 
     await saveToDB(db, storageKey, newKey);
 
-    sdkLogger.info(`Generated new wallet encryption key for user ${userId}`);
+    sdkLogger.info("Generated new wallet encryption key");
     return newKey;
   } catch (error) {
     sdkLogger.error("Failed to get/generate wallet password:", error);
-    return `wallet-key-${userId}`;
+    throw new Error("Secure wallet storage unavailable");
   }
 }
 
@@ -200,26 +238,36 @@ const connectSdk = async (mnemonic: string, retryCount = 0): Promise<void> => {
     config.breezApiKey = breezApiKey;
 
     // Configure custom blockchain explorers to avoid rate limits
-    // You can override these with environment variables
-    const liquidExplorerUrl = import.meta.env.VITE_LIQUID_EXPLORER_URL;
-    const bitcoinExplorerUrl = import.meta.env.VITE_BITCOIN_EXPLORER_URL;
+    // Prefer explicit VITE_* overrides, then backend proxy, then public explorers.
+    const liquidExplorerUrl =
+      normalizeExplorerUrl(import.meta.env.VITE_LIQUID_EXPLORER_URL) ??
+      buildBackendExplorerUrl("liquid") ??
+      normalizeExplorerUrl(publicEnv.PUBLIC_LIQUID_EXPLORER);
+    const bitcoinExplorerUrl =
+      normalizeExplorerUrl(import.meta.env.VITE_BITCOIN_EXPLORER_URL) ??
+      buildBackendExplorerUrl("bitcoin") ??
+      normalizeExplorerUrl(publicEnv.PUBLIC_EXPLORER);
 
     if (liquidExplorerUrl) {
-      sdkLogger.info("Using custom Liquid explorer:", liquidExplorerUrl);
+      sdkLogger.info("Using Liquid explorer:", liquidExplorerUrl);
       config.liquidExplorer = {
         type: "esplora",
         url: liquidExplorerUrl,
         useWaterfalls: false,
       };
+    } else {
+      sdkLogger.warn("No Liquid explorer configured; SDK will use defaults.");
     }
 
     if (bitcoinExplorerUrl) {
-      sdkLogger.info("Using custom Bitcoin explorer:", bitcoinExplorerUrl);
+      sdkLogger.info("Using Bitcoin explorer:", bitcoinExplorerUrl);
       config.bitcoinExplorer = {
         type: "esplora",
         url: bitcoinExplorerUrl,
         useWaterfalls: false,
       };
+    } else {
+      sdkLogger.warn("No Bitcoin explorer configured; SDK will use defaults.");
     }
 
     // Note: The SDK already includes default asset metadata for LBTC and USDT on mainnet
@@ -1036,9 +1084,12 @@ const registerLightningAddressSingle = async (
         throw new UsernameConflictError("Username is already taken");
       }
 
-      throw new Error(
-        `Breez registration failed: ${response.status} - ${errorText}`,
+      // Log full error for debugging, throw generic message
+      lightningAddressLogger.error(
+        `Breez registration failed: ${response.status}`,
+        errorText,
       );
+      throw new Error(`Breez registration failed: ${response.status}`);
     }
 
     const result = await response.json();

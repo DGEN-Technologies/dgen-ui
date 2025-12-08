@@ -1,6 +1,6 @@
 <script>
   import { browser } from "$app/environment";
-  import { PUBLIC_DGEN_URL } from "$env/static/public";
+  import { env } from "$env/dynamic/public";
   import { onMount, tick } from "svelte";
   import { fly } from "svelte/transition";
   import { applyAction, deserialize } from "$app/forms";
@@ -15,7 +15,7 @@
   import { page } from "$app/stores";
   const NOSTR_SIGNING_ENABLED = false;
   // import { sign, send, getPrivateKey } from "$lib/nostr"; // NOSTR DISABLED
-  import { invalidateAll, goto } from "$app/navigation";
+  import { beforeNavigate, invalidateAll, goto } from "$app/navigation";
   // import { getPublicKey } from "nostr-tools"; // NOSTR DISABLED
   import { bytesToHex } from "@noble/hashes/utils";
 
@@ -30,6 +30,7 @@
   let pendingBody = $state(null);
   let showPassword = $state(false);
 
+  const publicDgenUrl = env.PUBLIC_DGEN_URL || "";
   let { token, cookies, subscriptions } = $derived(data);
   let { tab } = $derived(data);
   let user = $derived({ ...data?.user, ...form?.user });
@@ -55,6 +56,34 @@
   let { about, id, username } = $derived(user);
   let submitting = $state();
   let cancel = () => goto(`/${username}`);
+
+  const safeT = (key, fallback) => {
+    const value = $t(key);
+    return value && value !== key ? value : fallback;
+  };
+
+  const clearPasswordState = () => {
+    newPassword = "";
+    confirmPassword = "";
+    showConfirmPassword = false;
+    showFinalConfirm = false;
+    pendingBody = null;
+    showPassword = false;
+  };
+
+  onMount(() => {
+    const removeBeforeNavigate = beforeNavigate(() => {
+      clearPasswordState();
+    });
+    const handleVisibility = () => {
+      if (document.hidden) clearPasswordState();
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      removeBeforeNavigate();
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  });
 
   async function submitBody(body) {
     form = {
@@ -102,7 +131,9 @@
         let { hash, ext } = JSON.parse(uploadResult);
 
         // Use full backend URL for production compatibility
-        let url = `${PUBLIC_DGEN_URL}/public/${hash}.${ext || "webp"}`;
+        let url = publicDgenUrl
+          ? `${publicDgenUrl}/public/${hash}.${ext || "webp"}`
+          : `/public/${hash}.${ext || "webp"}`;
         body.set("picture", url);
 
         await fetch(url, { cache: "reload", mode: "no-cors" });
@@ -121,7 +152,9 @@
         );
 
         // Use full backend URL for production compatibility
-        let url = `${PUBLIC_DGEN_URL}/public/${hash}.${ext || "webp"}`;
+        let url = publicDgenUrl
+          ? `${publicDgenUrl}/public/${hash}.${ext || "webp"}`
+          : `/public/${hash}.${ext || "webp"}`;
         body.set("banner", url);
         await fetch(url, { cache: "reload", mode: "no-cors" });
 
@@ -175,7 +208,7 @@
 
         warning($t("user.settings.verifying"), false);
       } catch (e) {
-        fail(e.message);
+        fail(safeT("error.message", "Please try again or contact support."));
         console.log(e);
       }
     }
@@ -224,7 +257,12 @@
     submitting = false;
   }
   $effect(() => form?.success && throttledSuccess());
-  $effect(() => form?.message && fail(form.message));
+  $effect(() => {
+    if (!form?.message) return;
+    if (form.message.startsWith("Pin")) return;
+    console.warn("[Settings] Unhandled form message:", form.message);
+    fail(safeT("error.message", "Something went wrong"));
+  });
   $effect(() => {
     if (form?.message?.startsWith("Pin")) {
       fail("Wrong pin, try again");

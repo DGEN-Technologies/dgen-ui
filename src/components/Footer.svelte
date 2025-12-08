@@ -91,9 +91,15 @@
     </div>
   </div>
 
-  <div class="mt-12 pt-8 border-t border-white/5 text-center">
+  <div class="mt-12 pt-8 border-t border-white/5 text-center space-y-3">
+    <button
+      class="text-xs md:text-sm text-white/70 hover:text-white underline underline-offset-4 decoration-white/30 hover:decoration-white transition-colors"
+      onclick={() => goto("/terms")}
+    >
+      Terms & Conditions
+    </button>
     <p class="text-xs text-gray-500">
-      © 2025 DGEN Technologies. All rights reserved.
+      © 2026 DGEN Technologies. All rights reserved.
     </p>
   </div>
 </footer>

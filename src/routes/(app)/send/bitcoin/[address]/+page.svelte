@@ -56,7 +56,7 @@
 
   <h1 class="text-3xl md:text-4xl font-semibold mb-2">{$t("payments.send")}</h1>
 
-  <div class="text-xl text-secondary break-all">{address}</div>
+  <div class="text-xs sm:text-sm text-secondary break-all">{address}</div>
 
   <Numpad
     bind:amount={a}
@@ -67,6 +67,7 @@
     {locale}
     skipBalanceCheck={true}
     minAmount={MIN_ONCHAIN_SATS}
+    compactClear
   />
 
   <div class="flex justify-center gap-2">

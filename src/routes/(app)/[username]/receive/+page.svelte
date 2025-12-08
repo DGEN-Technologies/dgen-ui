@@ -958,6 +958,9 @@
             <iconify-icon icon="ph:caret-down-bold" width="16"></iconify-icon>
           </button>
         </div>
+        <span class="text-sm md:text-2sm font-semibold"
+          >(Options other than Lightning Invoice)</span
+        >
       {/if}
 
       <!-- Payment Method Selection (Lightning Address, Bitcoin, Liquid) - EXPANDED view -->
@@ -1585,7 +1588,7 @@
           bind:showQr={$showQr}
           {txt}
           t={$t}
-          showSetAmount={false}
+          showSetAmount={invoiceType === types.lightning}
         />
 
         <!-- Transaction History button - only show for default Lightning view -->

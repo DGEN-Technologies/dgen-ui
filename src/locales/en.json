@@ -247,7 +247,7 @@
     "loadMore": "Load more",
     "url": "Public URL",
     "lnurl": "Payment code",
-    "install": "Install app",
+    "install": "Install App Directly On Device",
     "moreDetails": "Profile details",
     "noMessages": "You have not sent or received any messages",
     "profilePage": "Profile page",
@@ -549,6 +549,9 @@
     "confirmRefund": "Confirm Refund",
     "refundWarning": "Please verify the refund address is correct. This transaction cannot be reversed.",
     "refundBroadcast": "Refund broadcast",
+    "refundPrepareFailed": "Refund Preparation Failed",
+    "refundProcessFailed": "Refund Process Failed",
+    "refundFeeEstimateFailed": "Refund Fee Estimate Failed",
     "refundTxIdUnavailable": "Transaction ID unavailable.",
     "youWillReceive": "You will receive",
     "refundSuccess": "Refund transaction broadcast successfully!"

@@ -36,12 +36,6 @@
   // Loading states
   let isInitialLoad = $state(true);
 
-  // Virtual scrolling for performance
-  let visibleStart = $state(0);
-  let visibleEnd = $state(50);
-  let containerHeight = $state(0);
-  let scrollTop = $state(0);
-
   // Initialize on mount
   onMount(async () => {
     // Wait for SDK to be ready
@@ -110,22 +104,8 @@
 
     isInitialLoad = false;
 
-    // Set up auto-refresh every 30 seconds - silently in background
-    const refreshInterval = setInterval(async () => {
-      if (!document.hidden) {
-        try {
-          const { isConnected } = await import("$lib/walletService");
-          if (isConnected()) {
-            // Refresh silently without showing notification
-            await transactionStore.loadTransactions(true);
-          }
-        } catch (error) {
-          console.warn("[PaymentsList] Error during auto-refresh:", error);
-        }
-      }
-    }, 30000);
-
-    return () => clearInterval(refreshInterval);
+    // Note: Auto-refresh is now handled by PollManager in wallet.ts
+    // No need for component-level polling - reduces duplicate API calls
   });
 
   // Apply filters when they change
@@ -344,18 +324,13 @@
     };
   };
 
-  // Handle virtual scrolling
-  const handleScroll = (event) => {
-    const { scrollTop, scrollHeight, clientHeight } = event.target;
-    const scrollPercentage = scrollTop / (scrollHeight - clientHeight);
-
-    // Update visible range based on scroll position
-    const totalItems = $currentTransactionPage?.totalCount || 0;
-    const itemHeight = 80; // Approximate height of each item
-    const visibleItems = Math.ceil(clientHeight / itemHeight);
-
-    visibleStart = Math.floor(scrollPercentage * (totalItems - visibleItems));
-    visibleEnd = visibleStart + visibleItems + 5; // Buffer for smooth scrolling
+  const escapeCsvCell = (value) => {
+    if (value === null || value === undefined) return "";
+    const text = String(value);
+    const isNumeric = typeof value === "number";
+    const hardened =
+      !isNumeric && /^[\s]*[=+\-@]/.test(text) ? `'${text}` : text;
+    return hardened.replace(/"/g, '""');
   };
 
   // Export to CSV - Export ALL transactions, not just current page
@@ -492,8 +467,8 @@
         amount,
         fee,
         netAmount,
-        fiatAmount.toFixed(2),
-        (tx.details?.description || tx.description || "").replace(/"/g, '""'),
+        Number(fiatAmount.toFixed(2)),
+        tx.details?.description || tx.description || "",
         tx.details?.paymentHash || tx.paymentHash || "",
         tx.details?.preimage || "",
         tx.details?.destination || "",
@@ -502,7 +477,7 @@
     });
 
     const csv = [headers, ...rows]
-      .map((row) => row.map((cell) => `"${cell}"`).join(","))
+      .map((row) => row.map((cell) => `"${escapeCsvCell(cell)}"`).join(","))
       .join("\n");
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -919,13 +894,18 @@
                   Your transaction history will appear here
                 {/if}
               </p>
+              <button
+                class="btn btn-primary btn-sm mt-4"
+                onclick={() => window.location.reload()}
+              >
+                Reload
+              </button>
             </div>
           </div>
         {:else}
-          <!-- Transaction Items with Virtual Scrolling -->
+          <!-- Transaction Items -->
           <div
             class="divide-y divide-white/5 max-h-[600px] overflow-y-auto transaction-scroll"
-            onscroll={handleScroll}
           >
             {#each payments as payment, i}
               <div
