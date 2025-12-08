@@ -10,7 +10,7 @@
   import { locale, t } from "$lib/translations";
   import { post, success, fail, info } from "$lib/utils";
   import { page } from "$app/stores";
-  import { getLogs } from "$lib/logStorage";
+  import { getLogs, clearLogs } from "$lib/logStorage";
   // import { PUBLIC_VAPID_PUBKEY } from "$env/static/public";
 
   let { data } = $props();
@@ -55,6 +55,7 @@
   let notificationsEnabled = $state(false);
   let permission = $state();
   let showNotificationHelp = $state(false);
+  let showClearConfirm = $state(false)
 
   onMount(async () => {
     if (!browser) return;
@@ -130,14 +131,30 @@
       const a = document.createElement("a");
       a.href = url;
       
-      const date = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-      a.download = `dgen_logs_${date}.log`;
+      const now = new Date()
+      const date = now.toISOString()       
+        .replace(/T/, '_')                  
+        .replace(/:/g, '-')                 
+        .replace(/\..+/, '');
+      a.download = `dgen-logs_${date}.log`;
       a.click();
       
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Export failed:", err);
       fail("Failed to export logs");
+    }
+  }
+
+  async function handleClearLogs() {
+    try {
+      await clearLogs();
+      success("Logs cleared on this device");
+    } catch (err) {
+      console.error("Clear logs failed:", err);
+      fail("Failed to clear logs");
+    } finally {
+      showClearConfirm = false;
     }
   }
 
@@ -397,8 +414,8 @@
         </p>
       </div>
 
-      <div class="flex gap-3">
-        <!-- Export Logs -->
+      <div class="flex gap-3 items-center">
+        <!-- Export Logs (primary, large) -->
         <button
           type="button"
           class="flex-1 p-4 rounded-xl border-2 transition-all duration-300 border-blue-500/40 bg-blue-500/20 hover:border-blue-400"
@@ -409,7 +426,45 @@
             <span class="font-semibold">Export Logs</span>
           </div>
         </button>
+
+        <!-- Clear Logs -->
+        <button
+          type="button"
+          class="px-4 p-4 rounded-xl border border-red-500/50 bg-red-500/10 
+                text-red-300 text-xs md:text-sm 
+                hover:bg-red-500/20 hover:border-red-400 
+                transition-all flex items-center justify-center gap-2 flex-none"
+          onclick={() => showClearConfirm = true}
+        >
+          <iconify-icon icon="ph:trash-bold" class="text-red-300" width="18"></iconify-icon>
+          <span>Clear Logs</span>
+        </button>
       </div>
+
+      {#if showClearConfirm}
+        <div class="mt-2 p-3 rounded-xl border border-red-500/40 bg-red-500/10 text-xs text-red-100 space-y-2">
+          <p class="font-semibold">Clear all logs from this device?</p>
+          <p class="text-[11px] text-red-200/80">
+            This only deletes logs stored in this browser. It cannot be undone.
+          </p>
+          <div class="flex justify-end gap-2 mt-1">
+            <button
+              type="button"
+              class="px-3 py-1.5 rounded-lg border border-white/20 text-xs hover:bg-white/5"
+              onclick={() => showClearConfirm = false}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              class="px-3 py-1.5 rounded-lg border border-red-500/60 bg-red-500/40 text-xs font-semibold hover:bg-red-500/60"
+              onclick={handleClearLogs}
+            >
+              Confirm clear
+            </button>
+          </div>
+        </div>
+      {/if}
     </div>
   </div>
 
