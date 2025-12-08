@@ -55,19 +55,19 @@
   let notificationsEnabled = $state(false);
   let permission = $state();
   let showNotificationHelp = $state(false);
-  let showClearConfirm = $state(false);
+  let showClearConfirm = $state(false)
   let isExporting = $state(false);
 
   onMount(async () => {
     if (!browser) return;
 
     // Check browser notification permission
-    const { getNotificationPermission } = await import("$lib/notifications");
+    const { getNotificationPermission } = await import('$lib/notifications');
     permission = getNotificationPermission();
 
     // Load saved preference from localStorage
-    const savedPref = localStorage.getItem("notifications_enabled");
-    notificationsEnabled = savedPref === "true";
+    const savedPref = localStorage.getItem('notifications_enabled');
+    notificationsEnabled = savedPref === 'true';
 
     // Push notifications (VAPID) disabled for now - using browser Notification API instead
     // try {
@@ -96,31 +96,29 @@
   async function handleNotificationToggle() {
     if (!browser) return;
 
-    const { requestNotificationPermission } = await import(
-      "$lib/notifications"
-    );
+    const { requestNotificationPermission } = await import('$lib/notifications');
 
     if (notificationsEnabled) {
       // Request permission
       permission = await requestNotificationPermission();
-      if (permission === "granted") {
-        localStorage.setItem("notifications_enabled", "true");
-        success("Browser notifications enabled");
+      if (permission === 'granted') {
+        localStorage.setItem('notifications_enabled', 'true');
+        success('Browser notifications enabled');
       } else {
         // Permission denied, revert toggle
         notificationsEnabled = false;
-        localStorage.setItem("notifications_enabled", "false");
-        fail("Permission denied. Check your browser settings.");
+        localStorage.setItem('notifications_enabled', 'false');
+        fail('Permission denied. Check your browser settings.');
       }
     } else {
       // Disable notifications
-      localStorage.setItem("notifications_enabled", "false");
-      success("Browser notifications disabled");
+      localStorage.setItem('notifications_enabled', 'false');
+      success('Browser notifications disabled');
     }
   }
 
   async function exportLogs() {
-    if (isExporting) return; // prevent double clicks
+    if (isExporting) return;   // prevent double clicks
     isExporting = true;
 
     try {
@@ -129,20 +127,19 @@
         info("No logs to export");
         return;
       }
-
+      
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-
-      const now = new Date();
-      const date = now
-        .toISOString()
-        .replace(/T/, "_")
-        .replace(/:/g, "-")
-        .replace(/\..+/, "");
+      
+      const now = new Date()
+      const date = now.toISOString()       
+        .replace(/T/, '_')                  
+        .replace(/:/g, '-')                 
+        .replace(/\..+/, '');
       a.download = `dgen-logs_${date}.log`;
       a.click();
-
+      
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Export failed:", err);
@@ -197,35 +194,31 @@
   let revoke = () => {};
 </script>
 
-<div class="space-y-2.5 md:space-y-4">
+<div class="space-y-6">
   <!-- Language Settings -->
   <div
-    class="premium-card backdrop-blur-xl bg-white/5 border border-white/10 hover:border-purple-500/40 transition-all duration-500 animate-scaleIn p-2.5 md:p-3.5 rounded-lg md:rounded-xl"
+    class="premium-card backdrop-blur-xl bg-white/5 border-2 border-white/10 hover:border-purple-500/40 transition-all duration-500 animate-scaleIn"
   >
-    <label
-      for="language"
-      class="font-bold block mb-1 md:mb-1.5 text-xs md:text-sm gradient-text"
+    <label for="language" class="font-bold block mb-2 text-lg gradient-text"
       >{$t("user.settings.locale")}</label
     >
     <LocaleSelector
-      style="select-styles block py-1.5 md:py-2 w-full glass rounded-lg md:rounded-xl border border-white/20 focus:border-purple-500/50 text-xs md:text-sm"
+      style="select-styles block py-3 w-full glass rounded-2xl border-2 border-white/20 focus:border-purple-500/50"
     />
   </div>
 
   <!-- Currency Settings -->
   <div
-    class="premium-card backdrop-blur-xl bg-white/5 border border-white/10 hover:border-green-500/40 transition-all duration-500 animate-scaleIn p-2.5 md:p-3.5 rounded-lg md:rounded-xl"
+    class="premium-card backdrop-blur-xl bg-white/5 border-2 border-white/10 hover:border-green-500/40 transition-all duration-500 animate-scaleIn"
     style="animation-delay: 0.1s;"
   >
-    <label
-      for="currency"
-      class="font-bold block mb-1 md:mb-1.5 text-xs md:text-sm gradient-text"
+    <label for="currency" class="font-bold block mb-2 text-lg gradient-text"
       >{$t("user.settings.localCurrency")}</label
     >
     <select
       name="currency"
       value={currency}
-      class="glass rounded-lg md:rounded-xl border border-white/20 focus:border-green-500/50 bg-white/5 text-xs md:text-sm py-1.5 md:py-2 px-2 md:px-3"
+      class="glass rounded-2xl border-2 border-white/20 focus:border-green-500/50 bg-white/5"
     >
       {#each fiats as fiat}
         <option value={fiat} class="bg-gray-800 text-white">{fiat}</option>
@@ -234,7 +227,7 @@
   </div>
 
   <!-- Bitcoin Unit Settings -->
-  <!-- <div
+  <div
     class="premium-card backdrop-blur-xl bg-white/5 border-2 border-white/10 hover:border-orange-500/40 transition-all duration-500 animate-scaleIn"
     style="animation-delay: 0.2s;"
   >
@@ -268,7 +261,7 @@
         <p class="text-xs text-white/60 mt-1">e.g., 3,824</p>
       </button>
     </div>
-  </div> -->
+  </div>
 
   <!-- Email Settings (temporarily disabled) -->
   <!-- <div
@@ -310,17 +303,13 @@
 
   <!-- Browser Notifications -->
   <div
-    class="premium-card backdrop-blur-xl bg-white/5 border border-white/10 hover:border-yellow-500/40 transition-all duration-500 animate-scaleIn p-2.5 md:p-3.5 rounded-lg md:rounded-xl"
+    class="premium-card backdrop-blur-xl bg-white/5 border-2 border-white/10 hover:border-yellow-500/40 transition-all duration-500 animate-scaleIn"
     style="animation-delay: 0.3s;"
   >
-    <div
-      class="flex flex-col md:flex-row md:justify-between md:items-center gap-2"
-    >
+    <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
       <div>
-        <span class="font-bold text-xs md:text-sm gradient-text"
-          >Browser Notifications</span
-        >
-        <p class="text-white/60 mt-0.5 text-[10px] md:text-xs">
+        <span class="font-bold text-lg gradient-text">Browser Notifications</span>
+        <p class="text-white/60 mt-1">
           {#if permission === "denied"}
             Notifications are blocked. Enable them in your browser settings.
           {:else}
@@ -329,57 +318,32 @@
         </p>
       </div>
       {#if permission !== "denied"}
-        <Toggle
-          id="notifications"
-          bind:value={notificationsEnabled}
-          onclick={handleNotificationToggle}
-        />
+        <Toggle id="notifications" bind:value={notificationsEnabled} onclick={handleNotificationToggle} />
       {:else}
         <button
           type="button"
-          class="px-2.5 md:px-3 py-1.5 md:py-2 rounded-md md:rounded-lg bg-yellow-500/20 border border-yellow-500/50 text-yellow-400 text-[10px] md:text-xs hover:bg-yellow-500/30 transition-all flex items-center justify-center gap-1.5 w-full md:w-auto"
-          onclick={() => (showNotificationHelp = !showNotificationHelp)}
+          class="px-4 py-2 rounded-lg bg-yellow-500/20 border border-yellow-500/50 text-yellow-400 text-sm hover:bg-yellow-500/30 transition-all flex items-center justify-center gap-2 w-full md:w-auto"
+          onclick={() => showNotificationHelp = !showNotificationHelp}
         >
-          {showNotificationHelp ? "Hide" : "Show"} Instructions
-          <iconify-icon
-            icon={showNotificationHelp
-              ? "ph:caret-up-bold"
-              : "ph:caret-down-bold"}
-            width="12"
-          ></iconify-icon>
+          {showNotificationHelp ? 'Hide' : 'Show'} Instructions
+          <iconify-icon icon={showNotificationHelp ? 'ph:caret-up-bold' : 'ph:caret-down-bold'} width="16"></iconify-icon>
         </button>
       {/if}
     </div>
 
     {#if permission === "denied" && showNotificationHelp}
-      <div
-        class="mt-2.5 md:mt-3 space-y-2 border-t border-white/10 pt-2.5 md:pt-3"
-      >
+      <div class="mt-4 space-y-3 border-t border-white/10 pt-4">
         <!-- Chrome Instructions -->
         <details class="group">
-          <summary
-            class="cursor-pointer p-2 md:p-2.5 rounded-md md:rounded-lg bg-white/5 hover:bg-white/10 transition-all flex items-center justify-between text-xs md:text-sm"
-          >
-            <div class="flex items-center gap-1.5">
-              <iconify-icon icon="logos:chrome" width="14"></iconify-icon>
+          <summary class="cursor-pointer p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-all flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <iconify-icon icon="logos:chrome" width="20"></iconify-icon>
               <span class="font-semibold">Google Chrome</span>
             </div>
-            <iconify-icon
-              icon="ph:caret-down-bold"
-              width="12"
-              class="group-open:rotate-180 transition-transform"
-            ></iconify-icon>
+            <iconify-icon icon="ph:caret-down-bold" width="16" class="group-open:rotate-180 transition-transform"></iconify-icon>
           </summary>
-          <ol
-            class="mt-1.5 ml-5 md:ml-6 space-y-0.5 text-[10px] md:text-xs text-white/80 list-decimal list-inside"
-          >
-            <li>
-              Click the <span
-                class="inline-flex items-center gap-0.5 whitespace-nowrap"
-                >lock icon <iconify-icon icon="ph:lock-fill" width="10"
-                ></iconify-icon></span
-              > in the address bar
-            </li>
+          <ol class="mt-2 ml-8 space-y-1 text-sm text-white/80 list-decimal list-inside">
+            <li>Click the <span class="inline-flex items-center gap-1 whitespace-nowrap">lock icon <iconify-icon icon="ph:lock-fill" width="14"></iconify-icon></span> in the address bar</li>
             <li>Find "Notifications" in the permissions list</li>
             <li>Change it from "Block" to "Allow"</li>
             <li>Refresh this page and toggle notifications on</li>
@@ -388,30 +352,15 @@
 
         <!-- Edge Instructions -->
         <details class="group">
-          <summary
-            class="cursor-pointer p-2 md:p-2.5 rounded-md md:rounded-lg bg-white/5 hover:bg-white/10 transition-all flex items-center justify-between text-xs md:text-sm"
-          >
-            <div class="flex items-center gap-1.5">
-              <iconify-icon icon="logos:microsoft-edge" width="14"
-              ></iconify-icon>
+          <summary class="cursor-pointer p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-all flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <iconify-icon icon="logos:microsoft-edge" width="20"></iconify-icon>
               <span class="font-semibold">Microsoft Edge</span>
             </div>
-            <iconify-icon
-              icon="ph:caret-down-bold"
-              width="12"
-              class="group-open:rotate-180 transition-transform"
-            ></iconify-icon>
+            <iconify-icon icon="ph:caret-down-bold" width="16" class="group-open:rotate-180 transition-transform"></iconify-icon>
           </summary>
-          <ol
-            class="mt-1.5 ml-5 md:ml-6 space-y-0.5 text-[10px] md:text-xs text-white/80 list-decimal list-inside"
-          >
-            <li>
-              Click the <span
-                class="inline-flex items-center gap-0.5 whitespace-nowrap"
-                >lock icon <iconify-icon icon="ph:lock-fill" width="10"
-                ></iconify-icon></span
-              > in the address bar
-            </li>
+          <ol class="mt-2 ml-8 space-y-1 text-sm text-white/80 list-decimal list-inside">
+            <li>Click the <span class="inline-flex items-center gap-1 whitespace-nowrap">lock icon <iconify-icon icon="ph:lock-fill" width="14"></iconify-icon></span> in the address bar</li>
             <li>Click "Permissions for this site"</li>
             <li>Find "Notifications" and change to "Allow"</li>
             <li>Refresh this page and toggle notifications on</li>
@@ -420,55 +369,31 @@
 
         <!-- Firefox Instructions -->
         <details class="group">
-          <summary
-            class="cursor-pointer p-2 md:p-2.5 rounded-md md:rounded-lg bg-white/5 hover:bg-white/10 transition-all flex items-center justify-between text-xs md:text-sm"
-          >
-            <div class="flex items-center gap-1.5">
-              <iconify-icon icon="logos:firefox" width="14"></iconify-icon>
+          <summary class="cursor-pointer p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-all flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <iconify-icon icon="logos:firefox" width="20"></iconify-icon>
               <span class="font-semibold">Firefox</span>
             </div>
-            <iconify-icon
-              icon="ph:caret-down-bold"
-              width="12"
-              class="group-open:rotate-180 transition-transform"
-            ></iconify-icon>
+            <iconify-icon icon="ph:caret-down-bold" width="16" class="group-open:rotate-180 transition-transform"></iconify-icon>
           </summary>
-          <ol
-            class="mt-1.5 ml-5 md:ml-6 space-y-0.5 text-[10px] md:text-xs text-white/80 list-decimal list-inside"
-          >
-            <li>
-              Click the <span
-                class="inline-flex items-center gap-0.5 whitespace-nowrap"
-                >lock icon <iconify-icon icon="ph:lock-fill" width="10"
-                ></iconify-icon></span
-              > in the address bar
-            </li>
+          <ol class="mt-2 ml-8 space-y-1 text-sm text-white/80 list-decimal list-inside">
+            <li>Click the <span class="inline-flex items-center gap-1 whitespace-nowrap">lock icon <iconify-icon icon="ph:lock-fill" width="14"></iconify-icon></span> in the address bar</li>
             <li>Click the arrow next to "Blocked" under Permissions</li>
-            <li>
-              Find "Receive Notifications" and click the X to remove the block
-            </li>
+            <li>Find "Receive Notifications" and click the X to remove the block</li>
             <li>Refresh this page and toggle notifications on</li>
           </ol>
         </details>
 
         <!-- Safari Instructions -->
         <details class="group">
-          <summary
-            class="cursor-pointer p-2 md:p-2.5 rounded-md md:rounded-lg bg-white/5 hover:bg-white/10 transition-all flex items-center justify-between text-xs md:text-sm"
-          >
-            <div class="flex items-center gap-1.5">
-              <iconify-icon icon="logos:safari" width="14"></iconify-icon>
+          <summary class="cursor-pointer p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-all flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <iconify-icon icon="logos:safari" width="20"></iconify-icon>
               <span class="font-semibold">Safari</span>
             </div>
-            <iconify-icon
-              icon="ph:caret-down-bold"
-              width="12"
-              class="group-open:rotate-180 transition-transform"
-            ></iconify-icon>
+            <iconify-icon icon="ph:caret-down-bold" width="16" class="group-open:rotate-180 transition-transform"></iconify-icon>
           </summary>
-          <ol
-            class="mt-1.5 ml-5 md:ml-6 space-y-0.5 text-[10px] md:text-xs text-white/80 list-decimal list-inside"
-          >
+          <ol class="mt-2 ml-8 space-y-1 text-sm text-white/80 list-decimal list-inside">
             <li>Go to Safari → Settings → Websites</li>
             <li>Click "Notifications" in the left sidebar</li>
             <li>Find this website and change to "Allow"</li>
@@ -481,32 +406,28 @@
 
   <!-- Logs Export -->
   <div
-    class="premium-card backdrop-blur-xl bg-white/5 border border-white/10 hover:border-blue-500/40 transition-all duration-500 animate-scaleIn p-2.5 md:p-3.5 rounded-lg md:rounded-xl"
+    class="premium-card backdrop-blur-xl bg-white/5 border-2 border-white/10 hover:border-blue-500/40 transition-all duration-500 animate-scaleIn"
     style="animation-delay: 0.4s;"
   >
-    <div class="flex flex-col gap-2.5 md:gap-3">
+    <div class="flex flex-col gap-4">
       <div>
-        <span class="font-bold text-xs md:text-sm gradient-text"
-          >Application Logs</span
-        >
-        <p class="text-white/60 mt-0.5 text-[10px] md:text-xs">
-          Export technical logs from this device to share with support when
-          troubleshooting issues.
+        <span class="font-bold text-lg gradient-text">Application Logs</span>
+        <p class="text-white/60 mt-1 text-sm">
+          Export technical logs from this device to share with support when troubleshooting issues.
         </p>
       </div>
 
-      <div class="flex gap-2 items-center">
+      <div class="flex gap-3 items-center">
         <!-- Export Logs -->
         <button
           type="button"
-          class="flex-1 p-2.5 md:p-3 rounded-lg md:rounded-xl border border-blue-500/40 bg-blue-500/20 hover:border-blue-400 transition-all duration-300"
+          class="flex-1 p-4 rounded-xl border-2 transition-all duration-300 border-blue-500/40 bg-blue-500/20 hover:border-blue-400"
           onclick={exportLogs}
           disabled={isExporting}
         >
-          <div class="flex items-center justify-center gap-1.5">
-            <iconify-icon icon="ph:export-bold" class="text-blue-300" width="16"
-            ></iconify-icon>
-            <span class="font-semibold text-xs md:text-sm">
+          <div class="flex items-center justify-center gap-2">
+            <iconify-icon icon="ph:export-bold" class="text-blue-300" width="24"></iconify-icon>
+            <span class="font-semibold">
               {#if isExporting}
                 Exporting…
               {:else}
@@ -519,37 +440,34 @@
         <!-- Clear Logs -->
         <button
           type="button"
-          class="px-2.5 md:px-3 p-2.5 md:p-3 rounded-lg md:rounded-xl border border-red-500/50 bg-red-500/10
-                text-red-300 text-[10px] md:text-xs
-                hover:bg-red-500/20 hover:border-red-400
-                transition-all flex items-center justify-center gap-1.5 flex-none"
-          onclick={() => (showClearConfirm = true)}
+          class="px-4 p-4 rounded-xl border border-red-500/50 bg-red-500/10 
+                text-red-300 text-xs md:text-sm 
+                hover:bg-red-500/20 hover:border-red-400 
+                transition-all flex items-center justify-center gap-2 flex-none"
+          onclick={() => showClearConfirm = true}
         >
-          <iconify-icon icon="ph:trash-bold" class="text-red-300" width="14"
-          ></iconify-icon>
+          <iconify-icon icon="ph:trash-bold" class="text-red-300" width="18"></iconify-icon>
           <span>Clear Logs</span>
         </button>
       </div>
 
       {#if showClearConfirm}
-        <div
-          class="mt-1.5 p-2 md:p-2.5 rounded-lg md:rounded-xl border border-red-500/40 bg-red-500/10 text-[10px] md:text-xs text-red-100 space-y-1.5"
-        >
+        <div class="mt-2 p-3 rounded-xl border border-red-500/40 bg-red-500/10 text-xs text-red-100 space-y-2">
           <p class="font-semibold">Clear all logs from this device?</p>
-          <p class="text-[9px] md:text-[11px] text-red-200/80">
+          <p class="text-[11px] text-red-200/80">
             This only deletes logs stored in this browser. It cannot be undone.
           </p>
-          <div class="flex justify-end gap-1.5 mt-0.5">
+          <div class="flex justify-end gap-2 mt-1">
             <button
               type="button"
-              class="px-2 md:px-2.5 py-1 md:py-1.5 rounded-md border border-white/20 text-[10px] md:text-xs hover:bg-white/5"
-              onclick={() => (showClearConfirm = false)}
+              class="px-3 py-1.5 rounded-lg border border-white/20 text-xs hover:bg-white/5"
+              onclick={() => showClearConfirm = false}
             >
               Cancel
             </button>
             <button
               type="button"
-              class="px-2 md:px-2.5 py-1 md:py-1.5 rounded-md border border-red-500/60 bg-red-500/40 text-[10px] md:text-xs font-semibold hover:bg-red-500/60"
+              class="px-3 py-1.5 rounded-lg border border-red-500/60 bg-red-500/40 text-xs font-semibold hover:bg-red-500/60"
               onclick={handleClearLogs}
             >
               Confirm clear
@@ -696,9 +614,9 @@
       class="fixed backdrop-blur-xl bg-black/30 inset-0 overflow-y-auto h-full w-full z-50 max-w-lg mx-auto"
     >
       <div
-        class="relative p-3 md:p-4 border shadow-lg rounded-lg md:rounded-xl glass backdrop-blur-xl bg-white/5 border-white/10 space-y-3 md:space-y-4"
+        class="relative p-5 border shadow-lg rounded-md glass backdrop-blur-xl bg-white/5 border-white/10 space-y-5"
       >
-        <h1 class="text-center text-base md:text-xl font-semibold">
+        <h1 class="text-center text-2xl font-semibold">
           {$t("user.settings.threshold")}
         </h1>
         <Numpad
@@ -713,7 +631,7 @@
           bind:this={doneReserve}
           type="button"
           onclick={doneEditing}
-          class="btn text-xs md:text-sm py-1.5 md:py-2">Ok</button
+          class="btn">Ok</button
         >
       </div>
     </div>
@@ -724,9 +642,9 @@
       class="fixed backdrop-blur-xl bg-black/30 inset-0 overflow-y-auto h-full w-full z-50 mx-auto max-w-lg"
     >
       <div
-        class="relative mx-auto p-3 md:p-4 border shadow-lg rounded-lg md:rounded-xl glass backdrop-blur-xl bg-white/5 border-white/10 space-y-3 md:space-y-4 text-center"
+        class="relative mx-auto p-5 border shadow-lg rounded-md glass backdrop-blur-xl bg-white/5 border-white/10 space-y-5 text-center"
       >
-        <h1 class="text-base md:text-xl font-semibold">
+        <h1 class="text-2xl font-semibold">
           {$t("user.settings.reserve")}
         </h1>
         <Numpad
@@ -740,9 +658,10 @@
           bind:this={doneReserve}
           type="button"
           onclick={doneEditing}
-          class="btn text-xs md:text-sm py-1.5 md:py-2">Ok</button
+          class="btn">Ok</button
         >
       </div>
     </div>
   {/if}
+
 </div>
