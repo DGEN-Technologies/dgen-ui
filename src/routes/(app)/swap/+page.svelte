@@ -1,6 +1,6 @@
 <script>
   import { back } from "$lib/utils";
-  import { PUBLIC_SWAPSPACE_WIDGET_URL } from "$env/static/public";
+  import { env } from "$env/dynamic/public";
 </script>
 
 <div class="flex flex-col h-full w-full max-w-3xl mx-auto p-4">
@@ -13,13 +13,19 @@
   </div>
 
   <!-- Widget Container -->
-  <div class="flex-1 bg-white/5 rounded-3xl overflow-hidden relative min-h-[536px] w-[404px]">
-    <iframe 
-      src={PUBLIC_SWAPSPACE_WIDGET_URL} 
-      title="SwapSpace Widget"
-      class="w-full h-full absolute inset-0 border-0"
-      allow="clipboard-read; clipboard-write"
-    ></iframe>
+  <div class="flex-1 bg-transparent rounded-3xl overflow-hidden relative min-h-[617px] min-[392px]:min-h-[536px] w-full max-w-[404px] mx-auto">
+    {#if env.PUBLIC_SWAPSPACE_WIDGET_URL}
+      <iframe 
+        src={env.PUBLIC_SWAPSPACE_WIDGET_URL} 
+        title="SwapSpace Widget"
+        class="w-full h-full absolute inset-0 border-0"
+        allow="clipboard-read; clipboard-write"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation"
+        referrerpolicy="no-referrer-when-downgrade"
+      ></iframe>
+    {:else}
+      <div class="flex items-center justify-center">Swap feature not configured</div>
+    {/if}
     
     <!-- Loading/Placeholder State (optional, if you want to show something while iframe loads) -->
     <div class="absolute inset-0 -z-10 flex items-center justify-center">

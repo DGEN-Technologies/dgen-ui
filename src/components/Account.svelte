@@ -7,6 +7,7 @@
   import { walletBalance, walletInfo, transactions, assetBalances, walletStore } from "$lib/stores/wallet";
   import { ASSET_IDS, formatAssetAmount, getAssetTicker } from "$lib/assets";
   import { unitPreference } from "$lib/store";
+  import { env } from "$env/dynamic/public";
 
   let { user, rate, account, last = false, showBuyBitcoin = $bindable(false) } = $props();
   // Following misty-breez pattern: balance comes from SDK, component handles loading state
@@ -210,18 +211,20 @@
             <span class="text-xs sm:text-xs truncate w-full hidden sm:block">Send</span>
           </span>
         </button>
-        <button
-          class="glass rounded-xl py-4 sm:py-3 px-3 sm:px-2 font-bold hover:bg-white/10 transition-all duration-300 hover:scale-105 border border-white/20 hover:border-white/40 min-w-0 flex-1 max-w-[150px]"
-          onclick={(e) => {
-            e.stopPropagation();
-            goto("/swap");
-          }}
-        >
-          <span class="flex flex-col items-center justify-center gap-1.5 sm:gap-1">
-            <iconify-icon icon="ph:arrows-left-right-bold" width="22" class="flex-shrink-0"></iconify-icon>
-            <span class="text-xs sm:text-xs truncate w-full hidden sm:block">Swap</span>
-          </span>
-        </button>
+        {#if env.PUBLIC_SWAPSPACE_WIDGET_URL}
+          <button
+            class="glass rounded-xl py-4 sm:py-3 px-3 sm:px-2 font-bold hover:bg-white/10 transition-all duration-300 hover:scale-105 border border-white/20 hover:border-white/40 min-w-0 flex-1 max-w-[150px]"
+            onclick={(e) => {
+              e.stopPropagation();
+              goto("/swap");
+            }}
+          >
+            <span class="flex flex-col items-center justify-center gap-1.5 sm:gap-1">
+              <iconify-icon icon="ph:arrows-left-right-bold" width="22" class="flex-shrink-0"></iconify-icon>
+              <span class="text-xs sm:text-xs truncate w-full hidden sm:block">Swap</span>
+            </span>
+          </button>
+        {/if}
         <!-- Buy Bitcoin button commented out -->
         <!-- <button
           class="glass rounded-xl py-4 sm:py-3 px-3 sm:px-2 font-bold hover:bg-white/10 transition-all duration-300 hover:scale-105 border border-white/20 hover:border-white/40 min-w-0 flex-1 max-w-[150px]"
