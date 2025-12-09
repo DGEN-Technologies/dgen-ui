@@ -100,10 +100,12 @@
     };
   });
 
-  // Update userId when user data changes
+  // Change of userId or userId being undefined does not affect chatbot context
   $effect(() => {
     if (data.user) {
-      userId = data.user.id || data.user.username || "anonymous";
+      userId = data.user.id || data.user.username || undefined;
+    } else {
+      userId = undefined;
     }
   });
 </script>
