@@ -22,16 +22,19 @@ const PERSIST_LEVELS_PROD: LogLevel[] = [
 // NOTE TO DEVELOPERS: avoid logging secrets (mnemonics, private keys, auth tokens,
 // raw wallet data). This scrubber is best-effort only; do not rely on it as a security boundary.
 // Server-side validation and redaction must remain the primary defense.
-const mnemonicPattern =
-  /\b(?:[a-z]{3,}\s+){11,}[a-z]{3,}\b/gi; // 12+ space-separated lowercase words
-const hexKeyPattern = /\b[0-9a-fA-F]{32,}\b/g; // long hex strings (keys, hashes)
-const base64Pattern = /\b[A-Za-z0-9+/]{32,}={0,2}\b/g; // long base64-ish blobs
+const SCRUB_PATTERNS = [
+  { regex: /\b(?:[a-z]{3,}\s+){11,}[a-z]{3,}\b/gi, replacement: '[SCRUBBED_MNEMONIC]' }, // 12+ word mnemonics
+  { regex: /\b(?:0x)?[0-9a-fA-F]{26,}\b/g, replacement: '[SCRUBBED_HEX]' }, // long hex strings/keys
+  { regex: /\b[A-Za-z0-9+/]{32,}={0,2}\b/g, replacement: '[SCRUBBED_B64]' }, // long base64-ish blobs
+  { regex: /\b[13][a-km-zA-HJ-NP-Z1-9]{25,34}\b/g, replacement: '[SCRUBBED_BTC_ADDR]' }, // base58 BTC addr
+  { regex: /\b(?:bc1|tb1|bcrt1)[0-9ac-hj-np-z]{20,90}\b/gi, replacement: '[SCRUBBED_BTC_ADDR]' }, // bech32 BTC addr
+] as const;
 
 function scrubSensitive(line: string): string {
-  return line
-    .replace(mnemonicPattern, '[SCRUBBED_MNEMONIC]')
-    .replace(hexKeyPattern, '[SCRUBBED_HEX]')
-    .replace(base64Pattern, '[SCRUBBED_B64]');
+  return SCRUB_PATTERNS.reduce(
+    (acc, { regex, replacement }) => acc.replace(regex, replacement),
+    line,
+  );
 }
 
 function shouldPersist(level: LogLevel): boolean {

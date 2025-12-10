@@ -221,16 +221,34 @@
 
     const savedMessages = window.sessionStorage.getItem(mKey);
     if (savedMessages) {
-      try {
-        const parsed: ChatMessage[] = JSON.parse(savedMessages);
-        messages = parsed;
-      } catch (e) {
-        console.warn("[DGENChat] Failed to parse stored messages", e);
-        // Clear corrupted state so future writes succeed and surface the issue to the user
-        window.sessionStorage.removeItem(mKey);
-        error =
-          "We had to reset your chat history because it became unreadable. You can continue chatting normally.";
-      }
+      (async () => {
+        try {
+          const parsed = JSON.parse(savedMessages) as Array<ChatMessage & { html?: string }>;
+          // Regenerate sanitized HTML for assistant messages to avoid storing unsafe markup
+          const sanitized = await Promise.all(
+            parsed.map(async (m) => {
+              if (m.role === "assistant") {
+                try {
+                  return {
+                    ...m,
+                    html: await renderSafeMarkdown(m.content),
+                  };
+                } catch {
+                  return { ...m, html: undefined };
+                }
+              }
+              return { ...m, html: undefined };
+            })
+          );
+          messages = sanitized;
+        } catch (e) {
+          console.warn("[DGENChat] Failed to parse stored messages", e);
+          // Clear corrupted state so future writes succeed and surface the issue to the user
+          window.sessionStorage.removeItem(mKey);
+          error =
+            "We had to reset your chat history because it became unreadable. You can continue chatting normally.";
+        }
+      })();
     }
 
     isReady = true;
@@ -251,9 +269,15 @@
   $effect(() => {
     if (typeof window === "undefined") return;
     if (!sessionId) return;
-
     const mKey = messagesKeyFor(orgId, userId);
-    window.sessionStorage.setItem(mKey, JSON.stringify(messages));
+    // Store only safe fields
+    const safeMessages = messages.map(m => ({
+      id: m.id,
+      role: m.role,
+      content: m.content,
+      createdAt: m.createdAt
+    }));
+    window.sessionStorage.setItem(mKey, JSON.stringify(safeMessages));
   });
 
   // Auto-scroll to bottom
