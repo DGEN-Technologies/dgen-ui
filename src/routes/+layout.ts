@@ -31,7 +31,7 @@ export const load = async ({ data }) => {
     const theme = "dark";
     cookies.set("theme", theme, opts);
     setTimeout(() => themeStore.set(theme), 100);
-    
+
     // Original theme detection code - commented out for now
     // let theme = cookies.get("theme");
     // if (!theme) {

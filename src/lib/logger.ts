@@ -18,6 +18,25 @@ const PERSIST_LEVELS_PROD: LogLevel[] = [
   LogLevel.LOG,
 ];
 
+// Basic scrubbing for commonly leaked secrets before persistence/export.
+// NOTE TO DEVELOPERS: avoid logging secrets (mnemonics, private keys, auth tokens,
+// raw wallet data). This scrubber is best-effort only; do not rely on it as a security boundary.
+// Server-side validation and redaction must remain the primary defense.
+const SCRUB_PATTERNS = [
+  { regex: /\b(?:[a-z]{3,}\s+){11,}[a-z]{3,}\b/gi, replacement: '[SCRUBBED_MNEMONIC]' }, // 12+ word mnemonics
+  { regex: /\b(?:0x)?[0-9a-fA-F]{26,}\b/g, replacement: '[SCRUBBED_HEX]' }, // long hex strings/keys
+  { regex: /\b[A-Za-z0-9+/]{32,}={0,2}\b/g, replacement: '[SCRUBBED_B64]' }, // long base64-ish blobs
+  { regex: /\b[13][a-km-zA-HJ-NP-Z1-9]{25,34}\b/g, replacement: '[SCRUBBED_BTC_ADDR]' }, // base58 BTC addr
+  { regex: /\b(?:bc1|tb1|bcrt1)[0-9ac-hj-np-z]{20,90}\b/gi, replacement: '[SCRUBBED_BTC_ADDR]' }, // bech32 BTC addr
+] as const;
+
+function scrubSensitive(line: string): string {
+  return SCRUB_PATTERNS.reduce(
+    (acc, { regex, replacement }) => acc.replace(regex, replacement),
+    line,
+  );
+}
+
 function shouldPersist(level: LogLevel): boolean {
   if (import.meta.env.PROD) {
     return PERSIST_LEVELS_PROD.includes(level);
@@ -53,7 +72,7 @@ class BreezLogger {
 
     // Persist Breez log
     if (shouldPersist(level)) {
-      void appendLog(`${prefix}: ${entry.line}`);
+      void appendLog(scrubSensitive(`${prefix}: ${entry.line}`));
     }
   };
 }
@@ -77,7 +96,7 @@ export class Logger {
     if (!shouldPersist(level)) return;
 
     const [prefix, ...rest] = this.format(level, ...args);
-    const line = `${prefix}: ${rest
+    const line = scrubSensitive(`${prefix}: ${rest
       .map((arg) => {
         try {
           if (typeof arg === 'object' && arg !== null) {
@@ -92,7 +111,7 @@ export class Logger {
           return `[unserializable ${type}]`;
         }
       })
-      .join(' ')}`;
+      .join(' ')}`);
 
     void appendLog(line);
   }
