@@ -1,7 +1,7 @@
 <script lang="ts">
   import { run } from "svelte/legacy";
   import { browser } from "$app/environment";
-  import { PUBLIC_DOMAIN, PUBLIC_WIDGET_API_BASE } from "$env/static/public";
+  import { PUBLIC_DOMAIN, PUBLIC_WIDGET_API_BASE, PUBLIC_ORG_ID} from "$env/static/public";
   import "../app-modern.css";
   import { loading, t } from "$lib/translations";
   import { onMount } from "svelte";
@@ -93,7 +93,7 @@
         },
       );
     }
-
+    
     // Cleanup on unmount
     return () => {
       domSecurityMonitor.stopMonitoring();
@@ -136,7 +136,11 @@
 
 <!-- Chat Widget - loads after initial render -->
 {#if showChatWidget}
-  <ChatWidget apiBase={PUBLIC_WIDGET_API_BASE} {userId} />
+  <ChatWidget 
+    apiBase={PUBLIC_WIDGET_API_BASE}
+    orgId={PUBLIC_ORG_ID}
+    userId={userId}
+  />
 {/if}
 
 <style global>

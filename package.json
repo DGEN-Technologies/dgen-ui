@@ -88,8 +88,10 @@
     "cookie": "^1.0.2",
     "cordova-plugin-android-notch": "^1.0.3",
     "crypto-browserify": "^3.12.1",
+    "dompurify": "^3.3.0",
     "hls.js": "^1.6.13",
     "idb": "^8.0.3",
+    "marked": "^17.0.1",
     "qrcode": "^1.5.4"
   }
 }
