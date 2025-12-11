@@ -8,8 +8,9 @@
   import LocaleSelector from "$comp/LocaleSelector.svelte";
   import Toggle from "$comp/Toggle.svelte";
   import { locale, t } from "$lib/translations";
-  import { post, success, fail } from "$lib/utils";
+  import { post, success, fail, info } from "$lib/utils";
   import { page } from "$app/stores";
+  import { buildLogsBlob, getLogs, clearLogs } from "$lib/logStorage";
   // import { PUBLIC_VAPID_PUBKEY } from "$env/static/public";
 
   let { data } = $props();
@@ -54,6 +55,8 @@
   let notificationsEnabled = $state(false);
   let permission = $state();
   let showNotificationHelp = $state(false);
+  let showClearConfirm = $state(false)
+  let isExporting = $state(false);
 
   onMount(async () => {
     if (!browser) return;
@@ -113,6 +116,51 @@
       success('Browser notifications disabled');
     }
   }
+
+  async function exportLogs() {
+    if (isExporting) return;   // prevent double clicks
+    isExporting = true;
+
+    try {
+      const blob = await buildLogsBlob();
+      if (!blob) {
+        info("No logs to export");
+        return;
+      }
+      
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      
+      const now = new Date()
+      const date = now.toISOString()       
+        .replace(/T/, '_')                  
+        .replace(/:/g, '-')                 
+        .replace(/\..+/, '');
+      a.download = `dgen-logs_${date}.log`;
+      a.click();
+      
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Export failed:", err);
+      fail("Failed to export logs");
+    } finally {
+      isExporting = false;
+    }
+  }
+
+  async function handleClearLogs() {
+    try {
+      await clearLogs();
+      success("Logs cleared on this device");
+    } catch (err) {
+      console.error("Clear logs failed:", err);
+      fail("Failed to clear logs");
+    } finally {
+      showClearConfirm = false;
+    }
+  }
+
   // Push notifications (VAPID) disabled for now - using browser Notification API instead
   // let updateNotifications = async (push) => {
   //   if (!browser || !pm) return (push = false);
@@ -354,6 +402,80 @@
         </details>
       </div>
     {/if}
+  </div>
+
+  <!-- Logs Export -->
+  <div
+    class="premium-card backdrop-blur-xl bg-white/5 border-2 border-white/10 hover:border-blue-500/40 transition-all duration-500 animate-scaleIn"
+    style="animation-delay: 0.4s;"
+  >
+    <div class="flex flex-col gap-4">
+      <div>
+        <span class="font-bold text-lg gradient-text">Application Logs</span>
+        <p class="text-white/60 mt-1 text-sm">
+          Export technical logs from this device to share with support when troubleshooting issues.
+        </p>
+      </div>
+
+      <div class="flex gap-3 items-center">
+        <!-- Export Logs -->
+        <button
+          type="button"
+          class="flex-1 p-4 rounded-xl border-2 transition-all duration-300 border-blue-500/40 bg-blue-500/20 hover:border-blue-400"
+          onclick={exportLogs}
+          disabled={isExporting}
+        >
+          <div class="flex items-center justify-center gap-2">
+            <iconify-icon icon="ph:export-bold" class="text-blue-300" width="24"></iconify-icon>
+            <span class="font-semibold">
+              {#if isExporting}
+                Exporting…
+              {:else}
+                Export Logs
+              {/if}
+            </span>
+          </div>
+        </button>
+
+        <!-- Clear Logs -->
+        <button
+          type="button"
+          class="px-4 p-4 rounded-xl border border-red-500/50 bg-red-500/10 
+                text-red-300 text-xs md:text-sm 
+                hover:bg-red-500/20 hover:border-red-400 
+                transition-all flex items-center justify-center gap-2 flex-none"
+          onclick={() => showClearConfirm = true}
+        >
+          <iconify-icon icon="ph:trash-bold" class="text-red-300" width="18"></iconify-icon>
+          <span>Clear Logs</span>
+        </button>
+      </div>
+
+      {#if showClearConfirm}
+        <div class="mt-2 p-3 rounded-xl border border-red-500/40 bg-red-500/10 text-xs text-red-100 space-y-2">
+          <p class="font-semibold">Clear all logs from this device?</p>
+          <p class="text-[11px] text-red-200/80">
+            This only deletes logs stored in this browser. It cannot be undone.
+          </p>
+          <div class="flex justify-end gap-2 mt-1">
+            <button
+              type="button"
+              class="px-3 py-1.5 rounded-lg border border-white/20 text-xs hover:bg-white/5"
+              onclick={() => showClearConfirm = false}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              class="px-3 py-1.5 rounded-lg border border-red-500/60 bg-red-500/40 text-xs font-semibold hover:bg-red-500/60"
+              onclick={handleClearLogs}
+            >
+              Confirm clear
+            </button>
+          </div>
+        </div>
+      {/if}
+    </div>
   </div>
 
   <!-- Tip Prompt Settings (temporarily disabled) -->

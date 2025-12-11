@@ -1,4 +1,5 @@
 import { setLogger, type LogEntry } from '@breeztech/breez-sdk-liquid/web';
+import { appendLog } from './logStorage';
 
 // Log levels
 export enum LogLevel {
@@ -6,31 +7,72 @@ export enum LogLevel {
   DEBUG = 'DEBUG',
   INFO = 'INFO',
   WARN = 'WARN',
-  ERROR = 'ERROR'
+  ERROR = 'ERROR',
+  LOG = 'LOG',
+}
+
+const PERSIST_LEVELS_PROD: LogLevel[] = [
+  LogLevel.INFO,
+  LogLevel.WARN,
+  LogLevel.ERROR,
+  LogLevel.LOG,
+];
+
+// Basic scrubbing for commonly leaked secrets before persistence/export.
+// NOTE TO DEVELOPERS: avoid logging secrets (mnemonics, private keys, auth tokens,
+// raw wallet data). This scrubber is best-effort only; do not rely on it as a security boundary.
+// Server-side validation and redaction must remain the primary defense.
+const SCRUB_PATTERNS = [
+  { regex: /\b(?:[a-z]{3,}\s+){11,}[a-z]{3,}\b/gi, replacement: '[SCRUBBED_MNEMONIC]' }, // 12+ word mnemonics
+  { regex: /\b(?:0x)?[0-9a-fA-F]{26,}\b/g, replacement: '[SCRUBBED_HEX]' }, // long hex strings/keys
+  { regex: /\b[A-Za-z0-9+/]{32,}={0,2}\b/g, replacement: '[SCRUBBED_B64]' }, // long base64-ish blobs
+  { regex: /\b[13][a-km-zA-HJ-NP-Z1-9]{25,34}\b/g, replacement: '[SCRUBBED_BTC_ADDR]' }, // base58 BTC addr
+  { regex: /\b(?:bc1|tb1|bcrt1)[0-9ac-hj-np-z]{20,90}\b/gi, replacement: '[SCRUBBED_BTC_ADDR]' }, // bech32 BTC addr
+] as const;
+
+function scrubSensitive(line: string): string {
+  return SCRUB_PATTERNS.reduce(
+    (acc, { regex, replacement }) => acc.replace(regex, replacement),
+    line,
+  );
+}
+
+function shouldPersist(level: LogLevel): boolean {
+  if (import.meta.env.PROD) {
+    return PERSIST_LEVELS_PROD.includes(level);
+  }
+  return true;
 }
 
 // Logger class for Breez SDK
 class BreezLogger {
   log = (entry: LogEntry) => {
     const timestamp = new Date().toISOString();
-    const prefix = `[${timestamp}] [Breez SDK] [${entry.level}]`;
+    const raw = entry.level.toUpperCase();
+    const level = LogLevel[raw as keyof typeof LogLevel] ?? LogLevel.INFO;
+    const prefix = `[${timestamp}] [Breez SDK] [${level}]`;
 
-    switch (entry.level.toUpperCase()) {
-      case 'ERROR':
+    switch (level) {
+      case LogLevel.ERROR:
         console.error(`${prefix}:`, entry.line);
         break;
-      case 'WARN':
+      case LogLevel.WARN:
         console.warn(`${prefix}:`, entry.line);
         break;
-      case 'INFO':
+      case LogLevel.INFO:
         console.info(`${prefix}:`, entry.line);
         break;
-      case 'DEBUG':
-      case 'TRACE':
+      case LogLevel.DEBUG:
+      case LogLevel.TRACE:
         console.debug(`${prefix}:`, entry.line);
         break;
       default:
         console.log(`${prefix}:`, entry.line);
+    }
+
+    // Persist Breez log
+    if (shouldPersist(level)) {
+      void appendLog(scrubSensitive(`${prefix}: ${entry.line}`));
     }
   };
 }
@@ -43,35 +85,65 @@ export const initBreezLogger = () => {
 
 // Custom application logger with tags
 export class Logger {
-  constructor(private tag: string) {}
+  constructor(private tag: string) { }
 
   private format(level: string, ...args: any[]): any[] {
     const timestamp = new Date().toISOString();
     return [`[${timestamp}] [${this.tag}] [${level}]`, ...args];
   }
 
+  private persist(level: LogLevel, ...args: any[]) {
+    if (!shouldPersist(level)) return;
+
+    const [prefix, ...rest] = this.format(level, ...args);
+    const line = scrubSensitive(`${prefix}: ${rest
+      .map((arg) => {
+        try {
+          if (typeof arg === 'object' && arg !== null) {
+            const serialized = JSON.stringify(arg);
+            return serialized.length > 1000
+              ? serialized.slice(0, 1000) + '...[truncated]'
+              : serialized;
+          }
+          return String(arg);
+        } catch {
+          const type = Object.prototype.toString.call(arg);
+          return `[unserializable ${type}]`;
+        }
+      })
+      .join(' ')}`);
+
+    void appendLog(line);
+  }
+
   trace(...args: any[]) {
     console.debug(...this.format('TRACE', ...args));
+    this.persist(LogLevel.TRACE, ...args);
   }
 
   debug(...args: any[]) {
     console.debug(...this.format('DEBUG', ...args));
+    this.persist(LogLevel.DEBUG, ...args);
   }
 
   info(...args: any[]) {
     console.info(...this.format('INFO', ...args));
+    this.persist(LogLevel.INFO, ...args);
   }
 
   warn(...args: any[]) {
     console.warn(...this.format('WARN', ...args));
+    this.persist(LogLevel.WARN, ...args);
   }
 
   error(...args: any[]) {
     console.error(...this.format('ERROR', ...args));
+    this.persist(LogLevel.ERROR, ...args);
   }
 
   log(...args: any[]) {
     console.log(...this.format('LOG', ...args));
+    this.persist(LogLevel.LOG, ...args);
   }
 }
 

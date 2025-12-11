@@ -1,12 +1,13 @@
-<script>
+<script lang="ts">
   import { run } from "svelte/legacy";
   import { browser } from "$app/environment";
-  import { PUBLIC_DOMAIN } from "$env/static/public";
+  import { PUBLIC_DOMAIN, PUBLIC_WIDGET_API_BASE, PUBLIC_ORG_ID} from "$env/static/public";
   import "../app-modern.css";
   import { loading, t } from "$lib/translations";
   import { onMount } from "svelte";
   import { installPrompt, theme as themeStore, proMode } from "$lib/store";
   import { domSecurityMonitor } from "$lib/security/domMonitor";
+  import ChatWidget from "$comp/ChatWidget.svelte";
 
   let { data, children } = $props();
   let { pathname, theme } = $state(data);
@@ -15,6 +16,10 @@
 
   // Fallback to ensure app renders even if translations are slow/stuck
   let forceRender = $state(false);
+
+  // Chat widget state
+  let showChatWidget = $state(false);
+  let userId = $state<string | undefined>(undefined);
 
   let host = PUBLIC_DOMAIN.includes("localhost")
     ? `http://${PUBLIC_DOMAIN}`
@@ -25,6 +30,7 @@
       navigator.clearAppBadge().catch(() => {});
     }
   }
+
   onMount(() => {
     if (!browser) return;
 
@@ -33,6 +39,19 @@
     setTimeout(() => {
       forceRender = true;
     }, 2000);
+
+    // Load chat widget only when the browser is idle for better performance.
+    // This avoids arbitrary timing and reduces layout shift during first render.
+    if ("requestIdleCallback" in window) {
+      requestIdleCallback(() => {
+        showChatWidget = true;
+      });
+    } else {
+      // Fallback for older browsers
+      setTimeout(() => {
+        showChatWidget = true;
+      }, 500);
+    }
 
     // Start security monitoring for suspicious DOM access
     domSecurityMonitor.startMonitoring();
@@ -74,6 +93,20 @@
         },
       );
     }
+    
+    // Cleanup on unmount
+    return () => {
+      domSecurityMonitor.stopMonitoring();
+    };
+  });
+
+  // Change of userId or userId being undefined does not affect chatbot context
+  $effect(() => {
+    if (data.user) {
+      userId = data.user.id || data.user.username || undefined;
+    } else {
+      userId = undefined;
+    }
   });
 </script>
 
@@ -99,6 +132,15 @@
   <main data-theme={theme} class:pro-mode={$proMode}>
     {@render children?.()}
   </main>
+{/if}
+
+<!-- Chat Widget - loads after initial render -->
+{#if showChatWidget}
+  <ChatWidget 
+    apiBase={PUBLIC_WIDGET_API_BASE}
+    orgId={PUBLIC_ORG_ID}
+    userId={userId}
+  />
 {/if}
 
 <style global>
