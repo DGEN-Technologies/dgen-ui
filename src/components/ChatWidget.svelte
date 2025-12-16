@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount } from "svelte";
   import { renderSafeMarkdown } from "$lib/safeMarkdown";
 
   // Types
@@ -35,6 +35,7 @@
   let isReady = $state(false);
   let isSending = $state(false);
   let error = $state<string | null>(null);
+  let showPrompt = $state(true);
 
   // Refs
   let bottomRef: HTMLDivElement;
@@ -54,9 +55,9 @@
   function generateSessionId(): string {
     const array = new Uint8Array(16);
     crypto.getRandomValues(array);
-    return Array.from(array, (byte) =>
-      byte.toString(16).padStart(2, '0')
-    ).join('');
+    return Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join(
+      "",
+    );
   }
 
   // UI helpers
@@ -72,7 +73,7 @@
 
   async function sendMessage() {
     if (!isReady) return;
-  
+
     // Enforce a cooldown period to prevent message spamming
     const now = Date.now();
     if (now - lastSendTime < SEND_COOLDOWN_MS) {
@@ -136,7 +137,7 @@
         }
       }
 
-      const answer: string = data.answer ?? "";
+      const answer: string = (data.answer ?? "").trim();
 
       const assistantMessage: ChatMessage = {
         id: `assistant-${Date.now()}`,
@@ -147,40 +148,41 @@
       };
       messages = [...messages, assistantMessage];
     } catch (err) {
-        console.error(err);
+      console.error(err);
 
-        if (err instanceof Error && err.name === "AbortError") {
-          console.log("[DGENChat] Request aborted");
-          return;
-        }
-        
-        // TODO: To finalize the fallback response
-        let message = "Something unexpected went wrong. Please try again later.";
-
-        // Invalid JSON from res.json()
-        if (err instanceof Error && err.message === "INVALID_JSON") {
-          message = "Unexpected response from the server. Please try again later.";
-        }
-        // Network-level failure (no response)
-        else if (err instanceof TypeError) {
-          message = "Network error - please check your connection and try again.";
-        }
-        // 5xx server errors
-        else if (err instanceof Error && err.message.startsWith("HTTP_5")) {
-          message =
-            "Our server had a problem processing your request. Please try again in a moment.";
-        }
-        // 4xx client errors
-        else if (err instanceof Error && err.message.startsWith("HTTP_4")) {
-          message =
-            "There was a problem with this request. Please double-check and try again.";
-        }
-
-        error = message;
-      } finally {
-        isSending = false;
-        abortController = null;
+      if (err instanceof Error && err.name === "AbortError") {
+        console.log("[DGENChat] Request aborted");
+        return;
       }
+
+      // TODO: To finalize the fallback response
+      let message = "Something unexpected went wrong. Please try again later.";
+
+      // Invalid JSON from res.json()
+      if (err instanceof Error && err.message === "INVALID_JSON") {
+        message =
+          "Unexpected response from the server. Please try again later.";
+      }
+      // Network-level failure (no response)
+      else if (err instanceof TypeError) {
+        message = "Network error - please check your connection and try again.";
+      }
+      // 5xx server errors
+      else if (err instanceof Error && err.message.startsWith("HTTP_5")) {
+        message =
+          "Our server had a problem processing your request. Please try again in a moment.";
+      }
+      // 4xx client errors
+      else if (err instanceof Error && err.message.startsWith("HTTP_4")) {
+        message =
+          "There was a problem with this request. Please double-check and try again.";
+      }
+
+      error = message;
+    } finally {
+      isSending = false;
+      abortController = null;
+    }
   }
 
   function handleKeyDown(e: KeyboardEvent) {
@@ -223,7 +225,9 @@
     if (savedMessages) {
       (async () => {
         try {
-          const parsed = JSON.parse(savedMessages) as Array<ChatMessage & { html?: string }>;
+          const parsed = JSON.parse(savedMessages) as Array<
+            ChatMessage & { html?: string }
+          >;
           // Regenerate sanitized HTML for assistant messages to avoid storing unsafe markup
           const sanitized = await Promise.all(
             parsed.map(async (m) => {
@@ -238,7 +242,7 @@
                 }
               }
               return { ...m, html: undefined };
-            })
+            }),
           );
           messages = sanitized;
         } catch (e) {
@@ -251,17 +255,35 @@
       })();
     }
 
+    const intro =
+      "Hello! I'm DGEN AI Assistant, your guide to this DGEN app. How can I help you today?";
+    if (!savedMessages) {
+      (async () => {
+        messages = [
+          {
+            id: "assistant-intro",
+            role: "assistant",
+            content: intro,
+            createdAt: Date.now(),
+            html: await renderSafeMarkdown(intro),
+          },
+        ];
+      })();
+    }
+
     isReady = true;
-
+    const promptTimer = window.setTimeout(() => {
+      showPrompt = false;
+    }, 5000);
     window.addEventListener("keydown", handleGlobalKeydown);
-
     return () => {
       window.removeEventListener("keydown", handleGlobalKeydown);
-      
+
       // Abort any in-flight requests on unmount
       if (abortController) {
         abortController.abort();
       }
+      window.clearTimeout(promptTimer);
     };
   });
 
@@ -271,11 +293,11 @@
     if (!sessionId) return;
     const mKey = messagesKeyFor(orgId, userId);
     // Store only safe fields
-    const safeMessages = messages.map(m => ({
+    const safeMessages = messages.map((m) => ({
       id: m.id,
       role: m.role,
       content: m.content,
-      createdAt: m.createdAt
+      createdAt: m.createdAt,
     }));
     window.sessionStorage.setItem(mKey, JSON.stringify(safeMessages));
   });
@@ -296,15 +318,45 @@
 </script>
 
 <!-- Floating button -->
+{#if showPrompt}
+  <div class="prompt-bubble" role="status" aria-live="polite">
+    Ask my anything
+  </div>
+{/if}
 <button
   class="floating-button"
-  onclick={toggleOpen}
+  onclick={() => {
+    toggleOpen();
+    showPrompt = false;
+  }}
   aria-label={isOpen ? "Close DGEN chat" : "Open DGEN chat"}
   aria-haspopup="dialog"
   aria-expanded={isOpen}
   aria-controls="dgen-chat-widget"
 >
-  💬
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 64 64"
+    width="48"
+    height="48"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <!-- White circular button -->
+    <circle cx="32" cy="32" r="32" fill="#FFFFFF" />
+
+    <!-- Blue chat bubble -->
+    <rect x="16" y="16" width="32" height="32" rx="4" ry="4" fill="#1E6AE1" />
+    <path d="M32 48 L44 56 L44 48 Z" fill="#1E6AE1" />
+    <path
+      d="M22 36 C28 44 36 44 42 36"
+      fill="none"
+      stroke="#FFFFFF"
+      stroke-width="3"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+  </svg>
 </button>
 
 <!-- Chat window -->
@@ -319,8 +371,15 @@
     <!-- Header -->
     <div class="header">
       <div>
-        <div style="font-weight: 600;">DGEN Chat</div>
-        <div style="font-size: 12px; opacity: 0.8;">Ask me anything</div>
+        <div style="font-weight: 600;">DGEN Chat Bot</div>
+        <a
+          href="/disclaimer"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="disclaimer-link"
+        >
+          Disclaimer: Read First Before Using This AI Chatbot
+        </a>
       </div>
       <div>
         <button
@@ -345,13 +404,15 @@
       {#each messages as m (m.id)}
         <div
           class="message-row"
-          style="justify-content: {m.role === 'user' ? 'flex-end' : 'flex-start'};"
+          style="justify-content: {m.role === 'user'
+            ? 'flex-end'
+            : 'flex-start'};"
         >
           <div class="bubble {m.role}">
-            {#if m.role === 'assistant' && m.html}
+            {#if m.role === "assistant" && m.html}
               {@html m.html}
             {:else}
-              {m.content}  <!-- user -->
+              {m.content} <!-- user -->
             {/if}
           </div>
         </div>
@@ -401,7 +462,7 @@
   :root {
     --widget-floating-bottom: 60px;
     --widget-floating-right: 27px;
-    --widget-floating-size: 52px;
+    --widget-floating-size: 78px;
 
     --widget-container-width: 320px;
     --widget-container-height: 500px;
@@ -424,15 +485,63 @@
     height: var(--widget-floating-size);
     border-radius: 999px;
     border: none;
-    background: var(--widget-bg);
-    color: var(--widget-text-color);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+    background: transparent;
+    padding: 0;
+    box-shadow: none;
     cursor: pointer;
-    font-size: 22px;
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 999999;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .prompt-bubble {
+    position: fixed;
+    bottom: calc(
+      var(--widget-floating-bottom) + (var(--widget-floating-size) * 0.4)
+    );
+    right: calc(
+      var(--widget-floating-right) + var(--widget-floating-size) + 6px
+    );
+    background: #ffffff;
+    color: #111827;
+    padding: 8px 12px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-family: inherit;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+    white-space: nowrap;
+    z-index: 999999;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .prompt-bubble::after {
+    content: "";
+    position: absolute;
+    right: -6px;
+    top: 50%;
+    width: 14px;
+    height: 14px;
+    background: #ffffff;
+    transform: translateY(-50%) rotate(45deg);
+    border-radius: 2px;
+  }
+
+  @media (max-width: 600px) {
+    .prompt-bubble {
+      right: calc(16px + var(--widget-floating-size) + 8px);
+      bottom: calc(16px + (var(--widget-floating-size) / 2) - 12px);
+      max-width: 70vw;
+      white-space: normal;
+    }
+
+    .prompt-bubble::after {
+      right: -6px;
+    }
   }
 
   .widget-container {
@@ -452,8 +561,8 @@
     overflow: hidden;
     z-index: 999998;
     transition: all 0.25s ease;
-    font-family: -apple-system, BlinkMacSystemFont, system-ui, "SF Pro Text",
-      sans-serif;
+    font-family:
+      -apple-system, BlinkMacSystemFont, system-ui, "SF Pro Text", sans-serif;
   }
 
   .header {
@@ -472,13 +581,21 @@
     font-size: 16px;
   }
 
+  .disclaimer-link {
+    display: inline-block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: #9ca3af;
+    text-decoration: underline;
+  }
+
   .messages-container {
     flex: 1;
     padding: 12px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
   }
 
   .message-row {
@@ -562,9 +679,7 @@
     .widget-container {
       left: var(--widget-container-mobile-gap);
       right: var(--widget-container-mobile-gap);
-      width: calc(
-        100% - (var(--widget-container-mobile-gap) * 2)
-      );
+      width: calc(100% - (var(--widget-container-mobile-gap) * 2));
       max-width: 100%;
       height: var(--widget-container-mobile-height);
       bottom: calc(16px + var(--widget-floating-size) + 8px);
@@ -579,14 +694,16 @@
   .empty-state {
     opacity: 0;
     transform: translateY(10px);
-    transition: opacity 0.4s ease, transform 0.4s ease;
+    transition:
+      opacity 0.4s ease,
+      transform 0.4s ease;
   }
 
   .empty-state.ready {
     opacity: 0.8;
     transform: translateY(0);
   }
-  
+
   .textarea:disabled {
     opacity: 0.5;
     cursor: not-allowed;
