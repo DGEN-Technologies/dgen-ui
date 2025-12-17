@@ -24,12 +24,13 @@
   // Config
   const MAX_MESSAGE_LENGTH = 1000;
   const SEND_COOLDOWN_MS = 300;
+  const REQUEST_TIMEOUT_MS = 15000;
   let lastSendTime = 0;
 
   // State
   let isOpen = $state(false);
-  let sessionId = $state("");
   let sessionToken = $state("");
+  let sessionUserId = $state<string | undefined>(userId);
   let messages = $state<ChatMessage[]>([]);
   let input = $state("");
   let isReady = $state(false);
@@ -136,6 +137,9 @@
     messages = [...messages, userMessage];
     input = "";
     abortController = new AbortController();
+    const timeoutId = window.setTimeout(() => {
+      abortController?.abort();
+    }, REQUEST_TIMEOUT_MS);
 
     try {
       const headers: Record<string, string> = {
@@ -159,8 +163,8 @@
 
       if (!res.ok) {
         if (res.status === 401 || res.status === 403) {
-          sessionId = "";
           sessionToken = "";
+          sessionUserId = undefined;
           throw new Error("AUTH_EXPIRED");
         }
         throw new Error(`HTTP_${res.status}`);
@@ -173,14 +177,11 @@
         throw new Error("INVALID_JSON");
       }
 
-      if (data.session_id) {
-        sessionId = data.session_id;
-      }
-      if (data.user_id) {
-        userId = data.user_id;
-      }
       if (data.session_token) {
         sessionToken = data.session_token;
+      }
+      if (data.user_id) {
+        sessionUserId = data.user_id;
       }
 
       const answer: string =
@@ -197,7 +198,6 @@
       messages = [...messages, assistantMessage];
     } catch (err) {
       if (err instanceof Error && err.name === "AbortError") {
-        console.log("[DGENChat] Request aborted");
         return;
       }
 
@@ -209,9 +209,8 @@
       } else if (err instanceof Error && err.message === "INSECURE_PROTOCOL") {
         message = "Secure connection required. Please use HTTPS to continue.";
       } else if (err instanceof Error && err.message === "AUTH_EXPIRED") {
-        sessionId = "";
         sessionToken = "";
-        userId = undefined;
+        sessionUserId = undefined;
         message = "Session expired. Please send your message again.";
       } else if (err instanceof TypeError) {
         message = "Network error - please check your connection and try again.";
@@ -227,6 +226,7 @@
     } finally {
       isSending = false;
       abortController = null;
+      window.clearTimeout(timeoutId);
     }
   }
 
@@ -256,7 +256,7 @@
   onMount(() => {
     if (typeof window === "undefined") return;
 
-    const mKey = messagesKeyFor(userId);
+    const mKey = messagesKeyFor(sessionUserId);
 
     const savedMessages = window.sessionStorage.getItem(mKey);
     if (savedMessages) {
@@ -327,7 +327,7 @@
   // Persist messages to sessionStorage whenever they change
   $effect(() => {
     if (typeof window === "undefined") return;
-    const mKey = messagesKeyFor(userId);
+    const mKey = messagesKeyFor(sessionUserId);
     // Store only safe fields and cap history to recent 50 messages
     const recent = messages.slice(-50);
     const safeMessages = recent.map((m) => ({
