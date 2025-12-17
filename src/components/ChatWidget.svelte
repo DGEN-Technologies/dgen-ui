@@ -25,6 +25,8 @@
   const MAX_MESSAGE_LENGTH = 1000;
   const SEND_COOLDOWN_MS = 300;
   const REQUEST_TIMEOUT_MS = 15000;
+  const MAX_MESSAGES_STORED = 200;
+  const MAX_PERSISTED_MESSAGES = 50;
   let lastSendTime = 0;
 
   // State
@@ -55,6 +57,10 @@
   // UI helpers
   function toggleOpen() {
     isOpen = !isOpen;
+  }
+
+  function appendMessage(message: ChatMessage) {
+    messages = [...messages, message].slice(-MAX_MESSAGES_STORED);
   }
 
   function closeDisclaimer() {
@@ -134,7 +140,7 @@
       createdAt: Date.now(),
     };
 
-    messages = [...messages, userMessage];
+    appendMessage(userMessage);
     input = "";
     abortController = new AbortController();
     const timeoutId = window.setTimeout(() => {
@@ -195,7 +201,7 @@
         createdAt: Date.now(),
         html: await renderSafeMarkdown(answer),
       };
-      messages = [...messages, assistantMessage];
+      appendMessage(assistantMessage);
     } catch (err) {
       if (err instanceof Error && err.name === "AbortError") {
         return;
@@ -328,8 +334,8 @@
   $effect(() => {
     if (typeof window === "undefined") return;
     const mKey = messagesKeyFor(sessionUserId);
-    // Store only safe fields and cap history to recent 50 messages
-    const recent = messages.slice(-50);
+    // Store only safe fields and cap history
+    const recent = messages.slice(-MAX_PERSISTED_MESSAGES);
     const safeMessages = recent.map((m) => ({
       id: m.id,
       role: m.role,
