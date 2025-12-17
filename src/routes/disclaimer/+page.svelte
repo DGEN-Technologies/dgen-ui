@@ -1,11 +1,11 @@
 <svelte:head>
-  <title>DGEN AI Chatbot Disclaimer</title>
+  <title>DGEN A.I. Chatbot Disclaimer</title>
 </svelte:head>
 
 <section class="disclaimer">
   <div class="container">
     <p class="eyebrow">DGEN A.I. Chatbot Disclaimer</p>
-    <h1>Read Before You Use The Chatbot</h1>
+    <h1>Read Before You Use The DGEN Chatbot</h1>
     <div class="card">
       <p class="important">
         <strong>IMPORTANT DISCLAIMER:</strong> This is not financial, investment,
@@ -16,9 +16,9 @@
         Chatbot is currently in BETA stage and may generate inaccurate,
         incomplete, outdated, or fabricated information (hallucinations). You
         must independently verify and fact-check every statement, figure, or
-        claim made by the Chatbot before relying on it. DGEN Inc. ("DGEN")
-        cannot and does not take responsibility for any misinformation, errors,
-        or omissions produced by the AI.
+        claim made by the Chatbot before relying on it. DGEN cannot and does not
+        take responsibility for any misinformation, errors, or omissions
+        produced by the A.I.
       </p>
       <p>
         The information provided is for informational and entertainment purposes
@@ -39,9 +39,6 @@
         <strong>Consult Professionals:</strong> Always consult qualified, licensed
         advisors in your jurisdiction for important matters.
       </p>
-      <p>
-        DGEN is publicly listed on the Canadian Securities Exchange (CSE: DGEN).
-      </p>
       <p class="acknowledge">
         By continuing, you acknowledge and agree to this disclaimer. If you do
         not agree, stop using the Chatbot immediately.
@@ -51,11 +48,9 @@
 </section>
 
 <style>
-  :global(body) {
-    background: #0b0c11;
-  }
-
+  /* Scope background to this page to avoid bleed on SPA navigation */
   .disclaimer {
+    background: #0b0c11;
     min-height: 100vh;
     display: flex;
     align-items: center;
@@ -119,4 +114,5 @@
   strong {
     color: #fef08a;
   }
+
 </style>

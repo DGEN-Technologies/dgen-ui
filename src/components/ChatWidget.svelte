@@ -16,11 +16,10 @@
   // Props
   interface Props {
     apiBase: string;
-    orgId: string;
     userId?: string;
   }
 
-  let { apiBase, orgId, userId }: Props = $props();
+  let { apiBase, userId }: Props = $props();
 
   // Config
   const MAX_MESSAGE_LENGTH = 1000;
@@ -30,43 +29,68 @@
   // State
   let isOpen = $state(false);
   let sessionId = $state("");
+  let sessionToken = $state("");
   let messages = $state<ChatMessage[]>([]);
   let input = $state("");
   let isReady = $state(false);
   let isSending = $state(false);
   let error = $state<string | null>(null);
   let showPrompt = $state(true);
+  let showDisclaimer = $state(false);
+  let disclaimerAgreed = $state(false);
 
   // Refs
   let bottomRef: HTMLDivElement;
   let textareaRef: HTMLTextAreaElement;
+  let disclaimerWindowRef: HTMLDivElement;
+  let disclaimerCloseRef: HTMLButtonElement;
   let abortController: AbortController | null = null;
 
   // Helpers for storage keys
-  const buildKey = (suffix: string, orgId: string, userId?: string) =>
-    `dgen_${suffix}_${orgId}_${userId ?? "anon"}`;
-
-  const sessionKeyFor = (orgId: string, userId?: string) =>
-    buildKey("session", orgId, userId);
-
-  const messagesKeyFor = (orgId: string, userId?: string) =>
-    buildKey("messages", orgId, userId);
-
-  function generateSessionId(): string {
-    const array = new Uint8Array(16);
-    crypto.getRandomValues(array);
-    return Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join(
-      "",
-    );
-  }
+  const buildKey = (suffix: string, userId?: string) =>
+    `dgen_${suffix}_${userId ?? "anon"}`;
+  const messagesKeyFor = (userId?: string) => buildKey("messages", userId);
 
   // UI helpers
   function toggleOpen() {
     isOpen = !isOpen;
   }
 
+  function closeDisclaimer() {
+    showDisclaimer = false;
+  }
+
+  function trapDisclaimerFocus(event: KeyboardEvent) {
+    if (event.key !== "Tab" || !disclaimerWindowRef) return;
+
+    const focusables = disclaimerWindowRef.querySelectorAll<
+      HTMLButtonElement | HTMLInputElement
+    >(
+      "button, input, [href], select, textarea, [tabindex]:not([tabindex='-1'])",
+    );
+    if (!focusables.length) return;
+
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+
+    if (event.shiftKey) {
+      if (document.activeElement === first) {
+        event.preventDefault();
+        (last as HTMLElement).focus();
+      }
+    } else if (document.activeElement === last) {
+      event.preventDefault();
+      (first as HTMLElement).focus();
+    }
+  }
+
   function handleGlobalKeydown(event: KeyboardEvent) {
-    if (event.key === "Escape" && isOpen) {
+    if (event.key !== "Escape") return;
+    if (showDisclaimer) {
+      closeDisclaimer();
+      return;
+    }
+    if (isOpen) {
       isOpen = false;
     }
   }
@@ -82,10 +106,20 @@
     lastSendTime = now;
 
     const text = input.trim();
-    if (!text || !sessionId || isSending) return;
-    // Enforce length guard even if UI is bypassed
+    if (!text || isSending) return;
     if (text.length > MAX_MESSAGE_LENGTH) {
       error = `Messages are limited to ${MAX_MESSAGE_LENGTH} characters. Please shorten your message.`;
+      return;
+    }
+
+    // Require https (allow localhost for dev)
+    try {
+      const target = new URL(apiBase);
+      if (target.protocol !== "https:" && target.hostname !== "localhost") {
+        throw new Error("INSECURE_PROTOCOL");
+      }
+    } catch {
+      error = "Chat is not configured correctly. Please try again later.";
       return;
     }
 
@@ -104,21 +138,32 @@
     abortController = new AbortController();
 
     try {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (typeof window !== "undefined") {
+        headers.Origin = window.location.origin;
+      }
+      if (sessionToken) {
+        headers["X-Session-Token"] = sessionToken;
+      }
+
       const res = await fetch(`${apiBase}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         signal: abortController.signal,
         body: JSON.stringify({
-          session_id: sessionId,
           message: text,
-          org_id: orgId,
-          user_id: userId || undefined,
         }),
       });
 
       if (!res.ok) {
-        const body = await res.text();
-        throw new Error(`HTTP_${res.status}: ${body}`);
+        if (res.status === 401 || res.status === 403) {
+          sessionId = "";
+          sessionToken = "";
+          throw new Error("AUTH_EXPIRED");
+        }
+        throw new Error(`HTTP_${res.status}`);
       }
 
       let data: any;
@@ -129,15 +174,18 @@
       }
 
       if (data.session_id) {
-        const newSid = data.session_id;
-        sessionId = newSid;
-        if (typeof window !== "undefined") {
-          const sKey = sessionKeyFor(orgId, userId);
-          window.sessionStorage.setItem(sKey, newSid);
-        }
+        sessionId = data.session_id;
+      }
+      if (data.user_id) {
+        userId = data.user_id;
+      }
+      if (data.session_token) {
+        sessionToken = data.session_token;
       }
 
-      const answer: string = (data.answer ?? "").trim();
+      const answer: string =
+        data.answer ??
+        "I did not receive a response. Please try again in a moment.";
 
       const assistantMessage: ChatMessage = {
         id: `assistant-${Date.now()}`,
@@ -148,32 +196,29 @@
       };
       messages = [...messages, assistantMessage];
     } catch (err) {
-      console.error(err);
-
       if (err instanceof Error && err.name === "AbortError") {
         console.log("[DGENChat] Request aborted");
         return;
       }
 
-      // TODO: To finalize the fallback response
       let message = "Something unexpected went wrong. Please try again later.";
 
-      // Invalid JSON from res.json()
       if (err instanceof Error && err.message === "INVALID_JSON") {
         message =
           "Unexpected response from the server. Please try again later.";
-      }
-      // Network-level failure (no response)
-      else if (err instanceof TypeError) {
+      } else if (err instanceof Error && err.message === "INSECURE_PROTOCOL") {
+        message = "Secure connection required. Please use HTTPS to continue.";
+      } else if (err instanceof Error && err.message === "AUTH_EXPIRED") {
+        sessionId = "";
+        sessionToken = "";
+        userId = undefined;
+        message = "Session expired. Please send your message again.";
+      } else if (err instanceof TypeError) {
         message = "Network error - please check your connection and try again.";
-      }
-      // 5xx server errors
-      else if (err instanceof Error && err.message.startsWith("HTTP_5")) {
+      } else if (err instanceof Error && err.message.startsWith("HTTP_5")) {
         message =
           "Our server had a problem processing your request. Please try again in a moment.";
-      }
-      // 4xx client errors
-      else if (err instanceof Error && err.message.startsWith("HTTP_4")) {
+      } else if (err instanceof Error && err.message.startsWith("HTTP_4")) {
         message =
           "There was a problem with this request. Please double-check and try again.";
       }
@@ -211,15 +256,7 @@
   onMount(() => {
     if (typeof window === "undefined") return;
 
-    const sKey = sessionKeyFor(orgId, userId);
-    const mKey = messagesKeyFor(orgId, userId);
-
-    let sid = window.sessionStorage.getItem(sKey);
-    if (!sid) {
-      sid = generateSessionId();
-      window.sessionStorage.setItem(sKey, sid);
-    }
-    sessionId = sid;
+    const mKey = messagesKeyFor(userId);
 
     const savedMessages = window.sessionStorage.getItem(mKey);
     if (savedMessages) {
@@ -274,7 +311,7 @@
     isReady = true;
     const promptTimer = window.setTimeout(() => {
       showPrompt = false;
-    }, 5000);
+    }, 3000);
     window.addEventListener("keydown", handleGlobalKeydown);
     return () => {
       window.removeEventListener("keydown", handleGlobalKeydown);
@@ -290,10 +327,10 @@
   // Persist messages to sessionStorage whenever they change
   $effect(() => {
     if (typeof window === "undefined") return;
-    if (!sessionId) return;
-    const mKey = messagesKeyFor(orgId, userId);
-    // Store only safe fields
-    const safeMessages = messages.map((m) => ({
+    const mKey = messagesKeyFor(userId);
+    // Store only safe fields and cap history to recent 50 messages
+    const recent = messages.slice(-50);
+    const safeMessages = recent.map((m) => ({
       id: m.id,
       role: m.role,
       content: m.content,
@@ -315,12 +352,18 @@
       textareaRef.focus();
     }
   });
+
+  $effect(() => {
+    if (showDisclaimer) {
+      disclaimerCloseRef?.focus();
+    }
+  });
 </script>
 
 <!-- Floating button -->
 {#if showPrompt}
   <div class="prompt-bubble" role="status" aria-live="polite">
-    Ask my anything
+    Ask me anything
   </div>
 {/if}
 <button
@@ -370,16 +413,18 @@
   >
     <!-- Header -->
     <div class="header">
-      <div>
-        <div style="font-weight: 600;">DGEN Chat Bot</div>
-        <a
-          href="/disclaimer"
-          target="_blank"
-          rel="noopener noreferrer"
+      <div class="header-text">
+        <div style="font-weight: 600;">DGEN Chatbot</div>
+        <button
+          type="button"
           class="disclaimer-link"
+          onclick={() => {
+            showDisclaimer = true;
+            disclaimerAgreed = false;
+          }}
         >
-          Disclaimer: Read First Before Using This AI Chatbot
-        </a>
+          Disclaimer: Read First Before Using This DGEN Chatbot
+        </button>
       </div>
       <div>
         <button
@@ -454,6 +499,95 @@
       >
         ➤
       </button>
+    </div>
+  </div>
+{/if}
+
+{#if showDisclaimer}
+  <div
+    class="disclaimer-overlay"
+    role="dialog"
+    aria-modal="true"
+    tabindex="-1"
+    onkeydown={trapDisclaimerFocus}
+  >
+    <div
+      class="disclaimer-window"
+      bind:this={disclaimerWindowRef}
+      tabindex="-1"
+    >
+      <div class="disclaimer-header">
+        <div>
+          <p class="disclaimer-eyebrow">DGEN A.I. Chatbot Disclaimer</p>
+          <h2>Read Before You Use The DGEN Chatbot</h2>
+        </div>
+        <button
+          type="button"
+          class="disclaimer-close"
+          aria-label="Close disclaimer"
+          onclick={closeDisclaimer}
+          bind:this={disclaimerCloseRef}
+        >
+          ✕
+        </button>
+      </div>
+      <div class="disclaimer-body">
+        <p class="important">
+          <strong>IMPORTANT DISCLAIMER:</strong> This is not financial, investment,
+          or legal advice.
+        </p>
+        <p>
+          You are interacting with an artificial intelligence (the "Chatbot").
+          The Chatbot is currently in BETA stage and may generate inaccurate,
+          incomplete, outdated, or fabricated information (hallucinations). You
+          must independently verify and fact-check every statement, figure, or
+          claim made by the Chatbot before relying on it. DGEN cannot and does
+          not take responsibility for any misinformation, errors, or omissions
+          produced by the A.I.
+        </p>
+        <p>
+          The information provided is for informational and entertainment
+          purposes only. DGEN, its affiliates, officers, directors, employees,
+          agents, and representatives make no representations or warranties
+          regarding accuracy, completeness, or reliability.
+        </p>
+        <p>
+          <strong>No Financial Advice:</strong> Nothing here constitutes financial,
+          investment, tax, accounting, legal, or professional advice. Do not use
+          the Chatbot for financial decisions.
+        </p>
+        <p>
+          <strong>No Liability:</strong> DGEN shall not be liable for any losses
+          or damages arising from your use of or reliance on the Chatbot, including
+          misinformation.
+        </p>
+        <p>
+          <strong>Consult Professionals:</strong> Always consult qualified, licensed
+          advisors in your jurisdiction for important matters.
+        </p>
+        <p class="acknowledge">
+          By continuing, you acknowledge and agree to this disclaimer. If you do
+          not agree, stop using the Chatbot immediately.
+        </p>
+      </div>
+      <div class="disclaimer-actions">
+        <label class="disclaimer-agree">
+          <input
+            type="checkbox"
+            bind:checked={disclaimerAgreed}
+            aria-label="I agree to the disclaimer"
+          />
+          <span>I agree</span>
+        </label>
+        <button
+          type="button"
+          class="back-button"
+          onclick={closeDisclaimer}
+          disabled={!disclaimerAgreed}
+        >
+          Return to chat
+        </button>
+      </div>
     </div>
   </div>
 {/if}
@@ -573,6 +707,12 @@
     justify-content: space-between;
   }
 
+  .header-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
   .close-button {
     border: none;
     background: transparent;
@@ -584,9 +724,14 @@
   .disclaimer-link {
     display: inline-block;
     margin-top: 4px;
-    font-size: 12px;
-    color: #9ca3af;
+    font-size: 13px;
+    color: #facc15;
     text-decoration: underline;
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    text-align: left;
   }
 
   .messages-container {
@@ -707,5 +852,143 @@
   .textarea:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+  }
+
+  .disclaimer-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000000;
+    padding: 20px;
+  }
+
+  .disclaimer-window {
+    background: linear-gradient(145deg, #1a1f2d, #0f131d);
+    border: 1px solid rgba(140, 169, 255, 0.3);
+    border-radius: 16px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+    max-width: 620px;
+    width: min(92vw, 640px);
+    max-height: 80vh;
+    padding: 20px;
+    color: #f9fafb;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .disclaimer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .disclaimer-eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 11px;
+    color: #8ca9ff;
+    margin: 0 0 4px;
+  }
+
+  .disclaimer-window h2 {
+    margin: 0;
+    font-size: clamp(22px, 3vw, 28px);
+    color: #e5e7eb;
+  }
+
+  .disclaimer-close {
+    border: none;
+    background: transparent;
+    color: #d1d5db;
+    font-size: 18px;
+    cursor: pointer;
+  }
+
+  .disclaimer-body {
+    overflow-y: auto;
+    padding-right: 6px;
+    line-height: 1.55;
+    color: #d1d5db;
+  }
+
+  .disclaimer-body p {
+    margin: 10px 0;
+  }
+
+  .disclaimer-body .important {
+    color: #fef3c7;
+    background: rgba(255, 255, 255, 0.04);
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .disclaimer-body strong {
+    color: #fef08a;
+  }
+
+  .disclaimer-body .acknowledge {
+    font-weight: 600;
+    color: #f9fafb;
+  }
+
+  .disclaimer-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .disclaimer-actions .back-button {
+    margin-top: 0;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(140, 169, 255, 0.4);
+    background: linear-gradient(135deg, #1e6ae1, #3b82f6);
+    color: #f9fafb;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      transform 0.1s ease,
+      box-shadow 0.2s ease,
+      opacity 0.2s ease;
+  }
+
+  .disclaimer-actions .back-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+  }
+
+  .disclaimer-actions .back-button:active {
+    transform: translateY(0);
+    opacity: 0.9;
+  }
+
+  .disclaimer-actions .back-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+  }
+
+  .disclaimer-agree {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #e5e7eb;
+    cursor: pointer;
+  }
+
+  .disclaimer-agree input {
+    width: 18px;
+    height: 18px;
+    accent-color: #1e6ae1;
+    cursor: pointer;
   }
 </style>
