@@ -151,9 +151,6 @@
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
       };
-      if (typeof window !== "undefined") {
-        headers.Origin = window.location.origin;
-      }
       if (sessionToken) {
         headers["X-Session-Token"] = sessionToken;
       }
@@ -265,8 +262,11 @@
     const mKey = messagesKeyFor(sessionUserId);
 
     const savedMessages = window.sessionStorage.getItem(mKey);
-    if (savedMessages) {
-      (async () => {
+    const intro =
+      "Hello! I'm DGEN AI Assistant, your guide to this DGEN app. How can I help you today?";
+
+    (async () => {
+      if (savedMessages) {
         try {
           const parsed = JSON.parse(savedMessages) as Array<
             ChatMessage & { html?: string }
@@ -288,6 +288,7 @@
             }),
           );
           messages = sanitized;
+          return;
         } catch (e) {
           console.warn("[DGENChat] Failed to parse stored messages", e);
           // Clear corrupted state so future writes succeed and surface the issue to the user
@@ -295,24 +296,17 @@
           error =
             "We had to reset your chat history because it became unreadable. You can continue chatting normally.";
         }
-      })();
-    }
-
-    const intro =
-      "Hello! I'm DGEN AI Assistant, your guide to this DGEN app. How can I help you today?";
-    if (!savedMessages) {
-      (async () => {
-        messages = [
-          {
-            id: "assistant-intro",
-            role: "assistant",
-            content: intro,
-            createdAt: Date.now(),
-            html: await renderSafeMarkdown(intro),
-          },
-        ];
-      })();
-    }
+      }
+      messages = [
+        {
+          id: "assistant-intro",
+          role: "assistant",
+          content: intro,
+          createdAt: Date.now(),
+          html: await renderSafeMarkdown(intro),
+        },
+      ];
+    })();
 
     isReady = true;
     const promptTimer = window.setTimeout(() => {

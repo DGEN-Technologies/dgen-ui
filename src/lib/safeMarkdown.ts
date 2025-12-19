@@ -4,12 +4,13 @@ import { browser } from "$app/environment";
 
 marked.setOptions({
     breaks: false,
-    gfm: true,     // GitHub-style markdown
+    gfm: true, // GitHub-style markdown
 });
 
 // Convert markdown to sanitized HTML.
 export async function renderSafeMarkdown(markdown: string): Promise<string> {
-    if (!browser) return markdown;
+    // SSR safety: never return unsanitized markdown/HTML
+    if (!browser) return "";
 
     const rawHtml = await marked.parse(markdown); // safe future-proof
     const cleanHtml = DOMPurify.sanitize(rawHtml, {
