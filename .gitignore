@@ -8,7 +8,7 @@ ios
 .history/
 db
 .netlify
-.vscode
+
 # Test artifacts
 test-results/
 playwright-report/

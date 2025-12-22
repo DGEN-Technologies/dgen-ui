@@ -19,7 +19,7 @@
     },
     {
       id: "security",
-      title: "Security",
+      title: "High-Grade Security",
       subtitle: "Your choice, your control",
       description:
         "High-grade encryption, hardware wallet support, multi-signature vaults. Fully non-custodial - you control your keys.",
@@ -81,9 +81,7 @@
   <section class="relative py-32">
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
       <div class="text-center mb-12 sm:mb-16" in:fly={{ y: 30, duration: 800 }}>
-        <h2
-          class="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 heading-condensed"
-        >
+        <h2 class="text-3xl sm:text-4xl md:text-6xl font-bold mb-4">
           <span class="holographic">Built Different</span>
         </h2>
         <p class="text-lg sm:text-xl md:text-2xl opacity-80 px-2">
@@ -148,9 +146,7 @@
                         </p>
 
                         <!-- Stats -->
-                        <div
-                          class="flex flex-wrap gap-2 sm:gap-3 justify-center sm:justify-start"
-                        >
+                        <div class="flex flex-wrap gap-2 sm:gap-3 justify-center sm:justify-start">
                           {#each feature.stats as stat}
                             <div
                               class="glass px-3 sm:px-4 py-2 sm:py-3 rounded-xl border border-white/20 min-w-fit"
@@ -266,7 +262,9 @@
                     ? ''
                     : 'opacity-50'}"
                 >
-                  <iconify-icon icon={feature.icon} class="text-white text-2xl"
+                  <iconify-icon
+                    icon={feature.icon}
+                    class="text-white text-2xl"
                   ></iconify-icon>
                 </div>
                 <div class="flex-1">
@@ -279,23 +277,14 @@
                   </h4>
                   <p class="text-sm opacity-60">{feature.subtitle}</p>
                 </div>
-                <div
-                  class="text-2xl transition-transform duration-300 {i ===
-                  activeFeature
-                    ? 'rotate-180'
-                    : ''}"
-                >
-                  <iconify-icon icon="ph:caret-down-bold" width="24"
-                  ></iconify-icon>
+                <div class="text-2xl transition-transform duration-300 {i === activeFeature ? 'rotate-180' : ''}">
+                  <iconify-icon icon="ph:caret-down-bold" width="24"></iconify-icon>
                 </div>
               </div>
 
               {#if i === activeFeature}
                 <!-- Dropdown content -->
-                <div
-                  class="mt-4 pt-4 border-t border-white/10"
-                  in:fade={{ duration: 300 }}
-                >
+                <div class="mt-4 pt-4 border-t border-white/10" in:fade={{ duration: 300 }}>
                   <p class="text-base opacity-70 mb-4">
                     {feature.description}
                   </p>

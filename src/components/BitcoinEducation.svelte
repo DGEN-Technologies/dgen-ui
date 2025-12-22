@@ -18,8 +18,7 @@
         },
         {
           title: "The Bitcoin Standard",
-          description:
-            "Essential book by Saifedean Ammous on Bitcoin economics",
+          description: "Essential book by Saifedean Ammous on Bitcoin economics",
           url: "https://saifedean.com/thebitcoinstandard",
           icon: "ph:book-bold",
         },
@@ -96,38 +95,32 @@
   const concepts = [
     {
       term: "Satoshi",
-      definition:
-        "The smallest unit of Bitcoin (0.00000001 BTC), named after Bitcoin's creator",
+      definition: "The smallest unit of Bitcoin (0.00000001 BTC), named after Bitcoin's creator",
       emoji: "🪙",
     },
     {
       term: "Private Keys",
-      definition:
-        "Your secret password that controls your Bitcoin - never share it!",
+      definition: "Your secret password that controls your Bitcoin - never share it!",
       emoji: "🔑",
     },
     {
       term: "Seed Phrase",
-      definition:
-        "12-24 words that backup your wallet - write it down and keep it safe",
+      definition: "12-24 words that backup your wallet - write it down and keep it safe",
       emoji: "📝",
     },
     {
       term: "HODL",
-      definition:
-        "Hold On for Dear Life - the strategy of long-term Bitcoin saving",
+      definition: "Hold On for Dear Life - the strategy of long-term Bitcoin saving",
       emoji: "💎",
     },
     {
       term: "Lightning Invoice",
-      definition:
-        "A payment request on Lightning Network for instant Bitcoin transfers",
+      definition: "A payment request on Lightning Network for instant Bitcoin transfers",
       emoji: "⚡",
     },
     {
       term: "Self-Custody",
-      definition:
-        "You control your Bitcoin keys, not an exchange - true ownership",
+      definition: "You control your Bitcoin keys, not an exchange - true ownership",
       emoji: "🔐",
     },
   ];
@@ -142,28 +135,22 @@
     <div class="container mx-auto px-4 relative z-10">
       <!-- Header -->
       <div class="text-center mb-16" in:fly={{ y: 30, duration: 800 }}>
-        <h2 class="text-5xl md:text-6xl font-bold mb-4 heading-condensed">
-          <span
-            class="bg-gradient-to-r from-dgen-aqua to-dgen-cyan bg-clip-text text-transparent"
-          >
-            LEARN ABOUT BLOCKCHAIN
+        <h2 class="text-5xl md:text-6xl font-bold mb-4">
+          <span class="bg-gradient-to-r from-dgen-aqua to-dgen-cyan bg-clip-text text-transparent">
+            LEARN ABOUT CRYPTO
           </span>
         </h2>
         <p class="text-2xl opacity-80 max-w-3xl mx-auto">
-          Your journey into the future of crypto starts here. From basics to
+          Your journey into the future of money starts here. From basics to
           advanced concepts, we've curated some great resources.
         </p>
       </div>
 
       <!-- Resource Tabs -->
-      <div
-        class="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mb-12 px-4"
-        in:fly={{ y: 20, duration: 600, delay: 200 }}
-      >
+      <div class="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mb-12 px-4" in:fly={{ y: 20, duration: 600, delay: 200 }}>
         {#each Object.entries(resources) as [key, section]}
           <button
-            class="glass px-4 sm:px-6 py-3 rounded-full border-2 transition-all duration-300 text-sm sm:text-base {activeTab ===
-            key
+            class="glass px-4 sm:px-6 py-3 rounded-full border-2 transition-all duration-300 text-sm sm:text-base {activeTab === key
               ? 'border-dgen-aqua bg-dgen-aqua/20 text-dgen-aqua scale-105'
               : 'border-white/10 hover:border-dgen-cyan/30'}"
             onclick={() => (activeTab = key)}
@@ -177,10 +164,7 @@
       <!-- Resource Grid -->
       <div class="max-w-6xl mx-auto mb-20">
         {#key activeTab}
-          <div
-            class="grid md:grid-cols-2 gap-6"
-            in:fly={{ x: 0, y: 20, duration: 400 }}
-          >
+          <div class="grid md:grid-cols-2 gap-6" in:fly={{ x: 0, y: 20, duration: 400 }}>
             {#each resources[activeTab].items as resource, i}
               <a
                 href={resource.url}
@@ -193,9 +177,7 @@
                   in:fly={{ y: 20, duration: 400, delay: 100 * i }}
                 >
                   <div class="flex items-start gap-4 h-full">
-                    <div
-                      class="w-12 h-12 rounded-xl bg-gradient-to-br from-dgen-aqua to-dgen-cyan flex items-center justify-center flex-shrink-0"
-                    >
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-dgen-aqua to-dgen-cyan flex items-center justify-center flex-shrink-0">
                       <iconify-icon
                         icon={resource.icon}
                         width="24"
@@ -203,9 +185,7 @@
                       ></iconify-icon>
                     </div>
                     <div class="flex-1 flex flex-col">
-                      <h3
-                        class="text-xl font-bold mb-2 group-hover:text-dgen-aqua transition-colors"
-                      >
+                      <h3 class="text-xl font-bold mb-2 group-hover:text-dgen-aqua transition-colors">
                         {resource.title}
                         <iconify-icon
                           icon="ph:arrow-up-right-bold"
@@ -213,9 +193,7 @@
                           class="inline ml-2 opacity-0 group-hover:opacity-100 transition-opacity"
                         ></iconify-icon>
                       </h3>
-                      <p class="opacity-70 text-sm leading-relaxed">
-                        {resource.description}
-                      </p>
+                      <p class="opacity-70 text-sm leading-relaxed">{resource.description}</p>
                     </div>
                   </div>
                 </div>
@@ -226,14 +204,9 @@
       </div>
 
       <!-- Key Concepts -->
-      <div
-        class="max-w-6xl mx-auto"
-        in:fly={{ y: 30, duration: 800, delay: 400 }}
-      >
-        <h3 class="text-3xl font-bold mb-8 text-center heading-condensed">
-          <span
-            class="bg-gradient-to-r from-dgen-cyan to-dgen-aqua bg-clip-text text-transparent"
-          >
+      <div class="max-w-6xl mx-auto" in:fly={{ y: 30, duration: 800, delay: 400 }}>
+        <h3 class="text-3xl font-bold mb-8 text-center">
+          <span class="bg-gradient-to-r from-dgen-cyan to-dgen-aqua bg-clip-text text-transparent">
             Essential Bitcoin Terms
           </span>
         </h3>
@@ -256,39 +229,21 @@
       </div>
 
       <!-- CTA -->
-      <div
-        class="text-center mt-16"
-        in:fly={{ y: 30, duration: 800, delay: 600 }}
-      >
-        <div
-          class="glass inline-block p-8 rounded-3xl border border-dgen-aqua/20"
-        >
+      <div class="text-center mt-16" in:fly={{ y: 30, duration: 800, delay: 600 }}>
+        <div class="glass inline-block p-8 rounded-3xl border border-dgen-aqua/20">
           <h3 class="text-2xl font-bold mb-4">Ready to start?</h3>
           <p class="opacity-80 mb-6">
             Join thousands using DGEN to experience the Lightning Network
           </p>
           <div class="flex flex-col gap-4 justify-center items-center px-4">
             <a href="/register" class="w-full sm:w-auto">
-              <button
-                class="btn bg-gradient-to-r from-dgen-aqua to-dgen-cyan text-black font-bold hover:scale-105 transition-transform w-full sm:w-auto"
-              >
+              <button class="btn bg-gradient-to-r from-dgen-aqua to-dgen-cyan text-black font-bold hover:scale-105 transition-transform w-full sm:w-auto">
                 Create Account
               </button>
             </a>
-            <a
-              href="https://t.me/dgentech"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="w-full sm:w-auto"
-            >
-              <button
-                class="btn glass border-2 border-dgen-cyan/30 hover:border-dgen-cyan font-bold hover:scale-105 transition-transform w-full sm:w-auto"
-              >
-                <iconify-icon
-                  icon="ph:telegram-logo-bold"
-                  width="20"
-                  class="mr-2"
-                ></iconify-icon>
+            <a href="https://t.me/dgentech" target="_blank" rel="noopener noreferrer" class="w-full sm:w-auto">
+              <button class="btn glass border-2 border-dgen-cyan/30 hover:border-dgen-cyan font-bold hover:scale-105 transition-transform w-full sm:w-auto">
+                <iconify-icon icon="ph:telegram-logo-bold" width="20" class="mr-2"></iconify-icon>
                 <span class="whitespace-nowrap">Join us on Telegram</span>
               </button>
             </a>
@@ -301,8 +256,10 @@
 
 <style>
   .cyber-grid {
-    background-image:
-      linear-gradient(rgba(116, 235, 213, 0.1) 1px, transparent 1px),
+    background-image: linear-gradient(
+        rgba(116, 235, 213, 0.1) 1px,
+        transparent 1px
+      ),
       linear-gradient(90deg, rgba(116, 235, 213, 0.1) 1px, transparent 1px);
     background-size: 50px 50px;
   }

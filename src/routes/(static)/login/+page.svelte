@@ -169,7 +169,7 @@
         use:focus
         autocapitalize="none"
         placeholder={$t("login.username")}
-        class="relative glass border-2 text-black border-white/10 focus:border-purple-500/50 transition-all duration-300"
+        class="relative glass border-2 border-white/10 focus:border-purple-500/50 transition-all duration-300"
       />
     </div>
 
@@ -197,15 +197,9 @@
       style="background: linear-gradient(135deg, #74EBD5 0%, #9688DD 100%); color: white; box-shadow: 0 10px 30px rgba(116, 235, 213, 0.3);"
       bind:this={btn}
     >
-      <div
-        class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-        style="background: linear-gradient(135deg, #9688DD 0%, #74EBD5 100%);"
-      ></div>
-      <iconify-icon
-        icon="ph:sign-in-bold"
-        width="24"
-        class="relative z-10 group-hover:rotate-12 transition-transform duration-300"
-      ></iconify-icon>
+      <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+           style="background: linear-gradient(135deg, #9688DD 0%, #74EBD5 100%);"></div>
+      <iconify-icon icon="ph:sign-in-bold" width="24" class="relative z-10 group-hover:rotate-12 transition-transform duration-300"></iconify-icon>
       <span class="relative z-10">{$t("login.signIn")}</span>
       <iconify-icon
         icon="ph:arrow-right-bold"
@@ -244,15 +238,10 @@
           class="px-6 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center gap-2"
           style="background: linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%); color: white;"
         >
-          <div
-            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-            style="background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%);"
-          ></div>
+          <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+               style="background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%);"></div>
           <span class="relative z-10">{$t("login.register")}</span>
-          <iconify-icon
-            icon="ph:user-plus-bold"
-            width="20"
-            class="relative z-10 group-hover:rotate-12 transition-transform duration-300"
+          <iconify-icon icon="ph:user-plus-bold" width="20" class="relative z-10 group-hover:rotate-12 transition-transform duration-300"
           ></iconify-icon>
         </button>
       </a>

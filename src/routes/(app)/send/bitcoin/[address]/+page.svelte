@@ -69,27 +69,16 @@
       onkeydown={setMax}>Max ⚡️{s($walletBalance)}</button
     >
 
-    <form
-      action={`/send/bitcoin/${encodeURIComponent(address)}/${amount}/`}
-      class="contents"
-    >
+    <form action={`/send/bitcoin/${encodeURIComponent(address)}/${amount}/`} class="contents">
       <button
         use:focus
         bind:this={submit}
         type="submit"
         class="btn !w-auto grow btn-accent"
-        disabled={!a || a <= 0}
+        disabled={!amount || amount <= 0}
       >
         {$t("payments.next")}
       </button>
-      <button
-        type="button"
-        onclick={() => {
-          console.log(a);
-        }}
-      >
-        check ......</button
-      >
     </form>
   </div>
 </div>

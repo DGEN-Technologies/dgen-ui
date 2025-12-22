@@ -15,13 +15,6 @@
   font-style: normal;
 }
 
-/* Heading font for hero + section titles */
-.heading-condensed {
-  font-family: "Roboto Condensed", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
-  letter-spacing: 0.08em;
-}
-
 /* Modern Color System */
 :root {
   /* Primary Gradients - DGEN Aqua Theme */

@@ -7,21 +7,16 @@
   import { goto } from "$app/navigation";
   import { rate } from "$lib/store";
   import { walletBalance } from "$lib/stores/wallet";
-  import {
-    fetchOnchainLimits,
-    preparePayOnchain,
-    payOnchain,
-    recommendedFees,
-  } from "$lib/walletService";
-
+  import { fetchOnchainLimits, preparePayOnchain, payOnchain, recommendedFees } from "$lib/walletService";
+  
   import Amount from "$comp/Amount.svelte";
-
+  
   let { data } = $props();
-
+  
   // Get params from server
   let { address, amount } = $derived(data);
   let feeRate = $state(data.feeRate || 10);
-
+  
   // State for UI
   let loading = $state(true);
   let submitting = $state(false);
@@ -30,40 +25,40 @@
   let limits = $state(null);
   let fee = $state(0);
   let fees = $state({
-    hourFee: 5, // Economy
-    halfHourFee: 10, // Normal
-    fastestFee: 20, // Priority
+    hourFee: 5,      // Economy
+    halfHourFee: 10, // Normal  
+    fastestFee: 20,  // Priority
   });
-
+  
   // User's currency from page store
-  let currency = $derived($page.data.user?.currency || "USD");
-
+  let currency = $derived($page.data.user?.currency || 'USD');
+  
   // Initialize on mount
   onMount(async () => {
     await fetchRecommendedFees();
-    await prepareOnchainPayment(0);
+    await prepareOnchainPayment();
   });
-
+  
   // Fetch recommended fees from SDK with timeout
   async function fetchRecommendedFees() {
     try {
       // Add 10 second timeout for fee fetching
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Fee fetch timeout")), 10000),
+        setTimeout(() => reject(new Error('Fee fetch timeout')), 10000)
       );
 
       const recommended = await Promise.race([
         recommendedFees(),
-        timeoutPromise,
+        timeoutPromise
       ]);
 
       console.log("Recommended fees from SDK:", recommended);
 
       // Update our fee presets with actual recommended values
       fees = {
-        hourFee: Number(recommended.hourFee) || 5, // Economy
-        halfHourFee: Number(recommended.halfHourFee) || 10, // Normal
-        fastestFee: Number(recommended.fastestFee) || 20, // Priority
+        hourFee: Number(recommended.hourFee) || 5,       // Economy
+        halfHourFee: Number(recommended.halfHourFee) || 10,  // Normal
+        fastestFee: Number(recommended.fastestFee) || 20,   // Priority
       };
 
       // Set default fee rate to normal (halfHourFee)
@@ -75,7 +70,7 @@
       // Keep default values if fetch fails
     }
   }
-
+  
   // Prepare the onchain payment with timeout and retry
   async function prepareOnchainPayment(retryCount = 0) {
     const maxRetries = 2;
@@ -87,18 +82,13 @@
 
       // Fetch onchain limits with timeout
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(
-          () =>
-            reject(
-              new Error(
-                "Request timeout - network may be slow or rate limited",
-              ),
-            ),
-          timeout,
-        ),
+        setTimeout(() => reject(new Error('Request timeout - network may be slow or rate limited')), timeout)
       );
 
-      limits = await Promise.race([fetchOnchainLimits(), timeoutPromise]);
+      limits = await Promise.race([
+        fetchOnchainLimits(),
+        timeoutPromise
+      ]);
       console.log("Onchain limits:", limits);
 
       // Validate amount against limits
@@ -116,53 +106,44 @@
       // Prepare onchain payment with optional fee rate
       const prepareRequest = {
         amount: {
-          type: "bitcoin",
-          receiverAmountSat: amount,
+          type: 'bitcoin',
+          receiverAmountSat: amount
         },
-        ...(feeRate && { feeRateSatPerVbyte: feeRate }),
+        ...(feeRate && { feeRateSatPerVbyte: feeRate })
       };
 
       console.log("Prepare request:", prepareRequest);
 
       const prepareTimeoutPromise = new Promise((_, reject) =>
-        setTimeout(
-          () =>
-            reject(
-              new Error(
-                "Payment preparation timeout - network may be slow or rate limited",
-              ),
-            ),
-          timeout,
-        ),
+        setTimeout(() => reject(new Error('Payment preparation timeout - network may be slow or rate limited')), timeout)
       );
 
       preparedPayment = await Promise.race([
         preparePayOnchain(prepareRequest),
-        prepareTimeoutPromise,
+        prepareTimeoutPromise
       ]);
       console.log("Prepare response:", preparedPayment);
 
       // Extract fee information
       fee = preparedPayment.totalFeesSat || 0;
+
     } catch (e) {
       console.error("Onchain payment preparation error:", e);
       const errorMsg = e.message || "Failed to prepare payment";
 
       // Check if this is a retryable error (timeout, rate limit, network issue)
       const isRetryable =
-        errorMsg.includes("timeout") ||
-        errorMsg.includes("429") ||
-        errorMsg.includes("Too Many Requests") ||
-        errorMsg.includes("rate limit") ||
-        errorMsg.includes("network");
+        errorMsg.includes('timeout') ||
+        errorMsg.includes('429') ||
+        errorMsg.includes('Too Many Requests') ||
+        errorMsg.includes('rate limit') ||
+        errorMsg.includes('network');
 
       if (isRetryable && retryCount < maxRetries) {
-        console.log(
-          `Retrying payment preparation (${retryCount + 1}/${maxRetries})...`,
-        );
+        console.log(`Retrying payment preparation (${retryCount + 1}/${maxRetries})...`);
         // Exponential backoff: 2s, 4s
         const backoffMs = 2000 * Math.pow(2, retryCount);
-        await new Promise((resolve) => setTimeout(resolve, backoffMs));
+        await new Promise(resolve => setTimeout(resolve, backoffMs));
         return prepareOnchainPayment(retryCount + 1);
       }
 
@@ -171,28 +152,28 @@
       loading = false;
     }
   }
-
+  
   // Execute the onchain payment
   async function executePayment() {
     if (!preparedPayment) {
       error = "Payment not prepared";
       return;
     }
-
+    
     try {
       submitting = true;
       error = "";
-
+      
       // Send the onchain payment
       const payRequest = {
         address: address.trim(),
-        prepareResponse: preparedPayment,
+        prepareResponse: preparedPayment
       };
-
+      
       console.log("Pay request:", payRequest);
       const response = await payOnchain(payRequest);
       console.log("Payment response:", response);
-
+      
       // Check if payment was successful
       if (response.payment) {
         // Navigate to success page
@@ -200,6 +181,7 @@
       } else {
         throw new Error("Payment failed - no payment ID returned");
       }
+      
     } catch (e) {
       console.error("Problem sending onchain Bitcoin:", e);
       error = e.message || "Payment failed";
@@ -207,13 +189,13 @@
       submitting = false;
     }
   }
-
+  
   // Update fee rate and re-prepare
   async function setFee(newRate) {
     feeRate = newRate;
-    await prepareOnchainPayment(0);
+    await prepareOnchainPayment();
   }
-
+  
   let goBack = () => window.history.back();
 </script>
 
@@ -226,13 +208,17 @@
     <div class="flex flex-col items-center gap-4 mb-5">
       <div class="text-red-600 text-center">{error}</div>
       <div class="flex gap-2">
-        <button type="button" class="btn btn-secondary" onclick={goBack}>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          onclick={goBack}
+        >
           Back
         </button>
         <button
           type="button"
           class="btn btn-accent"
-          onclick={() => prepareOnchainPayment(0)}
+          onclick={() => prepareOnchainPayment()}
         >
           Retry
         </button>
@@ -246,7 +232,11 @@
   {:else if preparedPayment}
     <div class="text-xl text-secondary break-all">{address}</div>
 
-    <Amount {amount} rate={$rate} {currency} />
+    <Amount
+      amount={amount}
+      rate={$rate}
+      {currency}
+    />
 
     <div class="text-center">
       <h2 class="text-secondary text-lg">{$t("payments.networkFee")}</h2>
@@ -254,39 +244,33 @@
       <div class="flex flex-col gap-2 items-center">
         {#if fees}
           <div class="flex flex-wrap gap-2 justify-center text-sm">
-            <button
+            <button 
               type="button"
               onclick={() => setFee(fees.hourFee || 5)}
-              class="px-3 py-1 rounded {feeRate === fees.hourFee
-                ? 'bg-accent text-white'
-                : 'bg-gray-200 dark:bg-gray-700'}"
+              class="px-3 py-1 rounded {feeRate === fees.hourFee ? 'bg-accent text-white' : 'bg-gray-200 dark:bg-gray-700'}"
             >
               Economy ({fees.hourFee || 5} sat/vB)
             </button>
-            <button
+            <button 
               type="button"
               onclick={() => setFee(fees.halfHourFee || 10)}
-              class="px-3 py-1 rounded {feeRate === fees.halfHourFee
-                ? 'bg-accent text-white'
-                : 'bg-gray-200 dark:bg-gray-700'}"
+              class="px-3 py-1 rounded {feeRate === fees.halfHourFee ? 'bg-accent text-white' : 'bg-gray-200 dark:bg-gray-700'}"
             >
               Normal ({fees.halfHourFee || 10} sat/vB)
             </button>
-            <button
+            <button 
               type="button"
               onclick={() => setFee(fees.fastestFee || 20)}
-              class="px-3 py-1 rounded {feeRate === fees.fastestFee
-                ? 'bg-accent text-white'
-                : 'bg-gray-200 dark:bg-gray-700'}"
+              class="px-3 py-1 rounded {feeRate === fees.fastestFee ? 'bg-accent text-white' : 'bg-gray-200 dark:bg-gray-700'}"
             >
               Priority ({fees.fastestFee || 20} sat/vB)
             </button>
           </div>
         {/if}
-
+        
         <div class="flex items-center gap-2">
-          <input
-            type="number"
+          <input 
+            type="number" 
             bind:value={feeRate}
             onchange={() => setFee(feeRate)}
             min="1"
@@ -297,7 +281,7 @@
           />
           <span class="text-sm text-secondary">sat/vB</span>
         </div>
-
+        
         <Amount amount={fee} rate={$rate} {currency} />
       </div>
     </div>
