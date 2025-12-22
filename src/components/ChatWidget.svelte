@@ -53,10 +53,17 @@
   const buildKey = (suffix: string, userId?: string) =>
     `dgen_${suffix}_${userId ?? "anon"}`;
   const messagesKeyFor = (userId?: string) => buildKey("messages", userId);
+  const userKeyFor = (userId?: string) => buildKey("user", userId);
+  const tokenKeyFor = (userId?: string) => buildKey("token", userId);
 
   // UI helpers
   function toggleOpen() {
     isOpen = !isOpen;
+    if (isOpen && !disclaimerAgreed) {
+      showDisclaimer = true;
+    } else if (!isOpen) {
+      showDisclaimer = false;
+    }
   }
 
   function appendMessage(message: ChatMessage) {
@@ -64,7 +71,19 @@
   }
 
   function closeDisclaimer() {
+    if (!disclaimerAgreed) {
+      error = "Please confirm the disclaimer before using the chat.";
+      return;
+    }
+    error = null;
     showDisclaimer = false;
+  }
+
+  function declineDisclaimer() {
+    disclaimerAgreed = false;
+    showDisclaimer = false;
+    isOpen = false;
+    error = null;
   }
 
   function trapDisclaimerFocus(event: KeyboardEvent) {
@@ -94,7 +113,7 @@
   function handleGlobalKeydown(event: KeyboardEvent) {
     if (event.key !== "Escape") return;
     if (showDisclaimer) {
-      closeDisclaimer();
+      declineDisclaimer();
       return;
     }
     if (isOpen) {
@@ -104,6 +123,11 @@
 
   async function sendMessage() {
     if (!isReady) return;
+    if (!disclaimerAgreed) {
+      error = "Please agree to the disclaimer before using the chat.";
+      showDisclaimer = true;
+      return;
+    }
 
     // Enforce a cooldown period to prevent message spamming
     const now = Date.now();
@@ -180,11 +204,21 @@
         throw new Error("INVALID_JSON");
       }
 
-      if (data.session_token) {
-        sessionToken = data.session_token;
-      }
       if (data.user_id) {
         sessionUserId = data.user_id;
+        if (typeof window !== "undefined") {
+          window.sessionStorage.setItem(
+            userKeyFor(sessionUserId),
+            sessionUserId,
+          );
+        }
+      }
+      if (data.session_token) {
+        sessionToken = data.session_token;
+        if (typeof window !== "undefined") {
+          const tokenKey = tokenKeyFor(sessionUserId);
+          window.sessionStorage.setItem(tokenKey, data.session_token);
+        }
       }
 
       const answer: string =
@@ -212,6 +246,11 @@
       } else if (err instanceof Error && err.message === "INSECURE_PROTOCOL") {
         message = "Secure connection required. Please use HTTPS to continue.";
       } else if (err instanceof Error && err.message === "AUTH_EXPIRED") {
+        if (typeof window !== "undefined") {
+          const storage = window.sessionStorage;
+          storage.removeItem(userKeyFor(sessionUserId));
+          storage.removeItem(tokenKeyFor(sessionUserId));
+        }
         sessionToken = "";
         sessionUserId = undefined;
         message = "Session expired. Please send your message again.";
@@ -259,9 +298,25 @@
   onMount(() => {
     if (typeof window === "undefined") return;
 
+    const storage = window.sessionStorage;
+
+    const storedUserId =
+      storage.getItem(userKeyFor(sessionUserId)) ?? storage.getItem(userKeyFor());
+    if (storedUserId) {
+      sessionUserId = storedUserId;
+    } else if (sessionUserId) {
+      storage.setItem(userKeyFor(sessionUserId), sessionUserId);
+    }
+
+    const storedToken =
+      storage.getItem(tokenKeyFor(sessionUserId)) ?? storage.getItem(tokenKeyFor());
+    if (storedToken) {
+      sessionToken = storedToken;
+    }
+
     const mKey = messagesKeyFor(sessionUserId);
 
-    const savedMessages = window.sessionStorage.getItem(mKey);
+    const savedMessages = storage.getItem(mKey);
     const intro =
       "Hello! I'm DGEN AI Assistant, your guide to this DGEN app. How can I help you today?";
 
@@ -292,7 +347,7 @@
         } catch (e) {
           console.warn("[DGENChat] Failed to parse stored messages", e);
           // Clear corrupted state so future writes succeed and surface the issue to the user
-          window.sessionStorage.removeItem(mKey);
+          storage.removeItem(mKey);
           error =
             "We had to reset your chat history because it became unreadable. You can continue chatting normally.";
         }
@@ -324,9 +379,10 @@
     };
   });
 
-  // Persist messages to sessionStorage whenever they change
+  // Persist messages locally whenever they change
   $effect(() => {
     if (typeof window === "undefined") return;
+    const storage = window.sessionStorage;
     const mKey = messagesKeyFor(sessionUserId);
     // Store only safe fields and cap history
     const recent = messages.slice(-MAX_PERSISTED_MESSAGES);
@@ -336,7 +392,7 @@
       content: m.content,
       createdAt: m.createdAt,
     }));
-    window.sessionStorage.setItem(mKey, JSON.stringify(safeMessages));
+    storage.setItem(mKey, JSON.stringify(safeMessages));
   });
 
   // Auto-scroll to bottom
@@ -355,7 +411,11 @@
 
   $effect(() => {
     if (showDisclaimer) {
-      disclaimerCloseRef?.focus();
+      if (disclaimerAgreed) {
+        disclaimerCloseRef?.focus();
+      } else {
+        disclaimerWindowRef?.focus();
+      }
     }
   });
 </script>
@@ -489,13 +549,18 @@
         placeholder={isReady ? "Type your message..." : "Initializing..."}
         rows="1"
         class="textarea"
-        disabled={!isReady}
+        disabled={!isReady || !disclaimerAgreed}
       ></textarea>
       <button
         onclick={sendMessage}
-        disabled={!isReady || isSending || !input.trim()}
+        disabled={!isReady || isSending || !input.trim() || !disclaimerAgreed}
         class="send-button"
-        style="opacity: {!isReady || isSending || !input.trim() ? 0.5 : 1};"
+        style="opacity: {!isReady ||
+        isSending ||
+        !input.trim() ||
+        !disclaimerAgreed
+          ? 0.5
+          : 1};"
       >
         ➤
       </button>
@@ -521,15 +586,6 @@
           <p class="disclaimer-eyebrow">DGEN A.I. Chatbot Disclaimer</p>
           <h2>Read Before You Use The DGEN Chatbot</h2>
         </div>
-        <button
-          type="button"
-          class="disclaimer-close"
-          aria-label="Close disclaimer"
-          onclick={closeDisclaimer}
-          bind:this={disclaimerCloseRef}
-        >
-          ✕
-        </button>
       </div>
       <div class="disclaimer-body">
         <p class="important">
@@ -571,6 +627,13 @@
         </p>
       </div>
       <div class="disclaimer-actions">
+        <button
+          type="button"
+          class="decline-button"
+          onclick={declineDisclaimer}
+        >
+          I don’t agree, close chat
+        </button>
         <label class="disclaimer-agree">
           <input
             type="checkbox"
@@ -990,5 +1053,23 @@
     height: 18px;
     accent-color: #1e6ae1;
     cursor: pointer;
+  }
+
+  .decline-button {
+    margin-right: auto;
+    background: transparent;
+    color: #d1d5db;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    padding: 9px 12px;
+    cursor: pointer;
+    transition:
+      opacity 0.15s ease,
+      border-color 0.15s ease;
+  }
+
+  .decline-button:hover {
+    opacity: 0.85;
+    border-color: rgba(255, 255, 255, 0.3);
   }
 </style>
