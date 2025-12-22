@@ -45,6 +45,20 @@
     return { symbol: sym, position: pos, decimal };
   }
 
+  // Debug effect to check currency formatting
+  $effect(() => {
+    console.log("Currency formatting:", {
+      fiat,
+      isUSDT,
+      symbol,
+      position,
+      decimalChar,
+      displayValue,
+      amount,
+      rate: $rate,
+    });
+  });
+
   // Update currency info when locale/currency changes
   $effect(() => {
     const info = getCurrencyInfo(locale, currency);
@@ -55,7 +69,7 @@
 
   // Convert display value to satoshis
   function displayToSats(display) {
-    const numeric = parseFloat(display.replace(decimalChar, '.')) || 0;
+    const numeric = parseFloat(display.replace(decimalChar, ".")) || 0;
 
     if (fiat) {
       // Fiat -> Satoshis
@@ -66,7 +80,7 @@
       }
     } else {
       // Direct crypto input
-      if (isUSDT || $unitPreference === 'btc') {
+      if (isUSDT || $unitPreference === "btc") {
         return Math.round(numeric * 100000000);
       } else {
         // Sats mode - already in sats
@@ -88,9 +102,9 @@
       }
     } else {
       // Satoshis -> Crypto
-      if (isUSDT || $unitPreference === 'btc') {
+      if (isUSDT || $unitPreference === "btc") {
         const val = (sats / 100000000).toString();
-        return val.replace(/\.?0+$/, '') || "0";
+        return val.replace(/\.?0+$/, "") || "0";
       } else {
         // Sats mode
         return sats.toString();
@@ -134,7 +148,10 @@
       displayValue = displayValue.length > 1 ? displayValue.slice(0, -1) : "0";
     } else if (value === ".") {
       // Only allow decimal in appropriate modes
-      if ((fiat || isUSDT || $unitPreference === 'btc') && !displayValue.includes(decimalChar)) {
+      if (
+        (fiat || isUSDT || $unitPreference === "btc") &&
+        !displayValue.includes(decimalChar)
+      ) {
         displayValue = displayValue + decimalChar;
       }
     } else {
@@ -204,24 +221,26 @@
     isUserInput = true;
 
     const txt = (await navigator.clipboard.readText()) ?? "";
-    const clean = txt.replace(/[^\d.,]/g, "").replace(new RegExp(`[${decimalChar}]`, "g"), ".");
+    const clean = txt
+      .replace(/[^\d.,]/g, "")
+      .replace(new RegExp(`[${decimalChar}]`, "g"), ".");
     const val = parseFloat(clean);
     if (isFinite(val) && val >= 0) {
       displayValue = val.toString();
 
       // Limit fiat to 2 decimal places
-      if (fiat && displayValue.includes('.')) {
-        const parts = displayValue.split('.');
+      if (fiat && displayValue.includes(".")) {
+        const parts = displayValue.split(".");
         if (parts[1] && parts[1].length > 2) {
-          displayValue = parts[0] + '.' + parts[1].substring(0, 2);
+          displayValue = parts[0] + "." + parts[1].substring(0, 2);
         }
-      } else if (displayValue.includes('.')) {
-        displayValue = displayValue.replace(/\.?0+$/, '');
+      } else if (displayValue.includes(".")) {
+        displayValue = displayValue.replace(/\.?0+$/, "");
       }
 
-      if (displayValue === '') displayValue = '0';
+      if (displayValue === "") displayValue = "0";
     } else {
-      displayValue = '0';
+      displayValue = "0";
     }
     element && (element.textContent = displayValue);
     updateAmount();
@@ -248,7 +267,8 @@
       e.key === "Tab" ||
       e.key === "Home" ||
       e.key === "End" ||
-      (e.ctrlKey || e.metaKey)
+      e.ctrlKey ||
+      e.metaKey
     ) {
       return;
     }
@@ -258,7 +278,7 @@
     const isDecimal = char === "." || char === decimalChar;
 
     // Allow decimals in fiat/BTC/USDT modes
-    if (fiat || isUSDT || $unitPreference === 'btc') {
+    if (fiat || isUSDT || $unitPreference === "btc") {
       if (!isNumber && !isDecimal) {
         e.preventDefault();
         return;
@@ -285,11 +305,11 @@
       // Fiat -> Crypto
       fiat = false;
       if (!isUSDT) {
-        unitPreference.set('sats');
+        unitPreference.set("sats");
       }
-    } else if (!isUSDT && $unitPreference === 'sats') {
+    } else if (!isUSDT && $unitPreference === "sats") {
       // Sats -> BTC
-      unitPreference.set('btc');
+      unitPreference.set("btc");
     } else {
       // Back to fiat
       fiat = true;
@@ -325,7 +345,8 @@
     if (isUSDT) {
       amountFiat = ((amount || 0) / 100000000).toFixed(2);
     } else {
-      amountFiat = rate > 0 ? (((amount || 0) * rate) / 100000000).toFixed(2) : "0.00";
+      amountFiat =
+        rate > 0 ? (((amount || 0) * rate) / 100000000).toFixed(2) : "0.00";
     }
   });
 
@@ -341,7 +362,8 @@
     if (isUSDT) {
       amountFiat = ((amount || 0) / 100000000).toFixed(2);
     } else {
-      amountFiat = rate > 0 ? (((amount || 0) * rate) / 100000000).toFixed(2) : "0.00";
+      amountFiat =
+        rate > 0 ? (((amount || 0) * rate) / 100000000).toFixed(2) : "0.00";
     }
   });
 </script>
@@ -349,16 +371,36 @@
 <div class="flex justify-center items-center">
   <div class="space-y-5 w-full">
     <div class="text-center">
-      <div class="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight flex justify-center">
+      <div
+        class="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight flex justify-center"
+      >
         <div class="my-auto flex items-center gap-1">
           {#if fiat}
             {#if position === "before"}{symbol}{/if}
           {:else if isUSDT}
-            <iconify-icon noobserver icon="cryptocurrency:usdt" class="text-green-400" width="32" height="32"></iconify-icon>
-          {:else if $unitPreference === 'btc'}
-            <iconify-icon noobserver icon="cryptocurrency:btc" class="text-orange-400" width="32" height="32"></iconify-icon>
+            <iconify-icon
+              noobserver
+              icon="cryptocurrency:usdt"
+              class="text-green-400"
+              width="32"
+              height="32"
+            ></iconify-icon>
+          {:else if $unitPreference === "btc"}
+            <iconify-icon
+              noobserver
+              icon="cryptocurrency:btc"
+              class="text-orange-400"
+              width="32"
+              height="32"
+            ></iconify-icon>
           {:else}
-            <iconify-icon noobserver icon="ph:lightning-fill" class="text-yellow-300" width="32" height="32"></iconify-icon>
+            <iconify-icon
+              noobserver
+              icon="ph:lightning-fill"
+              class="text-yellow-300"
+              width="32"
+              height="32"
+            ></iconify-icon>
           {/if}
         </div>
 
@@ -368,7 +410,9 @@
           tabindex="0"
           aria-label="Amount input"
           contenteditable
-          inputmode={fiat || isUSDT || $unitPreference === 'btc' ? "decimal" : "numeric"}
+          inputmode={fiat || isUSDT || $unitPreference === "btc"
+            ? "decimal"
+            : "numeric"}
           enterkeyhint="done"
           autocapitalize="off"
           autocorrect="off"
@@ -397,35 +441,78 @@
         onclick={swap}
       >
         {#if isUSDT}
-          <div class="flex items-center justify-center gap-2 text-xs sm:text-sm w-full">
-            <span class={fiat ? "text-white/80 font-semibold" : "text-white/40"}>
+          <div
+            class="flex items-center justify-center gap-2 text-xs sm:text-sm w-full"
+          >
+            <span
+              class={fiat ? "text-white/80 font-semibold" : "text-white/40"}
+            >
               {f(amountFiat, currency, locale)}
             </span>
-            <iconify-icon noobserver icon="ph:arrows-left-right-bold" class="text-white/40 group-hover:text-white/60" width="12"></iconify-icon>
-            <span class="{!fiat ? 'text-white/80 font-semibold' : 'text-white/40'} flex items-center gap-1">
-              <iconify-icon noobserver icon="cryptocurrency:usdt" class="text-green-400" width="12"></iconify-icon>
+            <iconify-icon
+              noobserver
+              icon="ph:arrows-left-right-bold"
+              class="text-white/40 group-hover:text-white/60"
+              width="12"
+            ></iconify-icon>
+            <span
+              class="{!fiat
+                ? 'text-white/80 font-semibold'
+                : 'text-white/40'} flex items-center gap-1"
+            >
+              <iconify-icon
+                noobserver
+                icon="cryptocurrency:usdt"
+                class="text-green-400"
+                width="12"
+              ></iconify-icon>
               {isFinite(amount) ? (amount / 100000000).toFixed(2) : "0.00"} USDT
             </span>
           </div>
         {:else}
-          <div class="flex items-center justify-center gap-2 text-xs sm:text-sm w-full">
-            <span class={fiat ? "text-white/80 font-semibold" : "text-white/40"}>
+          <div
+            class="flex items-center justify-center gap-2 text-xs sm:text-sm w-full"
+          >
+            <span
+              class={fiat ? "text-white/80 font-semibold" : "text-white/40"}
+            >
               {f(amountFiat, currency, locale)}
             </span>
             <span class="text-white/20">•</span>
-            <span class="{!fiat && $unitPreference === 'sats' ? 'text-white/80 font-semibold' : 'text-white/40'} flex items-center gap-1">
-              <iconify-icon noobserver icon="ph:lightning-fill" class="text-yellow-300" width="12"></iconify-icon>
+            <span
+              class="{!fiat && $unitPreference === 'sats'
+                ? 'text-white/80 font-semibold'
+                : 'text-white/40'} flex items-center gap-1"
+            >
+              <iconify-icon
+                noobserver
+                icon="ph:lightning-fill"
+                class="text-yellow-300"
+                width="12"
+              ></iconify-icon>
               {isFinite(amount) ? s(amount, locale) : "0"}
             </span>
             <span class="text-white/20">•</span>
-            <span class="{!fiat && $unitPreference === 'btc' ? 'text-white/80 font-semibold' : 'text-white/40'} flex items-center gap-1">
-              <iconify-icon noobserver icon="cryptocurrency:btc" class="text-orange-400" width="12"></iconify-icon>
+            <span
+              class="{!fiat && $unitPreference === 'btc'
+                ? 'text-white/80 font-semibold'
+                : 'text-white/40'} flex items-center gap-1"
+            >
+              <iconify-icon
+                noobserver
+                icon="cryptocurrency:btc"
+                class="text-orange-400"
+                width="12"
+              ></iconify-icon>
               {isFinite(amount) ? btc(amount) : "0.00000000"}
             </span>
           </div>
         {/if}
-        <div class="text-[10px] text-white/40 group-hover:text-white/60 transition-colors flex items-center justify-center gap-1 w-full">
-          <iconify-icon noobserver icon="ph:hand-tap-bold" width="10"></iconify-icon>
+        <div
+          class="text-[10px] text-white/40 group-hover:text-white/60 transition-colors flex items-center justify-center gap-1 w-full"
+        >
+          <iconify-icon noobserver icon="ph:hand-tap-bold" width="10"
+          ></iconify-icon>
           Tap to switch
         </div>
       </button>
@@ -467,8 +554,8 @@
       <button
         type="button"
         class="btn"
-        class:opacity-50={!fiat && !isUSDT && $unitPreference !== 'btc'}
-        class:cursor-not-allowed={!fiat && !isUSDT && $unitPreference !== 'btc'}
+        class:opacity-50={!fiat && !isUSDT && $unitPreference !== "btc"}
+        class:cursor-not-allowed={!fiat && !isUSDT && $unitPreference !== "btc"}
         onclick={() => handleInput(".")}
       >
         {decimalChar}
@@ -478,7 +565,11 @@
         0
       </button>
 
-      <button type="button" class="btn" onclick={() => handleInput("backspace")}>
+      <button
+        type="button"
+        class="btn"
+        onclick={() => handleInput("backspace")}
+      >
         <Left />
       </button>
     </div>

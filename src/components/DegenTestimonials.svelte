@@ -9,15 +9,7 @@
 
   const features = [
     {
-      title: "Lightning Network Payments",
-      icon: "⚡",
-      description:
-        "Instant Bitcoin transactions powered by Lightning Network. Send and receive globally in milliseconds.",
-      highlight: "< 1 second",
-      category: "Speed",
-    },
-    {
-      title: "Institutional-Grade Security",
+      title: "Security",
       icon: "🔒",
       description:
         "Complete control over your assets. Advanced security with multi-signature support and hardware wallet integration.",
@@ -28,7 +20,7 @@
       title: "Liquid Network Support",
       icon: "💧",
       description:
-        "Fast 2-minute block confirmations with confidential transactions. Perfect for institutional trading and high-value transfers.",
+        "Fast 2-minute block confirmations with confidential transactions. Good for institutional trading and high-value transfers.",
       highlight: "Auto-managed",
       category: "Network",
     },
@@ -81,7 +73,6 @@
 {#if mounted}
   <section class="relative pb-32 pt-0">
     <div class="container mx-auto px-4 relative z-10">
-
       <!-- Tech Specs -->
       <div
         class="grid grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto mb-16"
@@ -163,10 +154,18 @@
             onclick={togglePlayPause}
           >
             {#if isPaused}
-              <iconify-icon icon="ph:play-fill" width="24" class="text-purple-400"></iconify-icon>
+              <iconify-icon
+                icon="ph:play-fill"
+                width="24"
+                class="text-purple-400"
+              ></iconify-icon>
               <span class="text-sm font-bold">Resume Slideshow</span>
             {:else}
-              <iconify-icon icon="ph:pause-fill" width="24" class="text-purple-400"></iconify-icon>
+              <iconify-icon
+                icon="ph:pause-fill"
+                width="24"
+                class="text-purple-400"
+              ></iconify-icon>
               <span class="text-sm font-bold">Pause Slideshow</span>
             {/if}
           </button>
@@ -195,7 +194,9 @@
           Ready to experience the future of finance?
         </p>
         <a href="/register" class="inline-block">
-          <button class="btn btn-liquid text-white font-bold text-xl px-12 py-4">
+          <button
+            class="btn btn-liquid text-white font-bold text-xl px-12 py-4"
+          >
             <iconify-icon
               icon="ph:lightning-bold"
               width="28"

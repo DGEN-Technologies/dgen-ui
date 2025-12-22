@@ -8,7 +8,7 @@
   import LocaleSelector from "$comp/LocaleSelector.svelte";
   import ProModeToggle from "$comp/ProModeToggle.svelte";
 
-  let { howItWorks, roadmap, faq, about, user } = $props();
+  let { howItWorks, roadmap, partners, faq, about, user } = $props();
 
   let showMobileMenu = $state(false);
   let header = $state();
@@ -38,15 +38,20 @@
         >
         <button
           class="hover:text-primary transition-colors duration-200"
+          onclick={() => scroll(partners)}>Partners</button
+        >
+        <button
+          class="hover:text-primary transition-colors duration-200"
           onclick={() => scroll(roadmap)}>Roadmap</button
         >
         <button
           class="hover:text-primary transition-colors duration-200"
           onclick={() => scroll(faq)}>{$t("faq.header")}</button
         >
-        <button
-          class="hover:text-primary transition-colors duration-200"
-          >Merch <span class="text-xs text-gray-500 dark:text-gray-400">(coming soon)</span></button
+        <button class="hover:text-primary transition-colors duration-200"
+          >Merch <span class="text-xs text-gray-500 dark:text-gray-400"
+            >(coming soon)</span
+          ></button
         >
         <ProModeToggle />
       {/if}
@@ -104,11 +109,16 @@
         <button onclick={() => mobileMenuButtonClick(roadmap)} class="block"
           >Roadmap</button
         >
+        <button onclick={() => mobileMenuButtonClick(partners)} class="block"
+          >Partners</button
+        >
         <button onclick={() => mobileMenuButtonClick(faq)} class="block"
           >{$t("faq.header")}</button
         >
         <button class="block"
-          >Merch <span class="text-sm text-gray-500 dark:text-gray-400">(coming soon)</span></button
+          >Merch <span class="text-sm text-gray-500 dark:text-gray-400"
+            >(coming soon)</span
+          ></button
         >
         <ProModeToggle />
         {#if !user}

@@ -49,7 +49,10 @@
   >
     {#if mounted}
       <!-- Logo with epic glow effect -->
-      <div class="mb-4 sm:mb-6 relative" in:fade={{ duration: 800, delay: 200 }}>
+      <div
+        class="mb-4 sm:mb-6 relative"
+        in:fade={{ duration: 800, delay: 200 }}
+      >
         <div class="relative pointer-events-none">
           <div
             class="absolute inset-0 bg-gradient-to-r from-dgen-aqua/30 to-dgen-cyan/30 blur-3xl opacity-40"
@@ -64,27 +67,37 @@
           />
         </div>
         <!-- Lightning bolt positioned close under logo -->
-        <div class="absolute left-1/2 transform -translate-x-1/2 pointer-events-none" style="bottom: 1rem;">
+        <div
+          class="absolute left-1/2 transform -translate-x-1/2 pointer-events-none"
+          style="bottom: 1rem;"
+        >
           <div class="relative inline-block sm:bottom-4">
-            <div class="absolute inset-0 bg-yellow-400/30 blur-xl opacity-40 animate-pulse"></div>
-            <span class="relative animate-pulse text-3xl sm:text-4xl md:text-5xl drop-shadow-2xl" style="color: #ffd700; filter: drop-shadow(0 0 20px #ffd700);">⚡</span>
+            <div
+              class="absolute inset-0 bg-yellow-400/30 blur-xl opacity-40 animate-pulse"
+            ></div>
+            <span
+              class="relative animate-pulse text-3xl sm:text-4xl md:text-5xl drop-shadow-2xl"
+              style="color: #ffd700; filter: drop-shadow(0 0 20px #ffd700);"
+              >⚡</span
+            >
           </div>
         </div>
       </div>
 
-
       <!-- Bitcoin Lightning Wallet text below logo -->
       <div
-        class="text-3xl sm:text-4xl md:text-6xl font-bold mb-8 px-2 w-full"
+        class="text-3xl sm:text-4xl md:text-6xl font-bold mb-8 px-2 w-full heading-condensed"
         in:fly={{ y: 30, duration: 800, delay: 400 }}
       >
         <div class="text-center">
-          <span class="gradient-text">
+          <span class="gradient-text font-roboto-condensed">
             THE FUTURE OF MONEY
           </span>
+          <p class="text-lg sm:text-xl md:text-2xl opacity-80 px-2">
+            How This Works, Built Different, Learn About Crypto.
+          </p>
         </div>
       </div>
-
 
       <!-- Epic CTA Buttons -->
       <div
@@ -115,7 +128,11 @@
             class="glass border-2 border-white/30 px-2 py-1 sm:px-8 sm:py-3 text-xs sm:text-lg font-semibold sm:font-bold hover:border-white/60 transition-all duration-300 rounded-xl sm:rounded-3xl hover:scale-105 sm:hover:scale-110 hover:shadow-lg sm:hover:shadow-2xl w-full sm:w-auto"
           >
             <span class="flex items-center gap-1 sm:gap-3 whitespace-nowrap">
-              <iconify-icon icon="ph:sign-in-bold" width="12" class="flex-shrink-0 sm:w-6"></iconify-icon>
+              <iconify-icon
+                icon="ph:sign-in-bold"
+                width="12"
+                class="flex-shrink-0 sm:w-6"
+              ></iconify-icon>
               Sign In
               <iconify-icon
                 icon="ph:arrow-right-bold"
@@ -129,24 +146,25 @@
 
       <!-- Feature badges moved below buttons -->
       <div
-        class="flex flex-wrap justify-center items-center gap-3 mb-8 sm:mb-12 max-w-4xl px-2"
+        class="flex flex-wrap justify-center items-center gap-4 mb-8 sm:mb-12 max-w-4xl px-2"
         in:fly={{ y: 20, duration: 800, delay: 800 }}
       >
-        <div
-          class="px-4 sm:px-6 py-3 sm:py-4 flex items-center min-h-[3rem]"
-        >
-          <span class="text-dgen-aqua font-bold text-sm sm:text-base">⚡ Instant transactions</span>
+        <div class="px-5 sm:px-7 py-4 sm:py-5 flex items-center min-h-[3.5rem]">
+          <span class="text-dgen-aqua font-bold text-base sm:text-xl"
+            >⚡ Instant Transactions</span
+          >
+        </div>
+        <div class="px-5 sm:px-7 py-4 sm:py-5 flex items-center min-h-[3.5rem]">
+          <span class="text-dgen-cyan font-bold text-base sm:text-xl"
+            >💎 Create Account In Seconds (Literally)</span
+          >
         </div>
         <div
-          class="px-4 sm:px-6 py-3 sm:py-4 flex items-center min-h-[3rem]"
+          class="px-5 sm:px-7 py-4 sm:py-5 text-center min-h-[3.5rem] flex items-center"
         >
-          <span class="text-dgen-cyan font-bold text-sm sm:text-base">💎 Open Source</span>
-        </div>
-        <div
-          class="px-4 sm:px-6 py-3 sm:py-4 text-center min-h-[3rem] flex flex-col justify-center"
-        >
-          <div class="text-dgen-aqua font-bold text-sm sm:text-base">🔒 Non-Custodial</div>
-          <div class="text-xs opacity-80 text-dgen-aqua">(your keys, your coins)</div>
+          <div class="text-dgen-aqua font-bold text-base sm:text-xl">
+            🔒 Non-Custodial
+          </div>
         </div>
       </div>
 
@@ -155,14 +173,17 @@
         class="text-center px-4 mb-16 sm:mb-20"
         in:fly={{ y: 20, duration: 800, delay: 900 }}
       >
-        <div class="glass px-3 py-2 sm:px-4 rounded-full border border-yellow-500/50 bg-yellow-500/10 inline-block">
-          <p class="text-yellow-400 font-semibold text-xs sm:text-sm">⚠️ This website/app is in Beta and not finalized. Use at your own risk.</p>
+        <div
+          class="glass px-4 py-3 sm:px-6 rounded-full border border-white/60 bg-white/10 inline-block"
+        >
+          <p class="font-semibold text-sm sm:text-base text-white/90">
+            ⚠️ This website/app is in Beta and not finalized. Use at your own
+            risk.
+          </p>
         </div>
       </div>
-
     {/if}
   </div>
-
 </div>
 
 <style>

@@ -6,7 +6,7 @@
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
   import { rate } from "$lib/store";
-  import { loc, fail, s } from "$lib/utils";
+  import { loc, fail, s, focus } from "$lib/utils";
   import { assetBalances, walletBalance } from "$lib/stores/wallet";
   import { ASSET_IDS } from "$lib/assets";
 
@@ -35,12 +35,12 @@
       const maxAttempts = 50; // 5 seconds max
 
       while (!isConnected() && attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
         attempts++;
       }
 
       if (!isConnected()) {
-        console.warn('[Send Liquid] SDK not ready after timeout');
+        console.warn("[Send Liquid] SDK not ready after timeout");
         isLoadingSDK = false;
         return;
       }
@@ -51,18 +51,25 @@
       console.log("[Send Liquid] Parsed input type:", parsedInput?.type);
 
       // Check if BIP21 has embedded amount
-      if (parsedInput && parsedInput.type === 'liquidAddress') {
+      if (parsedInput && parsedInput.type === "liquidAddress") {
         console.log("[Send Liquid] It's a liquid address");
         console.log("[Send Liquid] Full address object:", parsedInput.address);
 
         const addr = parsedInput.address;
 
         // Try different possible amount fields
-        const possibleAmount = addr?.amountSat || addr?.amount || addr?.payerAmountSat || addr?.receiverAmountSat;
+        const possibleAmount =
+          addr?.amountSat ||
+          addr?.amount ||
+          addr?.payerAmountSat ||
+          addr?.receiverAmountSat;
         console.log("[Send Liquid] Possible amount found:", possibleAmount);
 
         if (possibleAmount) {
-          autoAmount = typeof possibleAmount === 'number' ? possibleAmount : (possibleAmount * 100000000);
+          autoAmount =
+            typeof possibleAmount === "number"
+              ? possibleAmount
+              : possibleAmount * 100000000;
           console.log("[Send Liquid] Auto-navigating with amount:", autoAmount);
 
           // Auto-navigate to confirmation if amount is present
@@ -83,11 +90,11 @@
   // Get balance from wallet store based on asset type
   let balances = $derived($assetBalances || []);
   let balance = $derived(() => {
-    if (asset === 'usdt') {
-      const usdtBal = balances.find(b => b.assetId === ASSET_IDS.USDT);
+    if (asset === "usdt") {
+      const usdtBal = balances.find((b) => b.assetId === ASSET_IDS.USDT);
       return usdtBal?.balanceSat || 0;
     } else {
-      const lbtcBal = balances.find(b => b.assetId === ASSET_IDS.LBTC);
+      const lbtcBal = balances.find((b) => b.assetId === ASSET_IDS.LBTC);
       return lbtcBal?.balanceSat || 0;
     }
   });
@@ -105,7 +112,7 @@
 
     // For USDT, we need to handle the balance differently since Numpad expects
     // the amount in smallest units, but for USDT we show it as decimal
-    if (asset === 'usdt') {
+    if (asset === "usdt") {
       // Set the amount in smallest units (same as balance)
       amount = balance();
     } else {
@@ -131,9 +138,7 @@
     <div class="flex-1"></div>
   </div>
 
-  <h1 class="text-3xl md:text-4xl font-semibold mb-2">
-    Send via Liquid
-  </h1>
+  <h1 class="text-3xl md:text-4xl font-semibold mb-2">Send via Liquid</h1>
 
   <div class="text-xl text-secondary break-all">{address}</div>
 
@@ -144,84 +149,97 @@
       <p class="text-white/60">Initializing wallet...</p>
     </div>
   {:else}
-
-  <!-- Asset Selection Buttons -->
-  <div class="flex gap-3 justify-center">
-    <button
-      type="button"
-      class="btn flex-1 max-w-xs {asset === 'lbtc' ? 'bg-orange-500 hover:bg-orange-600 text-white border-orange-500' : 'btn-outline'}"
-      onclick={() => asset = 'lbtc'}
-    >
-      <iconify-icon icon="cryptocurrency:lbtc" width="24"></iconify-icon>
-      L-BTC
-    </button>
-    <button
-      type="button"
-      class="btn flex-1 max-w-xs {asset === 'usdt' ? 'bg-green-500 hover:bg-green-600 text-white border-green-500' : 'btn-outline'}"
-      onclick={() => asset = 'usdt'}
-    >
-      <iconify-icon icon="cryptocurrency:usdt" width="24"></iconify-icon>
-      USDT
-    </button>
-  </div>
-
-  {#if asset === "usdt"}
-    <div class="glass border-2 border-green-400/30 rounded-xl p-4 space-y-2">
-      <div class="flex items-center justify-center gap-2 text-green-400">
-        <span class="text-2xl font-bold">₮</span>
-        <span class="text-lg">Tether (USDT) on Liquid Network</span>
-      </div>
-      <p class="text-sm text-white/60">
-        You are sending USDT tokens on the Liquid Network
-      </p>
-    </div>
-  {:else}
-    <div class="glass border-2 border-orange-400/30 rounded-xl p-4 space-y-2">
-      <div class="flex items-center justify-center gap-2 text-orange-400">
+    <!-- Asset Selection Buttons -->
+    <div class="flex gap-3 justify-center">
+      <button
+        type="button"
+        class="btn flex-1 max-w-xs {asset === 'lbtc'
+          ? 'bg-orange-500 hover:bg-orange-600 text-white border-orange-500'
+          : 'btn-outline'}"
+        onclick={() => (asset = "lbtc")}
+      >
         <iconify-icon icon="cryptocurrency:lbtc" width="24"></iconify-icon>
-        <span class="text-lg">Liquid Bitcoin (L-BTC)</span>
-      </div>
-      <p class="text-sm text-white/60">
-        You are sending L-BTC on the Liquid Network
-      </p>
+        L-BTC
+      </button>
+      <button
+        type="button"
+        class="btn flex-1 max-w-xs {asset === 'usdt'
+          ? 'bg-green-500 hover:bg-green-600 text-white border-green-500'
+          : 'btn-outline'}"
+        onclick={() => (asset = "usdt")}
+      >
+        <iconify-icon icon="cryptocurrency:usdt" width="24"></iconify-icon>
+        USDT
+      </button>
     </div>
-  {/if}
 
-  <Numpad
-    bind:amount={a}
-    bind:fiat
-    {currency}
-    {submit}
-    bind:rate={$rate}
-    {locale}
-    skipBalanceCheck={true}
-    isUSDT={asset === 'usdt'}
-  />
+    {#if asset === "usdt"}
+      <div class="glass border-2 border-green-400/30 rounded-xl p-4 space-y-2">
+        <div class="flex items-center justify-center gap-2 text-green-400">
+          <span class="text-2xl font-bold">₮</span>
+          <span class="text-lg">Tether (USDT) on Liquid Network</span>
+        </div>
+        <p class="text-sm text-white/60">
+          You are sending USDT tokens on the Liquid Network
+        </p>
+      </div>
+    {:else}
+      <div class="glass border-2 border-orange-400/30 rounded-xl p-4 space-y-2">
+        <div class="flex items-center justify-center gap-2 text-orange-400">
+          <iconify-icon icon="cryptocurrency:lbtc" width="24"></iconify-icon>
+          <span class="text-lg">Liquid Bitcoin (L-BTC)</span>
+        </div>
+        <p class="text-sm text-white/60">
+          You are sending L-BTC on the Liquid Network
+        </p>
+      </div>
+    {/if}
 
-  <div class="flex justify-center gap-2">
-    <button
-      type="button"
-      class="btn !w-auto grow"
-      onclick={setMax}
-      onkeydown={setMax}
-    >
-      {#if asset === 'usdt'}
-        Max {(balance() / 100000000).toFixed(2)} USDT
-      {:else}
-        Max ⚡️{s(balance())}
-      {/if}
-    </button>
+    <Numpad
+      bind:amount={a}
+      bind:fiat
+      {currency}
+      {submit}
+      bind:rate={$rate}
+      {locale}
+      skipBalanceCheck={true}
+      isUSDT={asset === "usdt"}
+    />
 
-    <button
-      use:focus
-      bind:this={submit}
-      type="button"
-      class="btn !w-auto grow {asset === 'usdt' ? 'bg-green-500 hover:bg-green-600 text-white border-green-500' : 'bg-orange-500 hover:bg-orange-600 text-white border-orange-500'}"
-      disabled={!amount || amount <= 0}
-      onclick={() => goto(`/send/liquid/${address}/${amount}?asset=${asset}`)}
-    >
-      {$t("payments.next")}
-    </button>
-  </div>
+    <div class="flex justify-center gap-2">
+      <button
+        type="button"
+        class="btn !w-auto grow"
+        onclick={setMax}
+        onkeydown={setMax}
+      >
+        {#if asset === "usdt"}
+          Max {(balance() / 100000000).toFixed(2)} USDT
+        {:else}
+          Max ⚡️{s(balance())}
+        {/if}
+      </button>
+
+      <button
+        use:focus
+        bind:this={submit}
+        type="button"
+        class="btn !w-auto grow {asset === 'usdt'
+          ? 'bg-green-500 hover:bg-green-600 text-white border-green-500'
+          : 'bg-orange-500 hover:bg-orange-600 text-white border-orange-500'}"
+        disabled={!amount || amount <= 0}
+        onclick={() => goto(`/send/liquid/${address}/${amount}?asset=${asset}`)}
+      >
+        {$t("payments.next")}
+      </button>
+      <button
+        type="button"
+        onclick={() => {
+          console.log(a);
+        }}
+      >
+        check ......</button
+      >
+    </div>
   {/if}
 </div>
