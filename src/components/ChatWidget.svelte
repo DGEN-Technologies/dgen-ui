@@ -26,7 +26,6 @@
   const SEND_COOLDOWN_MS = 300;
   const REQUEST_TIMEOUT_MS = 15000;
   const MAX_MESSAGES_STORED = 200;
-  const MAX_PERSISTED_MESSAGES = 50;
   let lastSendTime = 0;
 
   // State
@@ -315,43 +314,12 @@
     }
 
     const mKey = messagesKeyFor(sessionUserId);
+    storage.removeItem(mKey);
 
-    const savedMessages = storage.getItem(mKey);
     const intro =
       "Hello! I'm DGEN AI Assistant, your guide to this DGEN app. How can I help you today?";
 
     (async () => {
-      if (savedMessages) {
-        try {
-          const parsed = JSON.parse(savedMessages) as Array<
-            ChatMessage & { html?: string }
-          >;
-          // Regenerate sanitized HTML for assistant messages to avoid storing unsafe markup
-          const sanitized = await Promise.all(
-            parsed.map(async (m) => {
-              if (m.role === "assistant") {
-                try {
-                  return {
-                    ...m,
-                    html: await renderSafeMarkdown(m.content),
-                  };
-                } catch {
-                  return { ...m, html: undefined };
-                }
-              }
-              return { ...m, html: undefined };
-            }),
-          );
-          messages = sanitized;
-          return;
-        } catch (e) {
-          console.warn("[DGENChat] Failed to parse stored messages", e);
-          // Clear corrupted state so future writes succeed and surface the issue to the user
-          storage.removeItem(mKey);
-          error =
-            "We had to reset your chat history because it became unreadable. You can continue chatting normally.";
-        }
-      }
       messages = [
         {
           id: "assistant-intro",
@@ -377,22 +345,6 @@
       }
       window.clearTimeout(promptTimer);
     };
-  });
-
-  // Persist messages locally whenever they change
-  $effect(() => {
-    if (typeof window === "undefined") return;
-    const storage = window.sessionStorage;
-    const mKey = messagesKeyFor(sessionUserId);
-    // Store only safe fields and cap history
-    const recent = messages.slice(-MAX_PERSISTED_MESSAGES);
-    const safeMessages = recent.map((m) => ({
-      id: m.id,
-      role: m.role,
-      content: m.content,
-      createdAt: m.createdAt,
-    }));
-    storage.setItem(mKey, JSON.stringify(safeMessages));
   });
 
   // Auto-scroll to bottom
