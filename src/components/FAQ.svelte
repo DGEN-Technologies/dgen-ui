@@ -22,7 +22,7 @@
       category: "Education",
       question: "What is the Lightning Network?",
       answer:
-        "Lightning is Bitcoin's layer-2 scaling solution enabling instant, nearly-free micropayments. It creates payment channels between users, allowing thousands of transactions per second while maintaining Bitcoin's security. Perfect for everyday purchases and streaming payments.",
+        "Lightning is Bitcoin's layer-2 scaling solution enabling instant, nearly-free micropayments. It creates payment channels between users, allowing thousands of transactions per second while maintaining Bitcoin's security. Good for everyday purchases and streaming payments.",
       icon: "ph:lightning-bolt",
       emoji: "⚡",
     },
@@ -162,8 +162,8 @@
           <span class="holographic">FAQ</span>
         </h2>
         <p class="text-2xl opacity-80 mb-8">
-          Everything you need to know about DGEN, plus educational
-          resources to learn about Crypto
+          Everything you need to know about DGEN, plus educational resources to
+          learn about Crypto
         </p>
 
         <!-- Search Bar -->
