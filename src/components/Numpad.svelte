@@ -45,20 +45,6 @@
     return { symbol: sym, position: pos, decimal };
   }
 
-  // Debug effect to check currency formatting
-  $effect(() => {
-    console.log("Currency formatting:", {
-      fiat,
-      isUSDT,
-      symbol,
-      position,
-      decimalChar,
-      displayValue,
-      amount,
-      rate: $rate,
-    });
-  });
-
   // Update currency info when locale/currency changes
   $effect(() => {
     const info = getCurrencyInfo(locale, currency);

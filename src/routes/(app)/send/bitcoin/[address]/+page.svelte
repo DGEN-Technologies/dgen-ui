@@ -82,14 +82,6 @@
       >
         {$t("payments.next")}
       </button>
-      <!-- <button
-        type="button"
-        onclick={() => {
-          console.log(a);
-        }}
-      >
-        check ......</button
-      > -->
     </form>
   </div>
 </div>

@@ -22,7 +22,7 @@ const config = {
         "script-src": ["self", "wasm-unsafe-eval"], // wasm-unsafe-eval required for Breez SDK WebAssembly
         "style-src": ["self", "unsafe-inline", "https://fonts.googleapis.com"], // Required for Svelte scoped styles and Google Fonts
         "img-src": ["self", "data:", "https:", "http://localhost:*"],
-        "font-src": ["self", "data:"],
+        "font-src": ["self", "data:", "https://fonts.gstatic.com"],
         "connect-src": [
           "self",
           "https://*.railway.app",
