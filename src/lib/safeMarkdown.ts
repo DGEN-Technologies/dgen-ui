@@ -41,7 +41,7 @@ export async function renderSafeMarkdown(markdown: string): Promise<string> {
     const cleanHtml = DOMPurify.sanitize(rawHtml, {
         ALLOWED_TAGS: ["p", "br", "strong", "em", "a", "ul", "ol", "li", "code", "pre"],
         ALLOWED_ATTR: ["href", "target", "rel"],
-        ALLOWED_URI_REGEXP: /^(https?:)?\/\//i,
+        ALLOWED_URI_REGEXP: /^https?:\/\//i,
     });
 
     return cleanHtml;

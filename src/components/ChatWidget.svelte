@@ -13,6 +13,12 @@
     html?: string;
   }
 
+  interface ChatResponse {
+    user_id?: string;
+    session_token?: string;
+    answer?: string;
+  }
+
   // Props
   interface Props {
     apiBase: string;
@@ -70,10 +76,7 @@
   }
 
   function closeDisclaimer() {
-    if (!disclaimerAgreed) {
-      error = "Please confirm the disclaimer before using the chat.";
-      return;
-    }
+    disclaimerAgreed = true;
     error = null;
     showDisclaimer = false;
   }
@@ -196,9 +199,9 @@
         throw new Error(`HTTP_${res.status}`);
       }
 
-      let data: any;
+      let data: ChatResponse;
       try {
-        data = await res.json();
+        data = (await res.json()) as ChatResponse;
       } catch (parseErr) {
         throw new Error("INVALID_JSON");
       }
@@ -229,7 +232,11 @@
         role: "assistant",
         content: answer,
         createdAt: Date.now(),
-        html: await renderSafeMarkdown(answer),
+        html: await renderSafeMarkdown(answer).catch((err) => {
+          // Fail closed: drop HTML if markdown render or sanitize fails
+          console.warn("renderSafeMarkdown failed", err);
+          return undefined;
+        }),
       };
       appendMessage(assistantMessage);
     } catch (err) {
@@ -300,7 +307,8 @@
     const storage = window.sessionStorage;
 
     const storedUserId =
-      storage.getItem(userKeyFor(sessionUserId)) ?? storage.getItem(userKeyFor());
+      storage.getItem(userKeyFor(sessionUserId)) ??
+      storage.getItem(userKeyFor());
     if (storedUserId) {
       sessionUserId = storedUserId;
     } else if (sessionUserId) {
@@ -308,7 +316,8 @@
     }
 
     const storedToken =
-      storage.getItem(tokenKeyFor(sessionUserId)) ?? storage.getItem(tokenKeyFor());
+      storage.getItem(tokenKeyFor(sessionUserId)) ??
+      storage.getItem(tokenKeyFor());
     if (storedToken) {
       sessionToken = storedToken;
     }
@@ -326,7 +335,11 @@
           role: "assistant",
           content: intro,
           createdAt: Date.now(),
-          html: await renderSafeMarkdown(intro),
+          html: await renderSafeMarkdown(intro).catch((err) => {
+            // Fail closed: drop HTML if markdown render or sanitize fails
+            console.warn("renderSafeMarkdown failed", err);
+            return undefined;
+          }),
         },
       ];
     })();
@@ -584,23 +597,15 @@
           class="decline-button"
           onclick={declineDisclaimer}
         >
-          I don’t agree, close chat
+          Decline and close chat
         </button>
-        <label class="disclaimer-agree">
-          <input
-            type="checkbox"
-            bind:checked={disclaimerAgreed}
-            aria-label="I agree to the disclaimer"
-          />
-          <span>I agree</span>
-        </label>
         <button
           type="button"
           class="back-button"
+          bind:this={disclaimerCloseRef}
           onclick={closeDisclaimer}
-          disabled={!disclaimerAgreed}
         >
-          Return to chat
+          Agree and continue
         </button>
       </div>
     </div>
@@ -982,29 +987,6 @@
   .disclaimer-actions .back-button:active {
     transform: translateY(0);
     opacity: 0.9;
-  }
-
-  .disclaimer-actions .back-button:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    box-shadow: none;
-    transform: none;
-  }
-
-  .disclaimer-agree {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    color: #e5e7eb;
-    cursor: pointer;
-  }
-
-  .disclaimer-agree input {
-    width: 18px;
-    height: 18px;
-    accent-color: #1e6ae1;
-    cursor: pointer;
   }
 
   .decline-button {
