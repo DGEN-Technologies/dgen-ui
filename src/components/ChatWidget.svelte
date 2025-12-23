@@ -898,6 +898,7 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
+    min-height: 0;
   }
 
   .disclaimer-header {
@@ -930,10 +931,14 @@
   }
 
   .disclaimer-body {
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
     padding-right: 6px;
     line-height: 1.55;
     color: #d1d5db;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
 
   .disclaimer-body p {
