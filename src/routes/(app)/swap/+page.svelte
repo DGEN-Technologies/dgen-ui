@@ -16,9 +16,18 @@
   </div>
 
   <!-- Widget Container -->
-  <div class="flex-1 bg-transparent rounded-3xl overflow-hidden relative min-h-[617px] min-[392px]:min-h-[536px] w-full max-w-[404px] mx-auto">
     {#if env.PUBLIC_SWAPSPACE_WIDGET_URL}
-      {#if hasError}
+      {@const isValidUrl = env.PUBLIC_SWAPSPACE_WIDGET_URL.startsWith('https://swapspace.co/')}
+      <div class="flex-1 bg-transparent rounded-3xl overflow-hidden relative min-h-[617px] min-[392px]:min-h-[536px] w-full max-w-[404px] mx-auto">
+        {#if !isValidUrl}
+           <div class="flex flex-col items-center justify-center h-full text-center p-6 gap-4">
+            <iconify-icon icon="ph:warning-circle-bold" class="text-error" width="48"></iconify-icon>
+            <div class="flex flex-col gap-2">
+              <p class="text-lg font-bold text-error">Security Warning</p>
+              <p class="text-sm opacity-60">Invalid SwapSpace URL configuration. <br>URL must start with https://swapspace.co/</p>
+            </div>
+          </div>
+        {:else if hasError}
         <div class="flex flex-col items-center justify-center h-full text-center p-6 gap-4">
           <iconify-icon icon="ph:warning-circle-bold" class="text-error" width="48"></iconify-icon>
           <div class="flex flex-col gap-2">
@@ -49,8 +58,8 @@
           referrerpolicy="no-referrer-when-downgrade"
         ></iframe>
       {/if}
+      </div>
     {:else}
       <div class="flex items-center justify-center h-full text-error">Swap feature not configured</div>
     {/if}
-  </div>
 </div>
