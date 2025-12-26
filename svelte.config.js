@@ -62,7 +62,7 @@ const config = {
         // Security: Restrict media sources
         'media-src': ['self'],
         // Security: Prevent frame injections (iframe src)
-        'frame-src': ['none'],
+        'frame-src': ['self', 'https://swapspace.co/'],
         // Security: Require HTTPS for all requests (upgrade insecure)
         // Disabled in development to allow localhost HTTP
         'upgrade-insecure-requests': process.env.NODE_ENV === 'production'
