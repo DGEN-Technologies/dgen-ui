@@ -44,6 +44,25 @@
   // The SDK already calculates the total balance across all assets
   let totalBalance = $derived(balance);
 
+  let refreshing = $state(false);
+
+  async function refreshBalance(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (refreshing) return;
+
+    refreshing = true;
+    try {
+      // await walletStore.refresh();
+      // small UX delay to let the user see the animation
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    } catch (e) {
+      console.error(e);
+    } finally {
+      refreshing = false;
+    }
+  }
+
   onMount(() => {
     mounted = true;
   });
@@ -131,6 +150,20 @@
         ></div>
       {/each}
     {/if}
+
+    <!-- Refresh Button -->
+    <button
+      class="absolute z-10 top-6 right-6 size-10 flex items-center justify-center rounded-full text-white/20 hover:text-white hover:bg-white/10 transition-all duration-300"
+      onclick={refreshBalance}
+      title="Refresh Balance"
+    >
+      <iconify-icon
+        icon="ph:arrow-clockwise"
+        width="20"
+        height="20"
+        class={refreshing ? "animate-spin" : ""}
+      ></iconify-icon>
+    </button>
 
     <div class="relative z-10">
       <!-- Centered Balance Display -->

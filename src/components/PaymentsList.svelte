@@ -10,7 +10,7 @@
     transactionStore,
     currentTransactionPage,
     isLoadingTransactions,
-    initTransactionEventHandling
+    initTransactionEventHandling,
   } from "$lib/transactionService";
   import Avatar from "$comp/Avatar.svelte";
   import { unitPreference } from "$lib/store";
@@ -50,12 +50,12 @@
         const { isConnected } = await import("$lib/walletService");
         let attempts = 0;
         while (!isConnected() && attempts < 20) {
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise((resolve) => setTimeout(resolve, 500));
           attempts++;
         }
         return isConnected();
       } catch (error) {
-        console.warn('[PaymentsList] Error checking SDK connection:', error);
+        console.warn("[PaymentsList] Error checking SDK connection:", error);
         return false;
       }
     };
@@ -67,16 +67,18 @@
       try {
         const walletService = await import("$lib/walletService");
         const fiatRates = await walletService.fetchFiatRates();
-        const usdRate = fiatRates.find(r => r.coin.toUpperCase() === currency.toUpperCase());
+        const usdRate = fiatRates.find(
+          (r) => r.coin.toUpperCase() === currency.toUpperCase(),
+        );
         if (usdRate) rate = usdRate.value;
       } catch (error) {
-        console.warn('[PaymentsList] Failed to fetch fiat rates:', error);
+        console.warn("[PaymentsList] Failed to fetch fiat rates:", error);
       }
 
       // Event handling is now initialized in layout.svelte to catch early dataSynced events
       // Wait for initial sync to complete before loading transactions
       // This ensures we get proper payment metadata (Lightning, Bitcoin) instead of placeholder "liquid" type
-      const { walletStore } = await import('$lib/stores/wallet');
+      const { walletStore } = await import("$lib/stores/wallet");
 
       // Check if initial sync is already complete
       const currentState = get(walletStore);
@@ -102,10 +104,13 @@
       try {
         await transactionStore.loadTransactions(true);
       } catch (error) {
-        console.error('[PaymentsList] Failed to load initial transactions:', error);
+        console.error(
+          "[PaymentsList] Failed to load initial transactions:",
+          error,
+        );
       }
     } else {
-      console.warn('[PaymentsList] SDK not ready, showing empty state');
+      console.warn("[PaymentsList] SDK not ready, showing empty state");
     }
 
     isInitialLoad = false;
@@ -120,7 +125,7 @@
             await transactionStore.loadTransactions(true);
           }
         } catch (error) {
-          console.warn('[PaymentsList] Error during auto-refresh:', error);
+          console.warn("[PaymentsList] Error during auto-refresh:", error);
         }
       }
     }, 30000);
@@ -136,9 +141,9 @@
     toTimestamp;
 
     const filter = {
-      type: typeFilter !== 'all' ? typeFilter : undefined,
+      type: typeFilter !== "all" ? typeFilter : undefined,
       startDate: fromTimestamp ? new Date(fromTimestamp * 1000) : undefined,
-      endDate: toTimestamp ? new Date(toTimestamp * 1000) : undefined
+      endDate: toTimestamp ? new Date(toTimestamp * 1000) : undefined,
     };
 
     // Apply the filter to store
@@ -152,7 +157,7 @@
   $effect(() => {
     transactionStore.setPagination({
       page: currentPage,
-      limit: itemsPerPage
+      limit: itemsPerPage,
     });
   });
 
@@ -167,10 +172,9 @@
 
   // Apply date filter from dialog
   const applyDateFilter = () => {
-
     if (tempFromDate) {
       // Parse date string as local time (YYYY-MM-DD format)
-      const [year, month, day] = tempFromDate.split('-').map(Number);
+      const [year, month, day] = tempFromDate.split("-").map(Number);
       const fromDate = new Date(year, month - 1, day, 0, 0, 0, 0);
       fromTimestamp = Math.floor(fromDate.getTime() / 1000);
     } else {
@@ -179,7 +183,7 @@
 
     if (tempToDate) {
       // Parse date string as local time (YYYY-MM-DD format)
-      const [year, month, day] = tempToDate.split('-').map(Number);
+      const [year, month, day] = tempToDate.split("-").map(Number);
       const toDate = new Date(year, month - 1, day, 23, 59, 59, 999);
       toTimestamp = Math.floor(toDate.getTime() / 1000);
     } else {
@@ -191,11 +195,11 @@
 
   // Format date range for display
   const formatDateRange = () => {
-    if (!fromTimestamp && !toTimestamp) return '';
+    if (!fromTimestamp && !toTimestamp) return "";
 
     const formatDate = (timestamp) => {
       const date = new Date(timestamp * 1000);
-      return format(date, 'MMM d, yyyy', { locale });
+      return format(date, "MMM d, yyyy", { locale });
     };
 
     if (fromTimestamp && toTimestamp) {
@@ -210,12 +214,11 @@
   // Format payment for display
   const formatPayment = (payment) => {
     // Detect payment type first to determine which amount field to use
-    let paymentIcon = 'lightning'; // default
-    let paymentTypeLabel = 'Lightning';
+    let paymentIcon = "lightning"; // default
+    let paymentTypeLabel = "Lightning";
     let assetType = null; // null for non-Liquid, 'lbtc' or 'usdt' for Liquid
     let isUSDT = false;
     const details = payment.details; // Define details at function scope
-
 
     if (details) {
       const detailsType = details.type;
@@ -226,58 +229,62 @@
       // - type="liquid": Direct Liquid payment (has destination, assetId)
 
       // Check the discriminated union type field
-      if (detailsType === 'bitcoin') {
+      if (detailsType === "bitcoin") {
         // Bitcoin on-chain payment (swap from Liquid to BTC)
-        paymentIcon = 'bitcoin';
-        paymentTypeLabel = 'Bitcoin';
-      }
-      else if (detailsType === 'lightning') {
+        paymentIcon = "bitcoin";
+        paymentTypeLabel = "Bitcoin";
+      } else if (detailsType === "lightning") {
         // Lightning payment (swap from/to Liquid)
-        paymentIcon = 'lightning';
-        paymentTypeLabel = 'Lightning';
-      }
-      else if (detailsType === 'liquid') {
+        paymentIcon = "lightning";
+        paymentTypeLabel = "Lightning";
+      } else if (detailsType === "liquid") {
         // Direct Liquid payment
-        paymentIcon = 'liquid';
+        paymentIcon = "liquid";
 
         // Check if it's USDT or LBTC based on assetId
-        if (details.assetId === 'ce091c998b83c78bb71a632313ba3760f1763d9cfcffae02258ffa9865a37bd2') {
-          paymentTypeLabel = 'USDT';
-          assetType = 'usdt';
+        if (
+          details.assetId ===
+          "ce091c998b83c78bb71a632313ba3760f1763d9cfcffae02258ffa9865a37bd2"
+        ) {
+          paymentTypeLabel = "USDT";
+          assetType = "usdt";
           isUSDT = true;
         } else {
-          paymentTypeLabel = 'Liquid';
-          assetType = 'lbtc';
+          paymentTypeLabel = "Liquid";
+          assetType = "lbtc";
         }
       }
       // Fallback detection if type is missing (shouldn't happen but just in case)
       else {
         // Try to infer from other fields
-        if ('bitcoinAddress' in details || 'swapId' in details) {
+        if ("bitcoinAddress" in details || "swapId" in details) {
           // Check if it has bitcoin-specific fields
-          if ('bitcoinAddress' in details) {
-            paymentIcon = 'bitcoin';
-            paymentTypeLabel = 'Bitcoin';
+          if ("bitcoinAddress" in details) {
+            paymentIcon = "bitcoin";
+            paymentTypeLabel = "Bitcoin";
           } else {
             // Has swapId but no bitcoin address - likely Lightning
-            paymentIcon = 'lightning';
-            paymentTypeLabel = 'Lightning';
+            paymentIcon = "lightning";
+            paymentTypeLabel = "Lightning";
           }
-        } else if ('destination' in details) {
+        } else if ("destination" in details) {
           // Has destination - likely Liquid
-          paymentIcon = 'liquid';
-          if (details.assetId === 'ce091c998b83c78bb71a632313ba3760f1763d9cfcffae02258ffa9865a37bd2') {
-            paymentTypeLabel = 'USDT';
-            assetType = 'usdt';
+          paymentIcon = "liquid";
+          if (
+            details.assetId ===
+            "ce091c998b83c78bb71a632313ba3760f1763d9cfcffae02258ffa9865a37bd2"
+          ) {
+            paymentTypeLabel = "USDT";
+            assetType = "usdt";
             isUSDT = true;
           } else {
-            paymentTypeLabel = 'Liquid';
-            assetType = 'lbtc';
+            paymentTypeLabel = "Liquid";
+            assetType = "lbtc";
           }
         } else {
           // Default fallback to Lightning
-          paymentIcon = 'lightning';
-          paymentTypeLabel = 'Lightning';
+          paymentIcon = "lightning";
+          paymentTypeLabel = "Lightning";
         }
       }
     }
@@ -288,26 +295,32 @@
       // SDK provides the actual USDT amount as a decimal in assetInfo.amount
       // Convert to smallest unit (multiply by 10^8)
       const usdtAmount = Math.round(details.assetInfo.amount * 100000000);
-      amount = payment.paymentType === 'receive' ? usdtAmount : -usdtAmount;
+      amount = payment.paymentType === "receive" ? usdtAmount : -usdtAmount;
     } else {
-      amount = payment.paymentType === 'receive' ? payment.amountSat : -payment.amountSat;
+      amount =
+        payment.paymentType === "receive"
+          ? payment.amountSat
+          : -payment.amountSat;
     }
 
     // Get timestamp - SDK uses paymentTime in seconds
     const timestamp = payment.paymentTime || payment.timestamp || 0;
-    let formattedTime = '--';
-    let formattedDate = '--';
+    let formattedTime = "--";
+    let formattedDate = "--";
 
     if (timestamp && timestamp > 0) {
       // Convert to milliseconds if in seconds (less than year 2200 in seconds)
-      const date = timestamp > 10000000000 ? new Date(timestamp) : new Date(timestamp * 1000);
+      const date =
+        timestamp > 10000000000
+          ? new Date(timestamp)
+          : new Date(timestamp * 1000);
       formattedTime = format(date, "h:mm a", { locale });
       formattedDate = format(date, "MMM d, yy", { locale });
     }
 
     // For USDT, format amount differently
     let displayValue, fiatValue;
-    if (assetType === 'usdt') {
+    if (assetType === "usdt") {
       // USDT amounts are in smallest unit (like sats), divide by 10^8
       const usdtAmount = Math.abs(amount) / 100000000;
       displayValue = `${usdtAmount.toFixed(2)} USDT`;
@@ -326,13 +339,13 @@
       paymentIcon,
       paymentTypeLabel,
       assetType,
-      isLightning: paymentIcon === 'lightning',
+      isLightning: paymentIcon === "lightning",
       formattedTime,
       formattedDate,
       fiatAmount: fiatValue,
-      btcAmount: assetType === 'usdt' ? null : btc(Math.abs(amount)),
+      btcAmount: assetType === "usdt" ? null : btc(Math.abs(amount)),
       satsAmount: displayValue,
-      isUsdt: assetType === 'usdt'
+      isUsdt: assetType === "usdt",
     };
   };
 
@@ -354,37 +367,38 @@
   const exportCSV = async () => {
     // Get ALL transactions from the store
     const storeState = get(transactionStore);
-    const allTx = storeState.filteredTransactions.length > 0
-      ? storeState.filteredTransactions
-      : storeState.allTransactions;
+    const allTx =
+      storeState.filteredTransactions.length > 0
+        ? storeState.filteredTransactions
+        : storeState.allTransactions;
 
     if (allTx.length === 0) {
-      alert('No transactions to export');
+      alert("No transactions to export");
       return;
     }
 
     // Get current fiat rate for better accuracy
-    const currentRate = storeState.fiatRates.get('USD') || 50000;
+    const currentRate = storeState.fiatRates.get("USD") || 50000;
 
     const headers = [
-      'Date',
-      'Time',
-      'Type',
-      'Asset',
-      'Direction',
-      'Status',
-      'Amount (sats)',
-      'Fee (sats)',
-      'Net Amount (sats)',
-      'Amount (USD)',
-      'Description',
-      'Payment Hash',
-      'Preimage',
-      'Destination',
-      'Asset ID'
+      "Date",
+      "Time",
+      "Type",
+      "Asset",
+      "Direction",
+      "Status",
+      "Amount (sats)",
+      "Fee (sats)",
+      "Net Amount (sats)",
+      "Amount (USD)",
+      "Description",
+      "Payment Hash",
+      "Preimage",
+      "Destination",
+      "Asset ID",
     ];
 
-    const rows = allTx.map(tx => {
+    const rows = allTx.map((tx) => {
       // Get timestamp - Breez SDK uses paymentTime in seconds
       const timestamp = tx.paymentTime || tx.timestamp || 0;
       let date = null;
@@ -395,47 +409,50 @@
       }
 
       // Detect payment type and asset (matching formatPayment logic)
-      let typeDisplay = 'Lightning';
+      let typeDisplay = "Lightning";
       let assetType = null;
-      let assetLabel = '';
+      let assetLabel = "";
       let isUSDT = false;
-      let assetId = '';
+      let assetId = "";
 
       if (tx.details) {
         const detailsType = tx.details.type;
-        if (detailsType === 'bitcoin') {
-          typeDisplay = 'Bitcoin';
-          assetLabel = 'BTC';
-        } else if (detailsType === 'lightning') {
-          typeDisplay = 'Lightning';
-          assetLabel = 'BTC';
-        } else if (detailsType === 'liquid') {
-          typeDisplay = 'Liquid';
+        if (detailsType === "bitcoin") {
+          typeDisplay = "Bitcoin";
+          assetLabel = "BTC";
+        } else if (detailsType === "lightning") {
+          typeDisplay = "Lightning";
+          assetLabel = "BTC";
+        } else if (detailsType === "liquid") {
+          typeDisplay = "Liquid";
 
           // Check if it's USDT or LBTC based on assetId
           if (tx.details.assetId) {
             assetId = tx.details.assetId;
             // USDT asset ID
-            if (tx.details.assetId === 'ce091c998b83c78bb71a632313ba3760f1763d9cfcffae02258ffa9865a37bd2') {
-              assetType = 'usdt';
-              assetLabel = 'USDT';
+            if (
+              tx.details.assetId ===
+              "ce091c998b83c78bb71a632313ba3760f1763d9cfcffae02258ffa9865a37bd2"
+            ) {
+              assetType = "usdt";
+              assetLabel = "USDT";
               isUSDT = true;
             } else {
-              assetType = 'lbtc';
-              assetLabel = 'L-BTC';
+              assetType = "lbtc";
+              assetLabel = "L-BTC";
             }
           } else {
-            assetType = 'lbtc';
-            assetLabel = 'L-BTC';
+            assetType = "lbtc";
+            assetLabel = "L-BTC";
           }
         }
         // Fallback detection
         else if (tx.details.swapInfo || tx.details.bitcoinAddress) {
-          typeDisplay = 'Bitcoin';
-          assetLabel = 'BTC';
-        } else if (tx.details.destination?.startsWith('lq')) {
-          typeDisplay = 'Liquid';
-          assetLabel = 'L-BTC';
+          typeDisplay = "Bitcoin";
+          assetLabel = "BTC";
+        } else if (tx.details.destination?.startsWith("lq")) {
+          typeDisplay = "Liquid";
+          assetLabel = "L-BTC";
         }
       }
 
@@ -445,27 +462,34 @@
       if (isUSDT && tx.details?.assetInfo?.amount !== undefined) {
         // USDT: use assetInfo.amount (already in USDT decimal)
         const usdtAmount = tx.details.assetInfo.amount;
-        amount = tx.paymentType === 'receive' ? usdtAmount : -usdtAmount;
+        amount = tx.paymentType === "receive" ? usdtAmount : -usdtAmount;
         fee = tx.feesSat || 0; // Fee is still in sats
         netAmount = amount; // USDT amount stays as-is
         fiatAmount = Math.abs(usdtAmount); // USDT is pegged to USD
       } else {
         // BTC/Lightning/L-BTC: use amountSat
-        amount = tx.paymentType === 'receive' ? tx.amountSat : -tx.amountSat;
+        amount = tx.paymentType === "receive" ? tx.amountSat : -tx.amountSat;
         fee = tx.feesSat || 0;
-        netAmount = tx.paymentType === 'receive' ? amount : amount - fee;
+        netAmount = tx.paymentType === "receive" ? amount : amount - fee;
         fiatAmount = (Math.abs(amount) / sats) * currentRate;
       }
 
       // Format direction
-      const direction = tx.paymentType === 'receive' ? 'Received' : 'Sent';
+      const direction = tx.paymentType === "receive" ? "Received" : "Sent";
 
       // Format status
-      const status = tx.status === 'complete' ? 'Complete' : tx.status === 'pending' ? 'Pending' : tx.status === 'failed' ? 'Failed' : tx.status;
+      const status =
+        tx.status === "complete"
+          ? "Complete"
+          : tx.status === "pending"
+            ? "Pending"
+            : tx.status === "failed"
+              ? "Failed"
+              : tx.status;
 
       return [
-        date ? format(date, 'yyyy-MM-dd', { locale }) : '',
-        date ? format(date, 'HH:mm:ss', { locale }) : '',
+        date ? format(date, "yyyy-MM-dd", { locale }) : "",
+        date ? format(date, "HH:mm:ss", { locale }) : "",
         typeDisplay,
         assetLabel,
         direction,
@@ -474,23 +498,23 @@
         fee,
         netAmount,
         fiatAmount.toFixed(2),
-        (tx.details?.description || tx.description || '').replace(/"/g, '""'),
-        tx.details?.paymentHash || tx.paymentHash || '',
-        tx.details?.preimage || '',
-        tx.details?.destination || '',
-        assetId
+        (tx.details?.description || tx.description || "").replace(/"/g, '""'),
+        tx.details?.paymentHash || tx.paymentHash || "",
+        tx.details?.preimage || "",
+        tx.details?.destination || "",
+        assetId,
       ];
     });
 
     const csv = [headers, ...rows]
-      .map(row => row.map(cell => `"${cell}"`).join(','))
-      .join('\n');
+      .map((row) => row.map((cell) => `"${cell}"`).join(","))
+      .join("\n");
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
-    link.download = `dgen_transactions_${format(new Date(), 'yyyyMMdd_HHmmss')}.csv`;
+    link.download = `dgen_transactions_${format(new Date(), "yyyyMMdd_HHmmss")}.csv`;
     link.click();
     URL.revokeObjectURL(url);
 
@@ -502,28 +526,35 @@
   let pageData = $derived($currentTransactionPage);
   let payments = $derived(
     pageData?.transactions
-      .filter(p => {
+      .filter((p) => {
         // Filter out transactions with 0 or very small amounts
         // Check both the original amountSat and any USDT amounts
-        if (p.details?.type === 'liquid' && p.details?.assetInfo?.amount !== undefined) {
+        if (
+          p.details?.type === "liquid" &&
+          p.details?.assetInfo?.amount !== undefined
+        ) {
           // For USDT/Liquid, check the assetInfo amount
           return p.details.assetInfo.amount > 0;
         }
         // For BTC/Lightning, check amountSat
         return p.amountSat > 0;
       })
-      .map(formatPayment) || []
+      .map(formatPayment) || [],
   );
   let totalPages = $derived(pageData?.totalPages || 0);
   let isLoading = $derived($isLoadingTransactions);
 </script>
 
 <div class="min-h-screen">
-  <div class="container mx-auto max-w-4xl px-2 sm:px-4 py-3 sm:py-6 space-y-3 sm:space-y-6">
+  <div
+    class="container mx-auto max-w-4xl px-2 sm:px-4 py-3 sm:py-6 space-y-3 sm:space-y-6"
+  >
     <!-- Header -->
     <div class="text-center mb-3 sm:mb-6">
       <h1 class="text-2xl sm:text-4xl md:text-5xl font-bold mb-2">
-        <span class="bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
+        <span
+          class="bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent"
+        >
           Transaction History
         </span>
       </h1>
@@ -536,21 +567,48 @@
         <div class="flex items-center gap-1.5 text-xs">
           <!-- Type Filter Dropdown -->
           <div class="dropdown dropdown-bottom shrink-0">
-            <label tabindex="0" class="inline-flex items-center gap-1 px-2 py-1 bg-base-300/50 border border-white/10 hover:bg-base-300 rounded cursor-pointer transition-colors">
+            <label
+              tabindex="0"
+              class="inline-flex items-center gap-1 px-2 py-1 bg-base-300/50 border border-white/10 hover:bg-base-300 rounded cursor-pointer transition-colors"
+            >
               <iconify-icon icon="ph:funnel" width="12"></iconify-icon>
-              <span>{typeFilter === 'all' ? 'All' : typeFilter === 'send' ? 'Sent' : 'Received'}</span>
+              <span
+                >{typeFilter === "all"
+                  ? "All"
+                  : typeFilter === "send"
+                    ? "Sent"
+                    : "Received"}</span
+              >
               <iconify-icon icon="ph:caret-down" width="10"></iconify-icon>
             </label>
-            <ul tabindex="0" class="dropdown-content menu p-1 shadow-xl bg-base-300 rounded-box w-32 mt-1 border border-white/10 z-50 text-xs">
-              <li><button onclick={() => typeFilter = 'all'} class:active={typeFilter === 'all'}>All</button></li>
-              <li><button onclick={() => typeFilter = 'send'} class:active={typeFilter === 'send'}>Sent</button></li>
-              <li><button onclick={() => typeFilter = 'receive'} class:active={typeFilter === 'receive'}>Received</button></li>
+            <ul
+              tabindex="0"
+              class="dropdown-content menu p-1 shadow-xl bg-base-300 rounded-box w-32 mt-1 border border-white/10 z-50 text-xs"
+            >
+              <li>
+                <button
+                  onclick={() => (typeFilter = "all")}
+                  class:active={typeFilter === "all"}>All</button
+                >
+              </li>
+              <li>
+                <button
+                  onclick={() => (typeFilter = "send")}
+                  class:active={typeFilter === "send"}>Sent</button
+                >
+              </li>
+              <li>
+                <button
+                  onclick={() => (typeFilter = "receive")}
+                  class:active={typeFilter === "receive"}>Received</button
+                >
+              </li>
             </ul>
           </div>
 
           <!-- Calendar Date Picker -->
           <button
-            onclick={() => showDateDialog = true}
+            onclick={() => (showDateDialog = true)}
             class="inline-flex items-center gap-1 px-2 py-1 bg-base-300/50 border border-white/10 hover:bg-base-300 rounded transition-colors shrink-0"
           >
             <iconify-icon icon="ph:calendar" width="12"></iconify-icon>
@@ -559,7 +617,9 @@
 
           <!-- Active Date Filter Display -->
           {#if fromTimestamp || toTimestamp}
-            <div class="inline-flex items-center gap-1 px-2 py-1 bg-base-300/50 border border-white/10 rounded text-base-content">
+            <div
+              class="inline-flex items-center gap-1 px-2 py-1 bg-base-300/50 border border-white/10 rounded text-base-content"
+            >
               <iconify-icon icon="ph:calendar" width="12"></iconify-icon>
               <span>{formatDateRange()}</span>
               <button onclick={clearDateFilter} class="hover:text-error ml-0.5">
@@ -597,18 +657,34 @@
         </div>
 
         <!-- Currency Toggle (3 options: Fiat/BTC/Sats) -->
-        <div class="flex items-center justify-center border-t border-white/10 pt-2.5">
+        <div
+          class="flex items-center justify-center border-t border-white/10 pt-2.5"
+        >
           <div class="flex items-center gap-2 text-xs">
             <span class="text-white/50 font-medium">Display:</span>
-            <div class="relative bg-black/30 backdrop-blur-xl rounded-full p-0.5 border border-white/10">
+            <div
+              class="relative bg-black/30 backdrop-blur-xl rounded-full p-0.5 border border-white/10"
+            >
               <div
-                class="absolute top-0.5 bottom-0.5 bg-gradient-to-r {unit === currency ? 'from-green-400 to-emerald-500' : unit === 'btc' ? 'from-orange-400 to-yellow-500' : 'from-dgen-aqua to-dgen-cyan'} rounded-full transition-all duration-300"
-                style="width: calc(33.333% - 2px); left: {unit === currency ? '2px' : unit === 'btc' ? 'calc(33.333% + 0px)' : 'calc(66.666% - 2px)'};"
+                class="absolute top-0.5 bottom-0.5 bg-gradient-to-r {unit ===
+                currency
+                  ? 'from-green-400 to-emerald-500'
+                  : unit === 'btc'
+                    ? 'from-orange-400 to-yellow-500'
+                    : 'from-dgen-aqua to-dgen-cyan'} rounded-full transition-all duration-300"
+                style="width: calc(33.333% - 2px); left: {unit === currency
+                  ? '2px'
+                  : unit === 'btc'
+                    ? 'calc(33.333% + 0px)'
+                    : 'calc(66.666% - 2px)'};"
               ></div>
               <div class="relative flex">
                 <button
-                  class="px-2 py-1 rounded-full font-semibold transition-all duration-300 relative z-10 {unit === currency ? 'text-white' : 'text-white/60 hover:text-white/80'} flex-1"
-                  onclick={() => unit = currency}
+                  class="px-2 py-1 rounded-full font-semibold transition-all duration-300 relative z-10 {unit ===
+                  currency
+                    ? 'text-white'
+                    : 'text-white/60 hover:text-white/80'} flex-1"
+                  onclick={() => (unit = currency)}
                 >
                   <div class="flex items-center justify-center gap-0.5">
                     <span class="text-sm">$</span>
@@ -616,20 +692,36 @@
                   </div>
                 </button>
                 <button
-                  class="px-2 py-1 rounded-full font-semibold transition-all duration-300 relative z-10 {unit === 'btc' ? 'text-white' : 'text-white/60 hover:text-white/80'} flex-1"
-                  onclick={() => unit = 'btc'}
+                  class="px-2 py-1 rounded-full font-semibold transition-all duration-300 relative z-10 {unit ===
+                  'btc'
+                    ? 'text-white'
+                    : 'text-white/60 hover:text-white/80'} flex-1"
+                  onclick={() => (unit = "btc")}
                 >
                   <div class="flex items-center justify-center gap-0.5">
-                    <iconify-icon icon="cryptocurrency:btc" class="{unit === 'btc' ? 'text-white' : 'text-orange-400'}" width="11"></iconify-icon>
+                    <iconify-icon
+                      icon="cryptocurrency:btc"
+                      class={unit === "btc" ? "text-white" : "text-orange-400"}
+                      width="11"
+                    ></iconify-icon>
                     <span>BTC</span>
                   </div>
                 </button>
                 <button
-                  class="px-2 py-1 rounded-full font-semibold transition-all duration-300 relative z-10 {unit === 'sats' ? 'text-white' : 'text-white/60 hover:text-white/80'} flex-1"
-                  onclick={() => unit = 'sats'}
+                  class="px-2 py-1 rounded-full font-semibold transition-all duration-300 relative z-10 {unit ===
+                  'sats'
+                    ? 'text-white'
+                    : 'text-white/60 hover:text-white/80'} flex-1"
+                  onclick={() => (unit = "sats")}
                 >
                   <div class="flex items-center justify-center gap-0.5">
-                    <iconify-icon icon="ph:lightning-fill" class="{unit === 'sats' ? 'text-yellow-400' : 'text-dgen-aqua'}" width="11"></iconify-icon>
+                    <iconify-icon
+                      icon="ph:lightning-fill"
+                      class={unit === "sats"
+                        ? "text-yellow-400"
+                        : "text-dgen-aqua"}
+                      width="11"
+                    ></iconify-icon>
                     <span>sats</span>
                   </div>
                 </button>
@@ -648,17 +740,41 @@
           <div class="card-body p-3 sm:p-4">
             <div class="flex items-center gap-2 sm:gap-3">
               <div class="text-green-400 flex-shrink-0">
-                <iconify-icon icon="ph:arrow-down-bold" width="24" class="sm:w-8"></iconify-icon>
+                <iconify-icon
+                  icon="ph:arrow-down-bold"
+                  width="24"
+                  class="sm:w-8"
+                ></iconify-icon>
               </div>
               <div class="min-w-0">
-                <div class="text-xs sm:text-sm text-white/60">Total Received</div>
-                <div class="text-base sm:text-xl font-bold text-green-400 truncate">
+                <div class="text-xs sm:text-sm text-white/60">
+                  Total Received
+                </div>
+                <div
+                  class="text-base sm:text-xl font-bold text-green-400 truncate"
+                >
                   {#if unit === currency}
-                    {f((payments.filter(p => p.displayAmount > 0 && !p.isUsdt).reduce((sum, p) => sum + p.displayAmount, 0) / sats) * rate, currency, locale)}
-                  {:else if unit === 'btc'}
-                    {btc(payments.filter(p => p.displayAmount > 0 && !p.isUsdt).reduce((sum, p) => sum + p.displayAmount, 0))} BTC
+                    {f(
+                      (payments
+                        .filter((p) => p.displayAmount > 0 && !p.isUsdt)
+                        .reduce((sum, p) => sum + p.displayAmount, 0) /
+                        sats) *
+                        rate,
+                      currency,
+                      locale,
+                    )}
+                  {:else if unit === "btc"}
+                    {btc(
+                      payments
+                        .filter((p) => p.displayAmount > 0 && !p.isUsdt)
+                        .reduce((sum, p) => sum + p.displayAmount, 0),
+                    )} BTC
                   {:else}
-                    {s(payments.filter(p => p.displayAmount > 0 && !p.isUsdt).reduce((sum, p) => sum + p.displayAmount, 0))} sats
+                    {s(
+                      payments
+                        .filter((p) => p.displayAmount > 0 && !p.isUsdt)
+                        .reduce((sum, p) => sum + p.displayAmount, 0),
+                    )} sats
                   {/if}
                 </div>
               </div>
@@ -671,45 +787,42 @@
           <div class="card-body p-3 sm:p-4">
             <div class="flex items-center gap-2 sm:gap-3">
               <div class="text-red-400 flex-shrink-0">
-                <iconify-icon icon="ph:arrow-up-bold" width="24" class="sm:w-8"></iconify-icon>
+                <iconify-icon icon="ph:arrow-up-bold" width="24" class="sm:w-8"
+                ></iconify-icon>
               </div>
               <div class="min-w-0">
                 <div class="text-xs sm:text-sm text-white/60">Total Sent</div>
-                <div class="text-base sm:text-xl font-bold text-red-400 truncate">
+                <div
+                  class="text-base sm:text-xl font-bold text-red-400 truncate"
+                >
                   {#if unit === currency}
-                    {f((Math.abs(payments.filter(p => p.displayAmount < 0 && !p.isUsdt).reduce((sum, p) => sum + p.displayAmount, 0)) / sats) * rate, currency, locale)}
-                  {:else if unit === 'btc'}
-                    {btc(Math.abs(payments.filter(p => p.displayAmount < 0 && !p.isUsdt).reduce((sum, p) => sum + p.displayAmount, 0)))} BTC
+                    {f(
+                      (Math.abs(
+                        payments
+                          .filter((p) => p.displayAmount < 0 && !p.isUsdt)
+                          .reduce((sum, p) => sum + p.displayAmount, 0),
+                      ) /
+                        sats) *
+                        rate,
+                      currency,
+                      locale,
+                    )}
+                  {:else if unit === "btc"}
+                    {btc(
+                      Math.abs(
+                        payments
+                          .filter((p) => p.displayAmount < 0 && !p.isUsdt)
+                          .reduce((sum, p) => sum + p.displayAmount, 0),
+                      ),
+                    )} BTC
                   {:else}
-                    {s(Math.abs(payments.filter(p => p.displayAmount < 0 && !p.isUsdt).reduce((sum, p) => sum + p.displayAmount, 0)))} sats
-                  {/if}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Net Total -->
-        <div class="card bg-blue-500/10 border border-blue-500/30">
-          <div class="card-body p-3 sm:p-4">
-            <div class="flex items-center gap-2 sm:gap-3">
-              <div class="text-blue-400 flex-shrink-0">
-                <iconify-icon icon="ph:scales-bold" width="24" class="sm:w-8"></iconify-icon>
-              </div>
-              <div class="min-w-0 flex-1">
-                <div class="flex items-center gap-1.5">
-                  <div class="text-xs sm:text-sm text-white/60">Net Total</div>
-                  <div class="tooltip tooltip-bottom" data-tip="Total Received - Total Sent = Net Total">
-                    <iconify-icon icon="ph:info-bold" width="14" class="text-white/40 hover:text-white/60 cursor-help"></iconify-icon>
-                  </div>
-                </div>
-                <div class="text-base sm:text-xl font-bold text-blue-400 truncate">
-                  {#if unit === currency}
-                    {f((payments.filter(p => !p.isUsdt).reduce((sum, p) => sum + p.displayAmount, 0) / sats) * rate, currency, locale)}
-                  {:else if unit === 'btc'}
-                    {btc(payments.filter(p => !p.isUsdt).reduce((sum, p) => sum + p.displayAmount, 0))} BTC
-                  {:else}
-                    {s(payments.filter(p => !p.isUsdt).reduce((sum, p) => sum + p.displayAmount, 0))} sats
+                    {s(
+                      Math.abs(
+                        payments
+                          .filter((p) => p.displayAmount < 0 && !p.isUsdt)
+                          .reduce((sum, p) => sum + p.displayAmount, 0),
+                      ),
+                    )} sats
                   {/if}
                 </div>
               </div>
@@ -721,8 +834,14 @@
 
     <!-- Date Range Dialog -->
     {#if showDateDialog}
-      <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onclick={() => showDateDialog = false}>
-        <div class="bg-base-200 rounded-2xl p-6 max-w-md w-full mx-4 border border-white/10" onclick={(e) => e.stopPropagation()}>
+      <div
+        class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+        onclick={() => (showDateDialog = false)}
+      >
+        <div
+          class="bg-base-200 rounded-2xl p-6 max-w-md w-full mx-4 border border-white/10"
+          onclick={(e) => e.stopPropagation()}
+        >
           <h3 class="text-xl font-bold mb-4">Select Date Range</h3>
 
           <div class="space-y-4">
@@ -734,7 +853,7 @@
                 type="date"
                 bind:value={tempFromDate}
                 class="input input-bordered w-full"
-                max={tempToDate || new Date().toISOString().split('T')[0]}
+                max={tempToDate || new Date().toISOString().split("T")[0]}
               />
             </div>
 
@@ -747,7 +866,7 @@
                 bind:value={tempToDate}
                 class="input input-bordered w-full"
                 min={tempFromDate}
-                max={new Date().toISOString().split('T')[0]}
+                max={new Date().toISOString().split("T")[0]}
               />
             </div>
           </div>
@@ -763,17 +882,13 @@
             >
               Clear
             </button>
-            <button
-              onclick={applyDateFilter}
-              class="btn btn-primary flex-1"
-            >
+            <button onclick={applyDateFilter} class="btn btn-primary flex-1">
               Apply
             </button>
           </div>
         </div>
       </div>
     {/if}
-
 
     <!-- Transactions List -->
     <div class="card bg-base-200/50 border border-white/10">
@@ -787,11 +902,12 @@
         {:else if payments.length === 0}
           <!-- Empty State -->
           <div class="flex flex-col items-center gap-4 py-12">
-            <iconify-icon icon="ph:receipt-x" width="64" class="text-white/20"></iconify-icon>
+            <iconify-icon icon="ph:receipt-x" width="64" class="text-white/20"
+            ></iconify-icon>
             <div class="text-center">
               <h3 class="text-lg font-semibold mb-2">No transactions found</h3>
               <p class="text-sm text-white/60">
-                {#if typeFilter !== 'all' || fromTimestamp || toTimestamp}
+                {#if typeFilter !== "all" || fromTimestamp || toTimestamp}
                   Try adjusting your filters
                 {:else}
                   Your transaction history will appear here
@@ -809,24 +925,29 @@
               <div
                 class="px-4 py-3 hover:bg-white/5 cursor-pointer transition-colors group"
                 onclick={() => goto(`/payment/${payment.id}`)}
-                onkeydown={(e) => e.key === 'Enter' && goto(`/payment/${payment.id}`)}
+                onkeydown={(e) =>
+                  e.key === "Enter" && goto(`/payment/${payment.id}`)}
                 role="button"
                 tabindex="0"
               >
                 <div class="flex items-center gap-4">
                   <!-- Icon -->
                   <div class="flex-shrink-0">
-                    {#if payment.paymentIcon === 'lightning'}
-                      <div class="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                    {#if payment.paymentIcon === "lightning"}
+                      <div
+                        class="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center"
+                      >
                         <iconify-icon
                           icon="ph:lightning-fill"
                           width="24"
                           class="text-yellow-400"
                         ></iconify-icon>
                       </div>
-                    {:else if payment.paymentIcon === 'liquid'}
-                      {#if payment.assetType === 'usdt'}
-                        <div class="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                    {:else if payment.paymentIcon === "liquid"}
+                      {#if payment.assetType === "usdt"}
+                        <div
+                          class="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center"
+                        >
                           <iconify-icon
                             icon="cryptocurrency:usdt"
                             width="24"
@@ -834,7 +955,9 @@
                           ></iconify-icon>
                         </div>
                       {:else}
-                        <div class="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+                        <div
+                          class="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center"
+                        >
                           <iconify-icon
                             icon="ph:drop-fill"
                             width="24"
@@ -843,7 +966,9 @@
                         </div>
                       {/if}
                     {:else}
-                      <div class="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center">
+                      <div
+                        class="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center"
+                      >
                         <iconify-icon
                           icon="cryptocurrency:btc"
                           width="24"
@@ -857,56 +982,97 @@
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2">
                       <!-- Amount -->
-                      <span class="font-semibold {payment.displayAmount < 0 ? 'text-red-400' : 'text-green-400'}">
+                      <span
+                        class="font-semibold {payment.displayAmount < 0
+                          ? 'text-red-400'
+                          : 'text-green-400'}"
+                      >
                         {#if payment.isUsdt}
-                          {payment.displayAmount < 0 ? '-' : '+'}{payment.satsAmount}
+                          {payment.displayAmount < 0
+                            ? "-"
+                            : "+"}{payment.satsAmount}
                         {:else if unit === currency}
-                          {payment.displayAmount < 0 ? '-' : '+'}{payment.fiatAmount}
-                        {:else if unit === 'btc'}
-                          {payment.displayAmount < 0 ? '-' : '+'}{payment.btcAmount} BTC
+                          {payment.displayAmount < 0
+                            ? "-"
+                            : "+"}{payment.fiatAmount}
+                        {:else if unit === "btc"}
+                          {payment.displayAmount < 0
+                            ? "-"
+                            : "+"}{payment.btcAmount} BTC
                         {:else}
-                          {payment.displayAmount < 0 ? '-' : '+'}{payment.satsAmount} sats
+                          {payment.displayAmount < 0
+                            ? "-"
+                            : "+"}{payment.satsAmount} sats
                         {/if}
                       </span>
 
                       <!-- Status Badge -->
-                      {#if payment.status === 'pending' || payment.status === 'waitingFeeAcceptance'}
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-400/30 text-xs font-medium text-amber-300 shadow-lg shadow-amber-500/10">
+                      {#if payment.status === "pending" || payment.status === "waitingFeeAcceptance"}
+                        <span
+                          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-400/30 text-xs font-medium text-amber-300 shadow-lg shadow-amber-500/10"
+                        >
                           <span class="relative flex h-2 w-2">
-                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                            <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                            <span
+                              class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"
+                            ></span>
+                            <span
+                              class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"
+                            ></span>
                           </span>
                           Pending
                         </span>
-                      {:else if payment.status === 'waitingConfirmation'}
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-400/30 text-xs font-medium text-blue-300 shadow-lg shadow-blue-500/10">
+                      {:else if payment.status === "waitingConfirmation"}
+                        <span
+                          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-400/30 text-xs font-medium text-blue-300 shadow-lg shadow-blue-500/10"
+                        >
                           <span class="relative flex h-2 w-2">
-                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                            <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                            <span
+                              class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"
+                            ></span>
+                            <span
+                              class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"
+                            ></span>
                           </span>
                           Confirming
                         </span>
-                      {:else if payment.status === 'refundable'}
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-400/30 text-xs font-medium text-orange-300">
-                          <iconify-icon icon="ph:arrow-counter-clockwise" width="12"></iconify-icon>
+                      {:else if payment.status === "refundable"}
+                        <span
+                          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-400/30 text-xs font-medium text-orange-300"
+                        >
+                          <iconify-icon
+                            icon="ph:arrow-counter-clockwise"
+                            width="12"
+                          ></iconify-icon>
                           Refundable
                         </span>
-                      {:else if payment.status === 'refundPending'}
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-orange-500/20 to-amber-500/20 border border-orange-400/30 text-xs font-medium text-orange-300">
+                      {:else if payment.status === "refundPending"}
+                        <span
+                          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-orange-500/20 to-amber-500/20 border border-orange-400/30 text-xs font-medium text-orange-300"
+                        >
                           <span class="relative flex h-2 w-2">
-                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
-                            <span class="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
+                            <span
+                              class="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"
+                            ></span>
+                            <span
+                              class="relative inline-flex rounded-full h-2 w-2 bg-orange-500"
+                            ></span>
                           </span>
                           Refunding
                         </span>
-                      {:else if payment.status === 'refunded'}
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-blue-500/20 to-indigo-500/20 border border-blue-400/30 text-xs font-medium text-blue-300">
-                          <iconify-icon icon="ph:arrow-u-up-left" width="12"></iconify-icon>
+                      {:else if payment.status === "refunded"}
+                        <span
+                          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-blue-500/20 to-indigo-500/20 border border-blue-400/30 text-xs font-medium text-blue-300"
+                        >
+                          <iconify-icon icon="ph:arrow-u-up-left" width="12"
+                          ></iconify-icon>
                           Refunded
                         </span>
-                      {:else if payment.status === 'failed'}
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-red-500/20 to-rose-500/20 border border-red-400/30 text-xs font-medium text-red-300">
-                          <iconify-icon icon="ph:x-circle" width="12"></iconify-icon>
+                      {:else if payment.status === "failed"}
+                        <span
+                          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-red-500/20 to-rose-500/20 border border-red-400/30 text-xs font-medium text-red-300"
+                        >
+                          <iconify-icon icon="ph:x-circle" width="12"
+                          ></iconify-icon>
                           Failed
                         </span>
                       {/if}
@@ -914,15 +1080,18 @@
 
                     <!-- Description or Type -->
                     <div class="text-sm text-white/60 truncate">
-                      {#if payment.details?.description && payment.details.description !== 'Liquid transfer'}
+                      {#if payment.details?.description && payment.details.description !== "Liquid transfer"}
                         {payment.details.description}
                       {:else}
-                        {payment.paymentTypeLabel} {payment.paymentType === 'receive' ? 'received' : 'sent'}
+                        {payment.paymentTypeLabel}
+                        {payment.paymentType === "receive"
+                          ? "received"
+                          : "sent"}
                       {/if}
                     </div>
 
                     <!-- Waiting Fee Acceptance Status -->
-                    {#if payment.status === 'waitingFeeAcceptance'}
+                    {#if payment.status === "waitingFeeAcceptance"}
                       <div class="text-xs text-amber-300/80 mt-0.5">
                         Waiting for fee acceptance
                       </div>
@@ -934,7 +1103,7 @@
                         {payment.paymentTypeLabel} on Liquid
                       {:else if unit === currency}
                         ≈ {payment.satsAmount} sats
-                      {:else if unit === 'btc'}
+                      {:else if unit === "btc"}
                         ≈ {payment.fiatAmount}
                       {:else}
                         ≈ {payment.fiatAmount}
@@ -942,7 +1111,7 @@
                     </div>
 
                     <!-- Fee Display (like misty-breez) - only show for completed non-USDT payments with fees -->
-                    {#if !payment.isUsdt && payment.feesSat > 0 && payment.status !== 'pending' && payment.status !== 'waitingConfirmation'}
+                    {#if !payment.isUsdt && payment.feesSat > 0 && payment.status !== "pending" && payment.status !== "waitingConfirmation"}
                       <div class="text-xs text-white/30 mt-0.5">
                         Fee: {s(payment.feesSat)} sats
                       </div>
@@ -952,12 +1121,17 @@
                   <!-- Time -->
                   <div class="flex-shrink-0 text-right text-sm">
                     <div class="text-white/60">{payment.formattedTime}</div>
-                    <div class="text-white/40 text-xs">{payment.formattedDate}</div>
+                    <div class="text-white/40 text-xs">
+                      {payment.formattedDate}
+                    </div>
                   </div>
 
                   <!-- Action Arrow -->
-                  <div class="flex-shrink-0 text-white/20 group-hover:text-white/60 transition-colors">
-                    <iconify-icon icon="ph:caret-right" width="20"></iconify-icon>
+                  <div
+                    class="flex-shrink-0 text-white/20 group-hover:text-white/60 transition-colors"
+                  >
+                    <iconify-icon icon="ph:caret-right" width="20"
+                    ></iconify-icon>
                   </div>
                 </div>
               </div>
@@ -967,7 +1141,9 @@
           <!-- Pagination -->
           {#if totalPages > 1}
             <div class="px-4 py-4 border-t border-white/10">
-              <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div
+                class="flex flex-col sm:flex-row items-center justify-between gap-4"
+              >
                 <div class="text-sm text-white/60">
                   Page {currentPage} of {totalPages}
                   ({pageData.totalCount} total)
@@ -975,11 +1151,12 @@
 
                 <div class="flex items-center gap-2">
                   <button
-                    onclick={() => currentPage = Math.max(1, currentPage - 1)}
+                    onclick={() => (currentPage = Math.max(1, currentPage - 1))}
                     disabled={!pageData?.hasPrevious}
                     class="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white/5 flex items-center gap-2"
                   >
-                    <iconify-icon icon="ph:caret-left" width="20"></iconify-icon>
+                    <iconify-icon icon="ph:caret-left" width="20"
+                    ></iconify-icon>
                     <span class="hidden sm:inline">Previous</span>
                   </button>
 
@@ -987,8 +1164,11 @@
                   {#if totalPages <= 7}
                     {#each Array(totalPages) as _, i}
                       <button
-                        onclick={() => currentPage = i + 1}
-                        class="px-3 py-2 rounded-lg border transition-all {currentPage === i + 1 ? 'bg-gradient-to-br from-dgen-cyan to-dgen-aqua text-white border-dgen-aqua font-semibold' : 'bg-white/5 hover:bg-white/10 border-white/10 text-white'}"
+                        onclick={() => (currentPage = i + 1)}
+                        class="px-3 py-2 rounded-lg border transition-all {currentPage ===
+                        i + 1
+                          ? 'bg-gradient-to-br from-dgen-cyan to-dgen-aqua text-white border-dgen-aqua font-semibold'
+                          : 'bg-white/5 hover:bg-white/10 border-white/10 text-white'}"
                       >
                         {i + 1}
                       </button>
@@ -996,16 +1176,26 @@
                   {:else}
                     <!-- Smart pagination with ellipsis -->
                     {#if currentPage > 3}
-                      <button onclick={() => currentPage = 1} class="px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white transition-all">1</button>
+                      <button
+                        onclick={() => (currentPage = 1)}
+                        class="px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white transition-all"
+                        >1</button
+                      >
                       <span class="px-2 text-white/40">...</span>
                     {/if}
 
                     {#each Array(Math.min(5, totalPages)) as _, i}
-                      {@const pageNum = Math.max(1, Math.min(currentPage - 2 + i, totalPages - 4) + i)}
+                      {@const pageNum = Math.max(
+                        1,
+                        Math.min(currentPage - 2 + i, totalPages - 4) + i,
+                      )}
                       {#if pageNum > 0 && pageNum <= totalPages}
                         <button
-                          onclick={() => currentPage = pageNum}
-                          class="px-3 py-2 rounded-lg border transition-all {currentPage === pageNum ? 'bg-gradient-to-br from-dgen-cyan to-dgen-aqua text-white border-dgen-aqua font-semibold' : 'bg-white/5 hover:bg-white/10 border-white/10 text-white'}"
+                          onclick={() => (currentPage = pageNum)}
+                          class="px-3 py-2 rounded-lg border transition-all {currentPage ===
+                          pageNum
+                            ? 'bg-gradient-to-br from-dgen-cyan to-dgen-aqua text-white border-dgen-aqua font-semibold'
+                            : 'bg-white/5 hover:bg-white/10 border-white/10 text-white'}"
                         >
                           {pageNum}
                         </button>
@@ -1014,19 +1204,24 @@
 
                     {#if currentPage < totalPages - 2}
                       <span class="px-2 text-white/40">...</span>
-                      <button onclick={() => currentPage = totalPages} class="px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white transition-all">
+                      <button
+                        onclick={() => (currentPage = totalPages)}
+                        class="px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white transition-all"
+                      >
                         {totalPages}
                       </button>
                     {/if}
                   {/if}
 
                   <button
-                    onclick={() => currentPage = Math.min(totalPages, currentPage + 1)}
+                    onclick={() =>
+                      (currentPage = Math.min(totalPages, currentPage + 1))}
                     disabled={!pageData?.hasNext}
                     class="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white/5 flex items-center gap-2"
                   >
                     <span class="hidden sm:inline">Next</span>
-                    <iconify-icon icon="ph:caret-right" width="20"></iconify-icon>
+                    <iconify-icon icon="ph:caret-right" width="20"
+                    ></iconify-icon>
                   </button>
                 </div>
               </div>
@@ -1035,8 +1230,6 @@
         {/if}
       </div>
     </div>
-
-
   </div>
 </div>
 
@@ -1078,8 +1271,13 @@
 
   /* Loading animation */
   @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
   }
 
   .animate-pulse {

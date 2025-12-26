@@ -1,23 +1,15 @@
 <script>
-  import { loc, focus } from "$lib/utils";
+  import { focus } from "$lib/utils";
   import { t } from "$lib/translations";
   import Success from "$comp/Success.svelte";
 
   let { data } = $props();
-  let { rate, tip, user } = $state(data);
-  let { currency, username } = $derived(user);
-  let amount = $state(Math.abs(data.amount));
-  let locale = $derived(loc(user));
+  let { user } = $state(data);
+  let { username } = $derived(user);
 </script>
 
-<Success
-  {amount}
-  {rate}
-  {tip}
-  {currency}
-  {locale}
-  title={`${$t("payments.sent")}!`}
-/>
+<Success title={`${$t("payments.sent")}!`} minimal />
+
 <a href={`/${username}`} use:focus aria-label="Continue">
   <div class="opacity-0 w-screen h-screen fixed top-0 left-0 z-50"></div>
 </a>

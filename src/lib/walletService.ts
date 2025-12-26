@@ -504,7 +504,6 @@ export const addEventListener = async (
     const listenerId = await sdk.addEventListener(listener);
     // Use the listenerId as the key to allow multiple listeners
     eventListeners.set(listenerId, listenerId);
-    
     return listenerId;
   } catch (error) {
     sdkLogger.error('Failed to add event listener:', error);

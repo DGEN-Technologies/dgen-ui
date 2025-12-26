@@ -232,5 +232,6 @@
       >
         {$t("payments.next")}
       </button>
+    </div>
   {/if}
 </div>

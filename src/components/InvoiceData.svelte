@@ -91,8 +91,8 @@
   {:else if invoice.type === "lightning" && !invoice.text}
     <!-- Show message for Lightning, which requires amount -->
     <div class="text-center text-white/70">
-      <p class="text-xl mb-2">⚡ Lightning Invoice</p>
-      <p>Set an amount to generate invoice</p>
+      <p class="text-3xl mb-2">⚡ Lightning Invoice</p>
+      <p class="text-xl">Set an amount to generate invoice</p>
     </div>
   {:else if invoice.type === types.bitcoin && !invoice.text}
     <!-- Show message for Bitcoin on-chain -->
@@ -179,7 +179,7 @@
       <div class="text-xl text-secondary">
         Only send <span class="text-green-500 font-bold">Tether (USDT)</span> to this address
         <br />
-        <span class="text-sm">If you want to send L-BTC to this wallet, select the Bitcoin option on the previous screen</span>
+        <span class="text-sm">If you want to receive L-BTC, select the L-BTC option on the previous screen</span>
       </div>
     </div>
   {:else}

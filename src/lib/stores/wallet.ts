@@ -63,11 +63,11 @@ const createWalletState = (mnemonicStore?: any, passwordStore?: any) => {
     subscribe,
     set,
     update,
-    
+
     // Initialize wallet store (SDK should already be connected by layout)
     async init(userPassword?: string, userId?: string): Promise<void> {
       update(state => ({ ...state, isConnecting: true, error: null }));
-      
+
       try {
         // SDK should already be initialized by layout, just get info
         // If not connected, the layout will handle it
@@ -80,7 +80,7 @@ const createWalletState = (mnemonicStore?: any, passwordStore?: any) => {
           }));
           return;
         }
-        
+
         const info = await walletService.getWalletInfo();
 
         // Mark initial sync complete if we got valid info with balance data
@@ -96,10 +96,10 @@ const createWalletState = (mnemonicStore?: any, passwordStore?: any) => {
           info,
           error: null
         }));
-        
+
         // Start event listening
         await startEventListening();
-        
+
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Failed to initialize wallet store';
         update(state => ({
@@ -116,19 +116,19 @@ const createWalletState = (mnemonicStore?: any, passwordStore?: any) => {
     async lock(): Promise<void> {
       try {
         await walletService.lockWallet();
-        
+
         update(state => ({
           ...state,
           isUnlocked: false,
           info: null,
           error: null
         }));
-        
+
         // Clear password from memory
         if (passwordStore) {
           passwordStore.set(undefined);
         }
-        
+
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Failed to lock wallet';
         update(state => ({ ...state, error: errorMessage }));
@@ -139,11 +139,11 @@ const createWalletState = (mnemonicStore?: any, passwordStore?: any) => {
     // Unlock wallet with password
     async unlock(userPassword: string): Promise<void> {
       update(state => ({ ...state, isConnecting: true, error: null }));
-      
+
       try {
         await walletService.unlockWallet(userPassword);
         const info = await walletService.getWalletInfo();
-        
+
         update(state => ({
           ...state,
           isUnlocked: true,
@@ -151,15 +151,15 @@ const createWalletState = (mnemonicStore?: any, passwordStore?: any) => {
           info,
           error: null
         }));
-        
+
         // Store password in memory for session
         if (passwordStore) {
           passwordStore.set(userPassword);
         }
-        
+
         // Start event listening
         await startEventListening();
-        
+
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Failed to unlock wallet';
         update(state => ({
@@ -182,7 +182,7 @@ const createWalletState = (mnemonicStore?: any, passwordStore?: any) => {
 
         // Save to secure storage with password
         await walletService.saveMnemonic(mnemonicPhrase, userPassword, userId);
-        
+
       } catch (error) {
         // If storage fails, clear the mnemonic from main store
         if (mnemonicStore) {

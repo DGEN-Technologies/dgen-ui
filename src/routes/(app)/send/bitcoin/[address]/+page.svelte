@@ -7,6 +7,7 @@
   import { rate } from "$lib/store";
   import { loc, fail, s, focus } from "$lib/utils";
   import { walletBalance } from "$lib/stores/wallet";
+  import { goto } from "$app/navigation";
 
   let { data } = $props();
 
@@ -39,7 +40,7 @@
     <button
       type="button"
       class="btn btn-ghost btn-sm gap-2"
-      onclick={() => window.history.back()}
+      onclick={() => goto("/send")}
     >
       <iconify-icon icon="ph:arrow-left-bold" width="20"></iconify-icon>
       Back

@@ -20,7 +20,7 @@
 
   // Get params from server
   let { address, amount } = $derived(data);
-  let feeRate = $state(data.feeRate || 10);
+  let feeRate = $state(data.feeRate || 20);
 
   // State for UI
   let loading = $state(true);
@@ -34,6 +34,7 @@
     halfHourFee: 10, // Normal
     fastestFee: 20, // Priority
   });
+  let selectedPreset = $state("priority");
 
   // User's currency from page store
   let currency = $derived($page.data.user?.currency || "USD");
@@ -66,9 +67,9 @@
         fastestFee: Number(recommended.fastestFee) || 20, // Priority
       };
 
-      // Set default fee rate to normal (halfHourFee)
+      // Set default fee rate to priority (fastestFee)
       if (!feeRate) {
-        feeRate = fees.halfHourFee;
+        feeRate = fees.fastestFee;
       }
     } catch (e) {
       console.error("Failed to fetch recommended fees:", e);
@@ -209,7 +210,8 @@
   }
 
   // Update fee rate and re-prepare
-  async function setFee(newRate) {
+  async function setFee(newRate, preset) {
+    selectedPreset = preset;
     feeRate = newRate;
     await prepareOnchainPayment(0);
   }
@@ -256,28 +258,28 @@
           <div class="flex flex-wrap gap-2 justify-center text-sm">
             <button
               type="button"
-              onclick={() => setFee(fees.hourFee || 5)}
-              class="px-3 py-1 rounded {feeRate === fees.hourFee
+              onclick={() => setFee(fees.hourFee || 5, "economy")}
+              class="px-3 py-1 rounded {selectedPreset === 'economy'
                 ? 'bg-accent text-white'
-                : 'bg-gray-200 dark:bg-gray-700'}"
+                : 'bg-gray-200 text-black dark:bg-gray-700 dark:text-white'}"
             >
               Economy ({fees.hourFee || 5} sat/vB)
             </button>
             <button
               type="button"
-              onclick={() => setFee(fees.halfHourFee || 10)}
-              class="px-3 py-1 rounded {feeRate === fees.halfHourFee
+              onclick={() => setFee(fees.halfHourFee || 10, "normal")}
+              class="px-3 py-1 rounded {selectedPreset === 'normal'
                 ? 'bg-accent text-white'
-                : 'bg-gray-200 dark:bg-gray-700'}"
+                : 'bg-gray-200 text-black dark:bg-gray-700 dark:text-white'}"
             >
               Normal ({fees.halfHourFee || 10} sat/vB)
             </button>
             <button
               type="button"
-              onclick={() => setFee(fees.fastestFee || 20)}
-              class="px-3 py-1 rounded {feeRate === fees.fastestFee
+              onclick={() => setFee(fees.fastestFee || 20, "priority")}
+              class="px-3 py-1 rounded {selectedPreset === 'priority'
                 ? 'bg-accent text-white'
-                : 'bg-gray-200 dark:bg-gray-700'}"
+                : 'bg-gray-200 text-black dark:bg-gray-700 dark:text-white'}"
             >
               Priority ({fees.fastestFee || 20} sat/vB)
             </button>
@@ -288,7 +290,10 @@
           <input
             type="number"
             bind:value={feeRate}
-            onchange={() => setFee(feeRate)}
+            onchange={() => {
+              selectedPreset = "custom";
+              setFee(feeRate);
+            }}
             min="1"
             max="1000"
             step="1"
@@ -320,6 +325,17 @@
           {$t("payments.send")}
         {/if}
       </button>
+    </div>
+    <div class="flex items-center justify-between mb-4">
+      <button
+        type="button"
+        class="btn btn-ghost btn-sm gap-2"
+        onclick={() => window.history.back()}
+      >
+        <iconify-icon icon="ph:arrow-left-bold" width="20"></iconify-icon>
+        Back
+      </button>
+      <div class="flex-1"></div>
     </div>
   {/if}
 </div>
