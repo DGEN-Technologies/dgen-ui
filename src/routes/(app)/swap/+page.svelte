@@ -43,7 +43,7 @@
         {#if isLoading}
           <div class="absolute inset-0 z-10 flex flex-col gap-4 items-center justify-center bg-base-100/50 backdrop-blur-sm transition-opacity duration-300">
             <div class="animate-spin rounded-full h-12 w-12 border-4 border-dgen-aqua border-t-transparent"></div>
-            <p class="text-lg font-semibold animate-pulse text-dgen-aqua">Loading SwapSpace...</p>
+            <p class="text-lg font-semibold animate-pulse text-dgen-aqua">Loading...</p>
           </div>
         {/if}
 
