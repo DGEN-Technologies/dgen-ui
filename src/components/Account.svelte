@@ -1,6 +1,6 @@
 <script>
   import { scale, fade, fly } from "svelte/transition";
-  import { btc, f, sat } from "$lib/utils";
+  import { btc, f, sat, sats } from "$lib/utils";
   import { goto } from "$app/navigation";
   import { onMount } from "svelte";
   import BalancePlaceholder from "./BalancePlaceholder.svelte";
@@ -31,18 +31,45 @@
   let isHovered = $state(false);
   let mounted = $state(false);
 
-  // Get individual asset balances
-  let balances = $derived($assetBalances || []);
-  let lbtcBalance = $derived(
-    balances.find((b) => b.assetId === ASSET_IDS.LBTC)?.balanceSat || 0,
-  );
-  let usdtBalance = $derived(
-    balances.find((b) => b.assetId === ASSET_IDS.USDT)?.balanceSat || 0,
-  );
+  // // Get individual asset balances
+  // let balances = $derived($assetBalances || []);
+  // let lbtcBalance = $derived(
+  //   balances.find((b) => b.assetId === ASSET_IDS.LBTC)?.balanceSat || 0,
+  // );
+  // let usdtBalance = $derived(
+  //   balances.find((b) => b.assetId === ASSET_IDS.USDT)?.balanceSat || 0,
+  // );
 
-  // Use the SDK's total balance directly
-  // The SDK already calculates the total balance across all assets
-  let totalBalance = $derived(balance);
+  // // Use the SDK's total balance directly
+  // // The SDK already calculates the total balance across all assets
+  // // let totalBalance = $derived(balance);
+  // let totalBalance = $derived(balance);
+
+  // Get all asset balances
+  let balances = $derived($assetBalances || []);
+  // Helper to get balance for a given assetId
+  function getBalance(assetId) {
+    return balances.find((b) => b.assetId === assetId)?.balanceSat || 0;
+  }
+  let lbtcBalance = $derived(getBalance(ASSET_IDS.LBTC));
+  let usdtBalance = $derived(getBalance(ASSET_IDS.USDT));
+
+  // Calculate unified total in sats (sum all asset balances, converting USDT to sats equivalent)
+  let unifiedTotalSats = $derived(() => {
+    let total = 0;
+    // BTC (Liquid)
+    total += getBalance(ASSET_IDS.LBTC);
+    // USDT (Liquid) - convert to sats using rate
+    const usdt = getBalance(ASSET_IDS.USDT);
+    if (usdt > 0 && rate > 0) {
+      // USDT is in 8 decimals, so convert to USD, then to sats
+      const usdtInUSD = usdt / sats;
+      const usdtInSats = Math.floor((usdtInUSD / rate) * sats);
+      total += usdtInSats;
+    }
+    // TODO: Add Lightning and Onchain BTC if available in balances
+    return total;
+  });
 
   let refreshing = $state(false);
 
@@ -63,16 +90,33 @@
     }
   }
 
-  onMount(() => {
+  // onMount(() => {
+  //   mounted = true;
+  // });
+  onMount(async () => {
     mounted = true;
+
+    // Force fresh balance when page opens
+    try {
+      await walletStore.refresh();
+    } catch (e) {
+      console.error("Failed to refresh wallet balance on mount", e);
+    }
   });
 
+  // let displayBalance = $derived(() => {
+  //   const displayTotal = totalBalance;
+  //   if (unit === "btc") return btc(displayTotal);
+  //   if (unit === "sats") return sat(displayTotal);
+  //   // Convert sats to BTC then multiply by rate
+  //   return f((displayTotal / 100000000) * rate, currency);
+  // });
   let displayBalance = $derived(() => {
-    const displayTotal = totalBalance;
-    if (unit === "btc") return btc(displayTotal);
-    if (unit === "sats") return sat(displayTotal);
-    // Convert sats to BTC then multiply by rate
-    return f((displayTotal / 100000000) * rate, currency);
+    const total = unifiedTotalSats();
+    if (unit === "btc") return btc(total);
+    if (unit === "sats") return sat(total);
+    // Convert sats to BTC then multiply by rate for fiat
+    return f((total / sats) * rate, currency);
   });
 
   let assetIcon = $derived(() => {
