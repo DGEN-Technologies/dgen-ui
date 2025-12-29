@@ -97,9 +97,9 @@
 
 <style>
   /* Ensure landing page sections flow properly in both modes */
-  :global(main) {
+  /* :global(main) {
     background: transparent !important;
-  }
+  } */
 
   /* Pro mode - eliminate visible gaps between sections */
 

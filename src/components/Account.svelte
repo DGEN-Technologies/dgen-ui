@@ -53,7 +53,7 @@
 
     refreshing = true;
     try {
-      // await walletStore.refresh();
+      await walletStore.refresh();
       // small UX delay to let the user see the animation
       await new Promise((resolve) => setTimeout(resolve, 1000));
     } catch (e) {

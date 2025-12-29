@@ -63,11 +63,11 @@ module.exports = {
       },
       {
         modern: {
-          primary: "#74EBD5",  // Changed from purple to aqua as primary
+          primary: "#74EBD5", // Changed from purple to aqua as primary
           "primary-content": "#000000",
-          secondary: "#9688DD",  // Purple is now secondary (less prominent)
+          secondary: "#9688DD", // Purple is now secondary (less prominent)
           "secondary-content": "#ffffff",
-          accent: "#5FE5D0",  // Lighter aqua/cyan accent
+          accent: "#5FE5D0", // Lighter aqua/cyan accent
           "accent-content": "#000000",
           neutral: "#0a0a0f",
           "neutral-content": "#ffffff",
@@ -75,8 +75,8 @@ module.exports = {
           "base-200": "rgba(22, 22, 33, 0.9)",
           "base-300": "rgba(35, 35, 50, 0.8)",
           "base-content": "#e0e0e0",
-          info: "#74EBD5",  // Aqua for info
-          success: "#6AEEC7",  // Teal for success
+          info: "#74EBD5", // Aqua for info
+          success: "#6AEEC7", // Teal for success
           warning: "#FFD700",
           error: "#FF4747",
           "--rounded-box": "1.5rem",
@@ -100,4 +100,5 @@ module.exports = {
     themeRoot: ":root", // The element that receives theme color CSS variables
   },
   safelist: ["w-16", "h-16", "w-20", "h-20", "w-24", "h-24"],
+  darkMode: ["selector", '[data-mode="dark"]'],
 };

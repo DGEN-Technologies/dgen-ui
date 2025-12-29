@@ -48,19 +48,19 @@
   let revealPassword = $state(false);
   let confirmPassword = $state("");
   let revealConfirmPassword = $state(false);
-  
+
   // Simple avatar color system
   const avatarColors = [
-    'from-dgen-aqua to-dgen-cyan',
-    'from-blue-500 to-cyan-500',
-    'from-green-500 to-emerald-500',
-    'from-yellow-500 to-orange-500',
-    'from-dgen-cyan to-dgen-teal',
-    'from-dgen-teal to-green-500',
-    'from-teal-500 to-green-500',
-    'from-orange-500 to-yellow-500'
+    "from-dgen-aqua to-dgen-cyan",
+    "from-blue-500 to-cyan-500",
+    "from-green-500 to-emerald-500",
+    "from-yellow-500 to-orange-500",
+    "from-dgen-cyan to-dgen-teal",
+    "from-dgen-teal to-green-500",
+    "from-teal-500 to-green-500",
+    "from-orange-500 to-yellow-500",
   ];
-  
+
   let colorIndex = $state(Math.floor(Math.random() * avatarColors.length));
 
   let cleared;
@@ -108,8 +108,10 @@
   let loading = $state();
 
   let avatarInput = $state();
-  let decr = () => (colorIndex = colorIndex <= 0 ? avatarColors.length - 1 : colorIndex - 1);
-  let incr = () => (colorIndex = colorIndex >= avatarColors.length - 1 ? 0 : colorIndex + 1);
+  let decr = () =>
+    (colorIndex = colorIndex <= 0 ? avatarColors.length - 1 : colorIndex - 1);
+  let incr = () =>
+    (colorIndex = colorIndex >= avatarColors.length - 1 ? 0 : colorIndex + 1);
   let selectAvatar = () => avatarInput.click();
 
   let progress;
@@ -194,131 +196,138 @@
     class="absolute -bottom-20 -right-20 w-40 h-40 bg-blue-500/20 rounded-full blur-3xl animate-float"
     style="animation-delay: 2s;"
   ></div>
-    <h1 class="text-4xl font-bold text-center mb-2">
-      <span class="holographic">Join DGEN</span>
-      <span class="text-yellow-400 lightning mx-2">⚡</span>
-    </h1>
-    <p class="text-center opacity-60 mb-6">Create Your Lightning Wallet</p>
-    <!-- Removed avatar selector for simplified registration -->
+  <h1 class="text-4xl font-bold text-center mb-2">
+    <span class="holographic">Join DGEN</span>
+    <span class="text-yellow-400 lightning mx-2">⚡</span>
+  </h1>
+  <p class="text-center opacity-60 mb-6">Create Your Lightning Wallet</p>
+  <!-- Removed avatar selector for simplified registration -->
 
-    {#if form?.error}
-      <div
-        class="glass p-4 rounded-2xl border-2 border-red-500/50 bg-red-500/10 text-red-400 text-center animate-pulse"
-        in:fly
-      >
-        <iconify-icon icon="ph:warning-circle" width="24" class="inline mr-2"
-        ></iconify-icon>
-        {form.error}
-      </div>
-    {/if}
-
-    <form
-      class="space-y-5"
-      method="POST"
-      use:enhance={() => {
-        // Validate password confirmation
-        if ($password !== confirmPassword) {
-          fail($t("accounts.passwordMismatch"));
-          // Cancel form submission
-          return () => {};
-        }
-
-        loading = true;
-
-        return async ({ result, update }) => {
-          loading = false;
-          await update();
-        };
-      }}
+  {#if form?.error}
+    <div
+      class="glass p-4 rounded-2xl border-2 border-red-500/50 bg-red-500/10 text-red-400 text-center animate-pulse"
+      in:fly
     >
-      <input
-        type="hidden"
-        name="loginRedirect"
-        value={$loginRedirect || $page.url.searchParams.get("redirect")}
-      />
-      <input type="hidden" name="token" value={token} />
-      <input type="hidden" name="confirm" bind:value={confirmPassword} />
+      <iconify-icon icon="ph:warning-circle" width="24" class="inline mr-2"
+      ></iconify-icon>
+      {form.error}
+    </div>
+  {/if}
 
-      <div class="relative group">
-        <div
-          class="absolute inset-0 bg-gradient-primary opacity-0 group-focus-within:opacity-20 rounded-2xl blur-xl transition-opacity duration-300"
-        ></div>
-        <div class="relative flex items-center">
-          <input
-            name="username"
-            type="text"
-            required
-            bind:value={username}
-            use:focus
-            onfocus={clear}
-            autocapitalize="none"
-            placeholder={$t("login.username")}
-            class="relative glass border-2 border-white/10 focus:border-purple-500/50 transition-all duration-300 pr-12"
-          />
-          <button
-            type="button"
-            tabindex="-1"
-            onclick={refresh}
-            aria-label="Randomize"
-            class="absolute right-3 hover:scale-110 transition-transform text-purple-400 hover:text-purple-300"
-          >
-            <iconify-icon noobserver icon="ph:dice-three-bold" width="32"></iconify-icon>
-          </button>
-        </div>
-      </div>
+  <form
+    class="space-y-5"
+    method="POST"
+    use:enhance={() => {
+      // Validate password confirmation
+      if ($password !== confirmPassword) {
+        fail($t("accounts.passwordMismatch"));
+        // Cancel form submission
+        return () => {};
+      }
 
-      <div class="relative group">
-        <div
-          class="absolute inset-0 bg-gradient-accent opacity-0 group-focus-within:opacity-20 rounded-2xl blur-xl transition-opacity duration-300"
-        ></div>
-        <div class="relative">
-          <PasswordInput
-            id="password"
-            bind:value={$password}
-            placeholder={$t("login.password")}
-            required
-          />
-        </div>
-      </div>
+      loading = true;
 
-      <div class="relative group">
-        <div
-          class="absolute inset-0 bg-gradient-accent opacity-0 group-focus-within:opacity-20 rounded-2xl blur-xl transition-opacity duration-300"
-        ></div>
-        <div class="relative">
-          <PasswordInput
-            id="confirmPassword"
-            name="confirmPassword"
-            bind:value={confirmPassword}
-            placeholder={$t("accounts.confirmPassword")}
-            required
-          />
-        </div>
-      </div>
+      return async ({ result, update }) => {
+        loading = false;
+        await update();
+      };
+    }}
+  >
+    <input
+      type="hidden"
+      name="loginRedirect"
+      value={$loginRedirect || $page.url.searchParams.get("redirect")}
+    />
+    <input type="hidden" name="token" value={token} />
+    <input type="hidden" name="confirm" bind:value={confirmPassword} />
 
-      <button
-        type="submit"
-        class="w-full px-6 py-4 rounded-2xl font-bold text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-2xl active:scale-95 relative overflow-hidden group inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed"
-        style="background: linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%); color: white; box-shadow: 0 10px 30px rgba(167, 139, 250, 0.3);"
-        disabled={loading}
-        bind:this={btn}
-      >
-        {#if loading}
-          <Spinner />
-        {:else}
-          <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-               style="background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%);"></div>
-          <iconify-icon icon="ph:user-circle-plus" width="24" class="relative z-10 group-hover:rotate-12 transition-transform duration-300"></iconify-icon>
-          <span class="relative z-10">{$t("login.register")}</span>
-          <iconify-icon
-            icon="ph:arrow-right-bold"
-            width="20"
-            class="relative z-10 group-hover:translate-x-2 transition-transform duration-300"
+    <div class="relative group">
+      <div
+        class="absolute inset-0 bg-gradient-primary opacity-0 group-focus-within:opacity-20 rounded-2xl blur-xl transition-opacity duration-300"
+      ></div>
+      <div class="relative flex items-center">
+        <input
+          name="username"
+          type="text"
+          required
+          bind:value={username}
+          use:focus
+          onfocus={clear}
+          autocapitalize="none"
+          placeholder={$t("login.username")}
+          class="relative glass border-2 border-white/10 focus:border-purple-500/50 transition-all duration-300 pr-12"
+        />
+        <button
+          type="button"
+          tabindex="-1"
+          onclick={refresh}
+          aria-label="Randomize"
+          class="absolute right-3 hover:scale-110 transition-transform text-purple-400 hover:text-purple-300"
+        >
+          <iconify-icon noobserver icon="ph:dice-three-bold" width="32"
           ></iconify-icon>
-        {/if}
-      </button>
+        </button>
+      </div>
+    </div>
 
-      <!-- Nostr login disabled
+    <div class="relative group">
+      <div
+        class="absolute inset-0 bg-gradient-accent opacity-0 group-focus-within:opacity-20 rounded-2xl blur-xl transition-opacity duration-300"
+      ></div>
+      <div class="relative">
+        <PasswordInput
+          id="password"
+          bind:value={$password}
+          placeholder={$t("login.password")}
+          required
+        />
+      </div>
+    </div>
+
+    <div class="relative group">
+      <div
+        class="absolute inset-0 bg-gradient-accent opacity-0 group-focus-within:opacity-20 rounded-2xl blur-xl transition-opacity duration-300"
+      ></div>
+      <div class="relative">
+        <PasswordInput
+          id="confirmPassword"
+          name="confirmPassword"
+          bind:value={confirmPassword}
+          placeholder={$t("accounts.confirmPassword")}
+          required
+        />
+      </div>
+    </div>
+
+    <button
+      type="submit"
+      class="w-full px-6 py-4 rounded-2xl font-bold text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-2xl active:scale-95 relative overflow-hidden group inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed"
+      style="background: linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%); color: white; box-shadow: 0 10px 30px rgba(167, 139, 250, 0.3);"
+      disabled={loading}
+      bind:this={btn}
+    >
+      {#if loading}
+        <Spinner />
+      {:else}
+        <div
+          class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+          style="background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%);"
+        ></div>
+        <iconify-icon
+          icon="ph:user-circle-plus"
+          width="24"
+          class="relative z-10 group-hover:rotate-12 transition-transform duration-300"
+        ></iconify-icon>
+        <span class="relative z-10">{$t("login.register")}</span>
+        <iconify-icon
+          icon="ph:arrow-right-bold"
+          width="20"
+          class="relative z-10 group-hover:translate-x-2 transition-transform duration-300"
+        ></iconify-icon>
+      {/if}
+    </button>
+
+    <!-- Nostr login disabled
       <button
         type="button"
         class="btn glass border-2 border-purple-500/30 hover:border-purple-500/60 hover:bg-purple-500/10 transition-all duration-300 font-bold"
@@ -343,22 +352,28 @@
       </button>
       -->
 
-      <div class="text-center space-y-2">
-        <p class="text-secondary font-medium">
-          {$t("login.haveAccount")}
-        </p>
-        <a href={"/login" + $page.url.search} class="inline-block">
-          <button
-            type="button"
-            class="px-6 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center gap-2"
-            style="background: linear-gradient(135deg, #74EBD5 0%, #9688DD 100%); color: white;"
-          >
-            <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                 style="background: linear-gradient(135deg, #9688DD 0%, #74EBD5 100%);"></div>
-            <span class="relative z-10">{$t("login.signIn")}</span>
-            <iconify-icon icon="ph:arrow-right-bold" width="20" class="relative z-10 group-hover:translate-x-2 transition-transform duration-300"></iconify-icon>
-          </button>
-        </a>
-      </div>
-    </form>
-  </div>
+    <div class="text-center space-y-2">
+      <p class="text-secondary font-medium">
+        {$t("login.haveAccount")}
+      </p>
+      <a href={"/login" + $page.url.search} class="inline-block">
+        <button
+          type="button"
+          class="px-6 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center gap-2"
+          style="background: linear-gradient(135deg, #74EBD5 0%, #9688DD 100%); color: white;"
+        >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+            style="background: linear-gradient(135deg, #9688DD 0%, #74EBD5 100%);"
+          ></div>
+          <span class="relative z-10">{$t("login.signIn")}</span>
+          <iconify-icon
+            icon="ph:arrow-right-bold"
+            width="20"
+            class="relative z-10 group-hover:translate-x-2 transition-transform duration-300"
+          ></iconify-icon>
+        </button>
+      </a>
+    </div>
+  </form>
+</div>

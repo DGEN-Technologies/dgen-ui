@@ -169,7 +169,7 @@
         use:focus
         autocapitalize="none"
         placeholder={$t("login.username")}
-        class="relative glass border-2 text-black border-white/10 focus:border-purple-500/50 transition-all duration-300"
+        class="relative glass border-2 border-white/10 focus:border-purple-500/50 transition-all duration-300"
       />
     </div>
 
