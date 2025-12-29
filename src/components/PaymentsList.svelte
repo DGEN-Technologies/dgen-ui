@@ -641,18 +641,6 @@
               <iconify-icon icon="ph:download-simple" width="12"></iconify-icon>
               <span class="hidden sm:inline">Export</span>
             </button>
-
-            <button
-              onclick={async () => {
-                await transactionStore.loadTransactions(true);
-              }}
-              class="inline-flex items-center px-2 py-1 hover:bg-white/10 rounded transition-colors"
-              class:animate-spin={isLoading}
-              disabled={isLoading}
-              title="Refresh transactions"
-            >
-              <iconify-icon icon="ph:arrow-clockwise" width="12"></iconify-icon>
-            </button>
           </div>
         </div>
 
