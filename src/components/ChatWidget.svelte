@@ -240,13 +240,13 @@
       };
       appendMessage(assistantMessage);
     } catch (err) {
+      let message =
+        "Something unexpected went wrong while processing your request. Please try again in a moment.";
+
       if (err instanceof Error && err.name === "AbortError") {
-        return;
-      }
-
-      let message = "Something unexpected went wrong. Please try again later.";
-
-      if (err instanceof Error && err.message === "INVALID_JSON") {
+        message =
+          "The request took too long and timed out. Please try again later.";
+      } else if (err instanceof Error && err.message === "INVALID_JSON") {
         message =
           "Unexpected response from the server. Please try again later.";
       } else if (err instanceof Error && err.message === "INSECURE_PROTOCOL") {
@@ -269,6 +269,15 @@
         message =
           "There was a problem with this request. Please double-check and try again.";
       }
+
+      // Always add a fallback assistant message when an error occurs
+      const fallbackMessage: ChatMessage = {
+        id: `assistant-error-${Date.now()}`,
+        role: "assistant",
+        content: message,
+        createdAt: Date.now(),
+      };
+      appendMessage(fallbackMessage);
 
       error = message;
     } finally {
@@ -573,7 +582,7 @@
           regarding accuracy, completeness, or reliability.
         </p>
         <p>
-          <strong>No Financial Advice:</strong> Nothing here constitutes financial,
+          <strong>Not Financial Advice:</strong> Nothing here constitutes financial,
           investment, tax, accounting, legal, or professional advice. Do not use
           the Chatbot for financial decisions.
         </p>
