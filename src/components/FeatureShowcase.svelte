@@ -8,10 +8,10 @@
   const features = [
     {
       id: "lightning",
-      title: "Lightning Fast",
+      title: "Swift Global Transfers",
       subtitle: "Instant global transfers",
       description:
-        "Send Bitcoin anywhere on Earth instantly. Faster and more cost-effective than any traditional bank transfer. Instant payment settlement - Visa/MC take 1-2 business days to settle.",
+        "Send Bitcoin anywhere on Earth with efficient transaction times. Payment settlement typically occurs quickly.",
       icon: "tabler:bolt",
       color: "yellow",
       stats: ["300ms", "Global", "Minimal fees"],
@@ -19,10 +19,10 @@
     },
     {
       id: "security",
-      title: "Security",
+      title: "Enhanced Security",
       subtitle: "Your choice, your control",
       description:
-        "High-grade encryption, hardware wallet support, multi-signature vaults. Fully non-custodial - you control your keys.",
+        "Wallet Encryption. Non-custodial - You control your keys, so you don’t have to trust a 3rd party to hold your keys for you.",
       icon: "ph:shield-check-bold",
       color: "green",
       stats: ["256-bit", "Multi-sig", "Biometric"],

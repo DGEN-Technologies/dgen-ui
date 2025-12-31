@@ -254,47 +254,6 @@
           {/each}
         </div>
       </div>
-
-      <!-- CTA -->
-      <div
-        class="text-center mt-16"
-        in:fly={{ y: 30, duration: 800, delay: 600 }}
-      >
-        <div
-          class="glass inline-block p-8 rounded-3xl border border-dgen-aqua/20"
-        >
-          <h3 class="text-2xl font-bold mb-4">Ready to start?</h3>
-          <p class="opacity-80 mb-6">
-            Join thousands using DGEN to experience the Lightning Network
-          </p>
-          <div class="flex flex-col gap-4 justify-center items-center px-4">
-            <a href="/register" class="w-full sm:w-auto">
-              <button
-                class="btn bg-gradient-to-r from-dgen-aqua to-dgen-cyan text-black font-bold hover:scale-105 transition-transform w-full sm:w-auto"
-              >
-                Create Account
-              </button>
-            </a>
-            <a
-              href="https://t.me/dgentech"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="w-full sm:w-auto"
-            >
-              <button
-                class="btn glass border-2 border-dgen-cyan/30 hover:border-dgen-cyan font-bold hover:scale-105 transition-transform w-full sm:w-auto"
-              >
-                <iconify-icon
-                  icon="ph:telegram-logo-bold"
-                  width="20"
-                  class="mr-2"
-                ></iconify-icon>
-                <span class="whitespace-nowrap">Join us on Telegram</span>
-              </button>
-            </a>
-          </div>
-        </div>
-      </div>
     </div>
   </section>
 {/if}

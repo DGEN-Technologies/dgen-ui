@@ -61,32 +61,6 @@
       ],
       status: "upcoming",
     },
-    {
-      phase: "Phase 5",
-      title: "RWA Tokenization",
-      icon: "ph:coins-bold",
-      color: "from-indigo-400 to-purple-400",
-      items: [
-        "Real-World Asset tokenization of stock",
-        "Tokenized rewards program",
-        "Fractional ownership",
-        "Enhanced liquidity & blockchain integration",
-      ],
-      status: "upcoming",
-    },
-    {
-      phase: "Phase 6",
-      title: "DGEN Mining Operation",
-      icon: "ph:cpu-bold",
-      color: "from-red-400 to-pink-400",
-      items: [
-        "Efficient, scalable mining operation",
-        "Sourcing hash rate from global leaders",
-        "Blockchain security enhancement",
-        "ESG principles adherence",
-      ],
-      status: "upcoming",
-    },
   ];
 </script>
 
