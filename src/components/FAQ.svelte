@@ -36,6 +36,15 @@
       emoji: "💸",
     },
     {
+      id: "swap",
+      category: "Swapping",
+      question: "How does the swap feature work?",
+      answer:
+        "<p>The swap feature allows you to instantly exchange one cryptocurrency for another directly within the wallet.</p> <ol class='pl-5'><li>1. Select the crypto to send and the one to receive.</li> <li>2. Enter the amount – you'll see competitive rates aggregated from trusted partners.</li> <li>3. Provide your receiving wallet address.</li> <li>4. Send the funds to the provided deposit address.</li></ol> <p>The exchange action is non-custodial: no account or KYC required, and DGEN is not the custodian of any cryptocurrency. Processing typically completes in minutes to an hour, depending on network conditions, which DGEN has no control over.</p>",
+      icon: "uiw:swap",
+      emoji: "🔁",
+    },
+    {
       id: "self-custody",
       category: "Education",
       question: "What is self-custody?",
