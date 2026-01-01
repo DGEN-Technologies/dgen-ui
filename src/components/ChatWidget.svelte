@@ -170,7 +170,7 @@
     input = "";
     abortController = new AbortController();
     const timeoutId = window.setTimeout(() => {
-      abortController?.abort();
+      abortController?.abort(new Error("TIMEOUT"));
     }, REQUEST_TIMEOUT_MS);
 
     try {
@@ -240,6 +240,13 @@
       };
       appendMessage(assistantMessage);
     } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") {
+        const reason = abortController?.signal?.reason;
+        if (reason instanceof Error && reason.message === "UNMOUNT") {
+          return; // Silent cleanup on unmount
+        }
+      }
+
       let message =
         "Something unexpected went wrong while processing your request. Please try again in a moment.";
 
@@ -278,8 +285,6 @@
         createdAt: Date.now(),
       };
       appendMessage(fallbackMessage);
-
-      error = message;
     } finally {
       isSending = false;
       abortController = null;
@@ -363,7 +368,7 @@
 
       // Abort any in-flight requests on unmount
       if (abortController) {
-        abortController.abort();
+        abortController.abort(new Error("UNMOUNT"));
       }
       window.clearTimeout(promptTimer);
     };
