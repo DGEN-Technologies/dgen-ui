@@ -248,8 +248,7 @@
       }
 
       let message =
-        "Something unexpected went wrong while processing your request. Please try again in a moment.";
-
+        "Something unexpected went wrong. Please try asking your question again."
       if (err instanceof Error && err.name === "AbortError") {
         message =
           "The request took too long and timed out. Please try again later.";
