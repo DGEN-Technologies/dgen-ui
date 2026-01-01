@@ -181,10 +181,8 @@
               class="text-blue-400"
               width="20"
             ></iconify-icon>
-            <span class="text-sm font-semibold text-blue-300">Visa Card</span>
-            <span
-              class="text-xs text-white/60 bg-white/10 px-2 py-0.5 rounded-full"
-              >Coming Soon</span
+            <button class="text-sm font-semibold text-blue-300"
+              >DGEN Mastercard is live</button
             >
           </div>
         </div>

@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: 'class',
   content: ["./src/**/*.{html,js,svelte}"],
   plugins: [require("tailwind-scrollbar"), require("daisyui")],
   theme: {

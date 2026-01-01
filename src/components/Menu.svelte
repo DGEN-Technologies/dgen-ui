@@ -92,6 +92,6 @@
 
 <style>
   .btn-menu {
-    @apply flex justify-center items-center glass backdrop-blur-xl bg-black/50 hover:bg-white/80 hover:text-gray-800 border-dgen-aqua/20 border-dgen-cyan/30 border text-gray-50 p-2 rounded-full w-12 h-12 sm:w-16 sm:h-16 md:w-auto md:h-auto md:rounded-2xl md:px-3 md:py-2 drop-shadow-xl border-dgen-aqua/50 bg-dgen-aqua/10 transition-all duration-300;
+    @apply flex justify-center items-center glass backdrop-blur-xl bg-black/50 border-dgen-aqua/20 border-dgen-cyan/30 border text-gray-50 p-2 rounded-full w-12 h-12 sm:w-16 sm:h-16 md:w-auto md:h-auto md:rounded-2xl md:px-3 md:py-2 drop-shadow-xl border-dgen-aqua/50  transition-all duration-300;
   }
 </style>
