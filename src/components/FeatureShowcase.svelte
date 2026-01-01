@@ -42,7 +42,7 @@
     {
       id: "liquid",
       title: "The Liquid Network",
-      subtitle: "Confidential & fast sidechains",
+      subtitle: "Fast Bitcoin Transactions onchain",
       description:
         "Transact with bitcoin using confidential transactions with speeds averaging 1 minute (compared to Bitcoin's typical 10min-2 hour transactions). All transactions here settle on the Liquid Network on the back end.",
       icon: "ph:drop-bold",

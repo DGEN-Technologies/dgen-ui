@@ -130,7 +130,7 @@
           <span class="holographic">HOW THIS WORKS</span>
         </h2>
         <p class="text-lg sm:text-xl md:text-2xl opacity-80 px-2">
-          Make transfers instantly internationally
+          Make transfers Efficiently & Internationally
         </p>
         <p class="text-sm sm:text-base md:text-lg opacity-60 mt-2">
           (click on steps 1, 2, 3, or 4 to navigate)

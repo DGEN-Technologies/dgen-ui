@@ -31,7 +31,7 @@
       category: "Money",
       question: "How much does DGEN cost?",
       answer:
-        "DGEN is completely free to use. You only pay minimal Lightning Network fees (typically less than a penny per transaction). Our mission is to grow the Bitcoin ecosystem.",
+        "<p>DGEN is free to create an account. When you transact, you will sometimes pay a minimal Lightning Network routing fees (typically ranging between a penny to 50 cents per transaction, depending on market conditions), and you also will pay a 0.6% fee when transacting in and out of the the wallet using the Lightning network & onchain Bitcoin network. This fee is variable depending on market conditions such as the onchain Bitcoin network fees and the Lightning Network routing fees.<p> </p>In most cases, you will not experience fees when transacting only on the Liquid network. For ex, Depositing L-BTC to your DGEN wallet, and then withdrawing that same L-BTC to a different place outside of your DGEN wallet.</p> <p>For buying/selling crypto via the fiat on-ramp/off-ramp, you will incur a fee that the 3rd party fiat on-ramp/off-ramp decides which is out of DGEN’s control.</p> <p> For swapping your crypto using the swap service, you will incur a fee that the 3rd party swap service decides which is out of DGEN’s control, and DGEN will add a small 0.2% fee on top of that.</p> <p>1 of the main reasons why these fees exist, is to cover DGEN’s cost of operations such as running our app’s, its features & websites.</p>",
       icon: "ph:currency-circle-dollar-bold",
       emoji: "💸",
     },
@@ -40,7 +40,7 @@
       category: "Education",
       question: "What is self-custody?",
       answer:
-        "Self-custody means YOU control your Bitcoin's private keys - not an exchange or bank. 'Not your keys, not your coins' is the golden rule. With DGEN, your seed phrase gives you complete ownership. No one else can access, freeze, or confiscate your funds.",
+        "<p>Self-custody (non-custodial) means YOU control your Bitcoin's private keys (via your seed phrase) - not an exchange or bank.</p><p> With this DGEN web-app, your seed phrase (key) gives you complete ownership. No one else can access, freeze, or confiscate your funds if you do not give out your seed phrase to anyone. It’s your responsibility to take care of your seed phrase and store it properly somewhere that you think is very safe and it won’t get stolen & compromised etc.</p><p> If you prefer to not want the hassle of managing your own seed phrase “keys’ and prefer a custodial solution (like an exchange for example) you can use our DGEN CARD app which is custodial - <a href='http://card.dgentech.io' target='_blank' class='text-dgen-aqua hover:underline'>card.dgentech.io</a></p><p> Examples of Custodial options are: Exchanges, not wallets. The Custodian holds your seed phrase. The DGEN CARD app is custodial.</p><p> Example of Non-custodial options: Wallets, not exchanges. This DGEN web-app you are currently on does not hold your seed phrase, it is your responsibility to manage your seed phrase</p>",
       icon: "ph:vault-bold",
       emoji: "🔐",
     },
@@ -49,16 +49,16 @@
       category: "Security",
       question: "Who controls my Bitcoin?",
       answer:
-        "You maintain complete control. With self-custody options, only you have access to your private keys. We cannot access your funds - that's the security of true ownership.",
+        "<p>With self-custody options, only you have access to your private kets (seed phrase). This DGEN wallet web-app cannot access your funds - that's the security of true ownership.</p><p> The DGEN CARD app is different, you can view the details on that website if you want.</p>",
       icon: "ph:key-bold",
       emoji: "🔑",
     },
     {
       id: "backup",
       category: "Security",
-      question: "What if I lose my phone?",
+      question: "What if I lose access to my phone or computer?",
       answer:
-        "Your 12-word seed phrase allows complete wallet recovery. Store it securely offline - written down or engraved in steel. Never share it with anyone.",
+        "Your 12-word seed phrase allows complete wallet recovery of all your funds in your DGEN wallet. Store it securely offline - written down or engraved in steel. Never share it with anyone. If you lose access to your phone or computer that had your DGEN wallet web-app on it, then you can recover all your funds on any other device, (new or used) by importing your seed phrase. Never share your seed phrase with anyone and make sure you take good care of it.",
       icon: "ph:cloud-arrow-up-bold",
       emoji: "☁️",
     },
@@ -76,7 +76,7 @@
       category: "DGEN",
       question: "Why DGEN over other wallets?",
       answer:
-        "Built by Bitcoin enthusiasts for the community. No data harvesting, no hidden fees, complete transparency. Features include atomic swaps, submarine swaps, and cutting-edge Lightning technology.",
+        "<p>Built by Bitcoin enthusiasts. Features accessible on the DGEN web-app include atomic swaps, submarine swaps, cross-chain swaps with 4,500 coins across almost all the main blockchains, cutting-edge Lightning & Liquid technology, Non-custodial, and our custodial DGEN CARD app which is a crypto mastercard that can be used internationally (more info on the DGEN CARD app at <a href='http://card.dgentech.io' target='_blank' class='text-dgen-aqua hover:underline'>card.dgentech.io</a>).</p><p> There are not many wallets on the market that have all these value points together.</p>",
       icon: "ph:rocket-bold",
       emoji: "🚀",
     },
@@ -104,7 +104,7 @@
       category: "Business",
       question: "Can businesses use DGEN?",
       answer:
-        "Absolutely. Generate invoices, QR codes, and integrate with our API. Accept Bitcoin globally with zero chargeback risk and simplified accounting.",
+        "<p>Yes, businesses may accept cryptocurrency payments wherever such transactions are legally permitted and the business complies fully with applicable regulations and laws.</p><p>Features include:</p> <ul class='pl-5'> <li>• Full access to DGEN web app functionality: depositing, withdrawing, cross-chain swapping, and more.</li> <li>• Generating invoices and QR codes for payments for goods & services.</li> <li>• API integration for seamless processing.</li> <li>• Zero chargeback risk and simplified accounting with Bitcoin and supported cryptocurrencies.</li> <li>• This app would then become another asset owned by your company potentially generating more revenue, especially with offering more options for your customers to pay you.</li></ul> <p>Additionally, businesses (or individuals) can white-label a customized version of the DGEN CARD app.</p>",
       icon: "ph:storefront-bold",
       emoji: "🏪",
     },
@@ -113,7 +113,7 @@
       category: "Tech",
       question: "Do I need to manage channels?",
       answer:
-        'No! DGEN uses Breez SDK Liquid - a next-generation Lightning solution that eliminates channel management entirely. No channel opening, no rebalancing, no liquidity concerns. Just instant payments that work every time. Learn more at <a href="https://sdk-doc-liquid.breez.technology" target="_blank" class="text-dgen-aqua hover:underline">Breez SDK Liquid Documentation</a>',
+        'No! DGEN uses Breez SDK Liquid - a next-generation Lightning solution that eliminates channel management entirely. No channel opening, no rebalancing, no liquidity concerns. Learn more at <a href="https://sdk-doc-liquid.breez.technology" target="_blank" class="text-dgen-aqua hover:underline">Breez SDK Liquid Documentation</a>',
       icon: "ph:cpu-bold",
       emoji: "🤖",
     },
@@ -122,7 +122,7 @@
       category: "Tech",
       question: "What is Liquid Network?",
       answer:
-        "Liquid is Bitcoin's confidential sidechain. Faster 2-minute blocks, confidential transactions, perfect for trading and high-value transfers. Peg Bitcoin in/out seamlessly.",
+        "Liquid is Bitcoin's sidechain. Faster 2-minute blocks, transactions, perfect for trading and high-value transfers. Peg Bitcoin in/out seamlessly.",
       icon: "ph:drop-bold",
       emoji: "💧",
     },
