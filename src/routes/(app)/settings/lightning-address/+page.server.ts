@@ -1,5 +1,5 @@
-import type { PageServerLoad } from './$types';
-import updateUser from '$lib/settings';
+import type { PageServerLoad } from "./$types";
+import updateUser from "$lib/settings";
 
 export const load: PageServerLoad = async ({ parent }) => {
   const { user } = await parent();

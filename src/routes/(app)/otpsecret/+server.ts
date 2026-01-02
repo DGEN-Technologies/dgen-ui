@@ -4,7 +4,12 @@ import { error } from "@sveltejs/kit";
 export async function POST({ cookies, request, fetch }) {
   try {
     const body = await request.json();
-    const { username, secret } = await post("/otpsecret", body, auth(cookies), fetch);
+    const { username, secret } = await post(
+      "/otpsecret",
+      body,
+      auth(cookies),
+      fetch,
+    );
     const uri = `otpauth://totp/DGEN Wallet:${username}?secret=${secret}&period=30&digits=6&algorithm=SHA1&issuer=DGEN Wallet`;
     return new Response(JSON.stringify({ secret, uri }));
   } catch (e: any) {

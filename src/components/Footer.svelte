@@ -22,7 +22,9 @@
   <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
     <div class="space-y-4">
       <a href="/" aria-label="Home" class="block">
-        <div class="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+        <div
+          class="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"
+        >
           DGEN Technologies
         </div>
       </a>
@@ -93,7 +95,7 @@
       </div>
     </div>
   </div>
-  
+
   <div class="mt-12 pt-8 border-t border-white/5 text-center">
     <p class="text-xs text-gray-500">
       © 2025 DGEN Technologies. All rights reserved.

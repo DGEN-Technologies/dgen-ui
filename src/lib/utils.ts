@@ -40,7 +40,7 @@ export const getImageUrl = (url: string | null | undefined): string | null => {
   if (!url) return null;
 
   // Already a full URL
-  if (url.startsWith('http://') || url.startsWith('https://')) {
+  if (url.startsWith("http://") || url.startsWith("https://")) {
     return url;
   }
 
@@ -51,16 +51,20 @@ export const getImageUrl = (url: string | null | undefined): string | null => {
     return url;
   }
 
-  if (browser && typeof window !== 'undefined' && window.location.protocol === 'https:') {
-    backendUrl = backendUrl.replace('http://', 'https://');
+  if (
+    browser &&
+    typeof window !== "undefined" &&
+    window.location.protocol === "https:"
+  ) {
+    backendUrl = backendUrl.replace("http://", "https://");
   }
 
   // Convert relative /api/public/ or /public/ paths to full backend URL
-  if (url.startsWith('/api/public/')) {
-    return `${backendUrl}${url.replace('/api', '')}`;
+  if (url.startsWith("/api/public/")) {
+    return `${backendUrl}${url.replace("/api", "")}`;
   }
 
-  if (url.startsWith('/public/')) {
+  if (url.startsWith("/public/")) {
     return `${backendUrl}${url}`;
   }
 
@@ -68,7 +72,12 @@ export const getImageUrl = (url: string | null | undefined): string | null => {
   return url;
 };
 
-export const g = (url: string, fetch: any, headers: object, origin?: string) => {
+export const g = (
+  url: string,
+  fetch: any,
+  headers: object,
+  origin?: string,
+) => {
   // Always use backend proxy for all requests
   const endpoint = `/api/backend${url}`;
   return fetch(endpoint, { headers })
@@ -80,9 +89,15 @@ export const g = (url: string, fetch: any, headers: object, origin?: string) => 
         throw new Error(body);
       }
     });
-}
+};
 
-export const p = async (url: string, body: object, fetch: any, headers: HeadersInit = {}, origin?: string) => {
+export const p = async (
+  url: string,
+  body: object,
+  fetch: any,
+  headers: HeadersInit = {},
+  origin?: string,
+) => {
   headers = {
     "content-type": "application/json",
     accept: "application/json",
@@ -91,7 +106,7 @@ export const p = async (url: string, body: object, fetch: any, headers: HeadersI
 
   // Always use backend proxy for all requests
   const endpoint = `/api/backend${url}`;
-  
+
   const response = await fetch(endpoint, {
     method: "POST",
     body: JSON.stringify(body),
@@ -124,9 +139,14 @@ export const p = async (url: string, body: object, fetch: any, headers: HeadersI
     });
 
   return response;
-}
+};
 
-export const get = (url: string, headers = {}, fetchFn = fetch, origin?: string) => {
+export const get = (
+  url: string,
+  headers = {},
+  fetchFn = fetch,
+  origin?: string,
+) => {
   // Always use backend proxy for all requests
   const endpoint = `/api/backend${url}`;
   return fetchFn(endpoint, { headers })
@@ -206,7 +226,7 @@ export const copy = (text: string) => {
     textArea.focus();
     textArea.select();
     try {
-      document.execCommand('copy');
+      document.execCommand("copy");
       success("Copied!");
     } catch (err) {
       fail("Failed to copy");
@@ -231,7 +251,7 @@ export const copyNoNewlines = (text: string) => {
     textArea.focus();
     textArea.select();
     try {
-      document.execCommand('copy');
+      document.execCommand("copy");
       success("Copied!");
     } catch (err) {
       fail("Failed to copy");
@@ -347,7 +367,8 @@ export const auth = (cookies) => ({
 });
 
 // Format satoshis as BTC decimal (e.g., 100000000 sats -> "1.00000000 BTC")
-export const btc = (satoshis: number): string => (satoshis / 100000000).toFixed(8);
+export const btc = (satoshis: number): string =>
+  (satoshis / 100000000).toFixed(8);
 
 // Convert fiat to satoshis using exchange rate
 export const fiatToSats = (fiat: number, rate: number): number =>
@@ -462,7 +483,9 @@ export const s = (s: number, locale = "en-US"): string =>
   new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(s);
 
 export const sat = (s: number): string =>
-  new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(Math.abs(s));
+  new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(
+    Math.abs(s),
+  );
 
 export const si = (
   n: number,
@@ -617,13 +640,22 @@ export const ago = (t) => {
   return `${days}d`;
 };
 
-export const register = async (user, ip, cookies, loginRedirect, fetchFn = fetch) => {
+export const register = async (
+  user,
+  ip,
+  cookies,
+  loginRedirect,
+  fetchFn = fetch,
+) => {
   let error;
   let sk;
   let registrationSuccessful = false;
 
   try {
-    console.log("[Register Utils] Sending registration request for:", user.username);
+    console.log(
+      "[Register Utils] Sending registration request for:",
+      user.username,
+    );
     // Use the fetchFn passed from the server action which has proper context
     const response = await fetchFn("/api/backend/register", {
       method: "POST",
@@ -634,7 +666,7 @@ export const register = async (user, ip, cookies, loginRedirect, fetchFn = fetch
         "cf-connecting-ip": ip,
       },
     });
-    
+
     if (!response.ok) {
       const text = await response.text();
       let message;
@@ -643,7 +675,7 @@ export const register = async (user, ip, cookies, loginRedirect, fetchFn = fetch
       } catch (e) {}
       throw new Error(message || text);
     }
-    
+
     const result = await response.json();
     sk = result.sk;
     registrationSuccessful = true;
@@ -659,10 +691,13 @@ export const register = async (user, ip, cookies, loginRedirect, fetchFn = fetch
   if (registrationSuccessful) {
     try {
       // Small delay to ensure Redis operations complete (reduces race conditions)
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       await login(user, cookies, ip, fetchFn);
-      console.log("[Register Utils] Auto-login successful for new user:", user.username);
+      console.log(
+        "[Register Utils] Auto-login successful for new user:",
+        user.username,
+      );
     } catch (e) {
       const { message } = e as Error;
       console.log("[Register Utils] Auto-login failed for new user:", message);
@@ -670,14 +705,20 @@ export const register = async (user, ip, cookies, loginRedirect, fetchFn = fetch
       // Retry once after a short delay in case of timing issues
       try {
         console.log("[Register Utils] Retrying auto-login after delay...");
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, 500));
         await login(user, cookies, ip, fetchFn);
-        console.log("[Register Utils] Auto-login retry successful for:", user.username);
+        console.log(
+          "[Register Utils] Auto-login retry successful for:",
+          user.username,
+        );
       } catch (retryError) {
         console.log("[Register Utils] Auto-login retry also failed");
         // If auto-login fails after successful registration, still show as success
         // The user can manually login
-        return svelteFail(400, { error: "Registration successful but auto-login failed. Please try logging in manually." });
+        return svelteFail(400, {
+          error:
+            "Registration successful but auto-login failed. Please try logging in manually.",
+        });
       }
     }
 

@@ -4,7 +4,7 @@
  * Similar patterns were used in the MyAlgo wallet exploit
  */
 
-import { lockWallet } from '$lib/walletService';
+import { lockWallet } from "$lib/walletService";
 
 interface SecurityEvent {
   type: string;
@@ -34,7 +34,7 @@ class DOMSecurityMonitor {
    * Start monitoring for suspicious activity
    */
   startMonitoring(): void {
-    if (this.isMonitoring || typeof window === 'undefined') return;
+    if (this.isMonitoring || typeof window === "undefined") return;
     this.isMonitoring = true;
 
     // Monitor DOM mutations for suspicious patterns
@@ -47,7 +47,7 @@ class DOMSecurityMonitor {
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ['style', 'class']
+      attributeFilter: ["style", "class"],
     });
 
     // Monitor storage access patterns
@@ -74,21 +74,33 @@ class DOMSecurityMonitor {
   private checkMutations(mutations: MutationRecord[]): void {
     for (const mutation of mutations) {
       // Check for injection of suspicious scripts or iframes
-      if (mutation.type === 'childList') {
+      if (mutation.type === "childList") {
         mutation.addedNodes.forEach((node) => {
-          if (node.nodeName === 'SCRIPT' || node.nodeName === 'IFRAME') {
-            this.recordEvent('suspicious_injection', `${node.nodeName} element added to DOM`);
+          if (node.nodeName === "SCRIPT" || node.nodeName === "IFRAME") {
+            this.recordEvent(
+              "suspicious_injection",
+              `${node.nodeName} element added to DOM`,
+            );
           }
         });
       }
 
       // Check for style changes that might be used to hide malicious activity
-      if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+      if (
+        mutation.type === "attributes" &&
+        mutation.attributeName === "style"
+      ) {
         const element = mutation.target as HTMLElement;
-        if (element.style.visibility === 'hidden' || element.style.display === 'none') {
+        if (
+          element.style.visibility === "hidden" ||
+          element.style.display === "none"
+        ) {
           // Only suspicious if it contains sensitive data
-          if (element.textContent?.includes(' ') && element.textContent.split(' ').length === 12) {
-            this.recordEvent('seed_hiding', 'Element with seed phrase hidden');
+          if (
+            element.textContent?.includes(" ") &&
+            element.textContent.split(" ").length === 12
+          ) {
+            this.recordEvent("seed_hiding", "Element with seed phrase hidden");
           }
         }
       }
@@ -103,9 +115,9 @@ class DOMSecurityMonitor {
     const originalGetItem = sessionStorage.getItem.bind(sessionStorage);
     const self = this;
 
-    sessionStorage.getItem = function(key: string): string | null {
-      if (key.includes('wallet') || key.includes('mnemonic')) {
-        self.recordEvent('storage_access', `Accessing: ${key}`);
+    sessionStorage.getItem = function (key: string): string | null {
+      if (key.includes("wallet") || key.includes("mnemonic")) {
+        self.recordEvent("storage_access", `Accessing: ${key}`);
       }
       return originalGetItem(key);
     };
@@ -118,9 +130,9 @@ class DOMSecurityMonitor {
     let clipboardAccessCount = 0;
     const resetInterval = 1000;
 
-    document.addEventListener('copy', () => {
+    document.addEventListener("copy", () => {
       clipboardAccessCount++;
-      this.recordEvent('clipboard_copy', 'Copy event detected');
+      this.recordEvent("clipboard_copy", "Copy event detected");
 
       setTimeout(() => {
         clipboardAccessCount = 0;
@@ -128,7 +140,10 @@ class DOMSecurityMonitor {
 
       // Suspicious if many copies in short time
       if (clipboardAccessCount > 3) {
-        this.recordEvent('rapid_clipboard_access', 'Multiple rapid copy events');
+        this.recordEvent(
+          "rapid_clipboard_access",
+          "Multiple rapid copy events",
+        );
       }
     });
   }
@@ -140,7 +155,7 @@ class DOMSecurityMonitor {
     const event: SecurityEvent = {
       type,
       timestamp: Date.now(),
-      details
+      details,
     };
 
     this.events.push(event);
@@ -155,7 +170,7 @@ class DOMSecurityMonitor {
 
     // Log for debugging (in production, send to monitoring service)
     if (import.meta.env.DEV) {
-      console.warn('[Security Monitor]', type, details);
+      console.warn("[Security Monitor]", type, details);
     }
   }
 
@@ -165,18 +180,18 @@ class DOMSecurityMonitor {
   private checkThreshold(): void {
     const now = Date.now();
     const recentEvents = this.events.filter(
-      (e) => now - e.timestamp < this.TIME_WINDOW
+      (e) => now - e.timestamp < this.TIME_WINDOW,
     );
 
     // Count suspicious event types
     const suspiciousTypes = [
-      'suspicious_injection',
-      'seed_hiding',
-      'rapid_clipboard_access'
+      "suspicious_injection",
+      "seed_hiding",
+      "rapid_clipboard_access",
     ];
 
     const suspiciousCount = recentEvents.filter((e) =>
-      suspiciousTypes.includes(e.type)
+      suspiciousTypes.includes(e.type),
     ).length;
 
     if (suspiciousCount >= this.SUSPICIOUS_THRESHOLD) {
@@ -188,7 +203,9 @@ class DOMSecurityMonitor {
    * Handle detected suspicious activity
    */
   private async handleSuspiciousActivity(): Promise<void> {
-    console.error('[Security Monitor] SUSPICIOUS ACTIVITY DETECTED - Locking wallet');
+    console.error(
+      "[Security Monitor] SUSPICIOUS ACTIVITY DETECTED - Locking wallet",
+    );
 
     // Clear events to prevent multiple triggers
     this.events = [];
@@ -197,14 +214,14 @@ class DOMSecurityMonitor {
     try {
       await lockWallet();
     } catch (error) {
-      console.error('[Security Monitor] Failed to lock wallet:', error);
+      console.error("[Security Monitor] Failed to lock wallet:", error);
     }
 
     // Alert user
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       alert(
-        'Suspicious activity detected. Your wallet has been locked for security. ' +
-        'Please verify your browser has not been compromised.'
+        "Suspicious activity detected. Your wallet has been locked for security. " +
+          "Please verify your browser has not been compromised.",
       );
     }
   }

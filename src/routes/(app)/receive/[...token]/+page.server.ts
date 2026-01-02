@@ -7,7 +7,7 @@ export async function load({ params, parent, url, fetch }) {
   if (!user) redirect(307, `/register?redirect=${url.pathname}`);
 
   // If no token provided, redirect to user's receive page
-  if (!params.token || params.token.length === 0 || params.token[0] === '') {
+  if (!params.token || params.token.length === 0 || params.token[0] === "") {
     redirect(307, `/${user.username}/receive`);
   }
 

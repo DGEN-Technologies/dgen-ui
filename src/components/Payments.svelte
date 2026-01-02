@@ -12,14 +12,16 @@
 <div class="text-base">
   {#each payments as p, i}
     {@const amount = fund ? -p.amount : p.amount}
-    {@const dest = p.details?.destination || ''}
-    {@const desc = p.details?.description?.toLowerCase() || ''}
+    {@const dest = p.details?.destination || ""}
+    {@const desc = p.details?.description?.toLowerCase() || ""}
     <div
       class="grid grid-cols-12 border-b border-base-200 hover:bg-base-200 px-1 py-2 lg:p-4 cursor-pointer gap-2 sm:gap-1"
       class:border-b-0={i === payments.length - 1}
       class:text-error={amount < 0}
       onclick={() => goto(`/payment/${p.txId || p.id || p.paymentHash}`)}
-      onkeydown={(e) => e.key === "Enter" && goto(`/payment/${p.txId || p.id || p.paymentHash}`)}
+      onkeydown={(e) =>
+        e.key === "Enter" &&
+        goto(`/payment/${p.txId || p.id || p.paymentHash}`)}
       role="button"
       tabindex="0"
       aria-label={`Payment ${Math.abs(amount)} sats`}
@@ -36,7 +38,11 @@
             -->
             {#if Math.abs(amount) > 25000}
               <!-- Bitcoin on-chain (large amount) -->
-              <img src="/images/bitcoin.svg" class="w-5 h-5 sm:w-6 sm:h-6 mr-1 sm:mr-2" alt="Bitcoin" />
+              <img
+                src="/images/bitcoin.svg"
+                class="w-5 h-5 sm:w-6 sm:h-6 mr-1 sm:mr-2"
+                alt="Bitcoin"
+              />
             {:else}
               <!-- Lightning payment (smaller amount) -->
               <iconify-icon
@@ -97,7 +103,9 @@
             </div>
           </div>
         {:else}
-          <div class="text-secondary flex items-center gap-0.5 text-xs sm:text-base">
+          <div
+            class="text-secondary flex items-center gap-0.5 text-xs sm:text-base"
+          >
             <!-- Direction icon based on amount -->
             {#if amount > 0}
               <iconify-icon
@@ -131,7 +139,9 @@
         {/if}
       </div>
 
-      <div class="text-secondary text-right text-xs sm:text-sm my-auto col-span-4 sm:col-span-3 min-w-0 pl-1">
+      <div
+        class="text-secondary text-right text-xs sm:text-sm my-auto col-span-4 sm:col-span-3 min-w-0 pl-1"
+      >
         {#if p.timestamp && p.timestamp > 0}
           {@const date = new Date(p.timestamp * 1000)}
           <div class="whitespace-nowrap overflow-hidden text-ellipsis">

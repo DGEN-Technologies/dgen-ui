@@ -14,8 +14,18 @@
   let prepareResponse = $state(null);
 
   const assets = [
-    { id: ASSET_IDS.LBTC, name: "Bitcoin", ticker: "BTC", icon: "cryptocurrency:btc" },
-    { id: ASSET_IDS.USDT, name: "Tether USD", ticker: "USDT", icon: "cryptocurrency:usdt" }
+    {
+      id: ASSET_IDS.LBTC,
+      name: "Bitcoin",
+      ticker: "BTC",
+      icon: "cryptocurrency:btc",
+    },
+    {
+      id: ASSET_IDS.USDT,
+      name: "Tether USD",
+      ticker: "USDT",
+      icon: "cryptocurrency:usdt",
+    },
   ];
 
   async function generateAddress() {
@@ -27,13 +37,13 @@
 
       prepareResponse = await prepareReceiveAsset({
         assetId: selectedAsset,
-        payerAmount
+        payerAmount,
       });
 
       const receiveResponse = await receiveAsset({
         prepareResponse,
         description,
-        useDescriptionHash: false
+        useDescriptionHash: false,
       });
 
       destination = receiveResponse.destination;
@@ -74,8 +84,10 @@
         <div class="grid grid-cols-2 gap-3">
           {#each assets as asset}
             <button
-              class="btn btn-outline {selectedAsset === asset.id ? 'btn-primary' : ''}"
-              onclick={() => selectedAsset = asset.id}
+              class="btn btn-outline {selectedAsset === asset.id
+                ? 'btn-primary'
+                : ''}"
+              onclick={() => (selectedAsset = asset.id)}
             >
               <iconify-icon icon={asset.icon} width="24"></iconify-icon>
               {asset.ticker}
@@ -141,9 +153,7 @@
           Generate Address
         </button>
         {#if onCancel}
-          <button class="btn btn-ghost" onclick={onCancel}>
-            Cancel
-          </button>
+          <button class="btn btn-ghost" onclick={onCancel}> Cancel </button>
         {/if}
       </div>
     </div>
@@ -184,7 +194,8 @@
         <div class="alert">
           <iconify-icon icon="mdi:information" width="24"></iconify-icon>
           <span>
-            Requesting: {amount} {getAssetTicker(selectedAsset)}
+            Requesting: {amount}
+            {getAssetTicker(selectedAsset)}
           </span>
         </div>
       {/if}

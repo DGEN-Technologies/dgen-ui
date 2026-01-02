@@ -21,18 +21,20 @@
     if (user) preloadData(`/${user.username}/receive`);
     preloadData("/send");
   });
-  
+
   // Refresh wallet data on mount to ensure latest balance
   onMount(async () => {
     if (browser && user) {
       try {
         // Import wallet service to check connection
-        const walletService = await import('$lib/walletService');
-        
+        const walletService = await import("$lib/walletService");
+
         // Only refresh if SDK is connected
         if (walletService.isConnected()) {
-          const { walletStore, transactions: txStore } = await import('$lib/stores/wallet');
-          
+          const { walletStore, transactions: txStore } = await import(
+            "$lib/stores/wallet"
+          );
+
           // Refresh wallet data
           await walletStore.refresh();
           await txStore.refresh();
@@ -40,33 +42,33 @@
           // The layout will initialize the wallet and trigger updates
         }
       } catch (e) {
-        console.error('[Profile] Failed to refresh wallet data:', e);
+        console.error("[Profile] Failed to refresh wallet data:", e);
       }
     }
   });
 
   let { subject, rate, user } = $derived(data);
   let { locked } = $derived(user);
-  
+
   // Track if user has acknowledged backup warning
   let backupAcknowledged = $state(false);
-  
+
   // Check localStorage for backup acknowledgment
   onMount(() => {
     if (browser && user) {
       const key = `backup-acknowledged-${user.id || user.username}`;
-      backupAcknowledged = localStorage.getItem(key) === 'true';
+      backupAcknowledged = localStorage.getItem(key) === "true";
     }
   });
-  
+
   function acknowledgeBackup() {
     if (user) {
       const key = `backup-acknowledged-${user.id || user.username}`;
-      localStorage.setItem(key, 'true');
+      localStorage.setItem(key, "true");
       backupAcknowledged = true;
     }
   }
-  
+
   // Get wallet data from browser SDK
   let browserWalletInfo = $derived($walletInfo);
   // Following misty-breez: balance comes directly from SDK, let Balance component handle loading state
@@ -76,14 +78,14 @@
   // Create accounts from browser SDK data
   let accounts = $derived([
     {
-      id: `lightning-${user?.id || 'browser'}`,
+      id: `lightning-${user?.id || "browser"}`,
       name: "Lightning Wallet",
       asset: "lightning",
       balance: balance, // Can be 0 during loading, Balance component checks walletInfo === null
-      browserManaged: true
-    }
+      browserManaged: true,
+    },
   ]);
-  
+
   // Wallet status flags - all removed, browser manages everything
 
   let install = async () => {
@@ -105,8 +107,9 @@
       isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
       isAndroid = /Android/.test(navigator.userAgent);
       // @ts-ignore - standalone is iOS-specific
-      isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-                     window.navigator.standalone === true;
+      isStandalone =
+        window.matchMedia("(display-mode: standalone)").matches ||
+        window.navigator.standalone === true;
     }
   });
 
@@ -127,7 +130,9 @@
 
 <div class="relative min-h-screen">
   <!-- Content Container -->
-  <div class="w-full px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-40 sm:pb-44 relative z-10">
+  <div
+    class="w-full px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-40 sm:pb-44 relative z-10"
+  >
     <div class="max-w-4xl mx-auto space-y-6">
       {#if user?.id && user.id === subject.id}
         <!-- Install App Button - Top Position (Android or iOS) -->
@@ -135,10 +140,16 @@
           <button
             class="lg:hidden w-full px-6 py-3 rounded-2xl font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center justify-center gap-2 animate-pulse-soft"
             style="background: linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%); color: white;"
-            onclick={$installPrompt ? install : (isIOS ? showIOSInstallGuide : showAndroidInstallGuide)}
+            onclick={$installPrompt
+              ? install
+              : isIOS
+                ? showIOSInstallGuide
+                : showAndroidInstallGuide}
           >
-            <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                 style="background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);"></div>
+            <div
+              class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              style="background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);"
+            ></div>
             <iconify-icon
               noobserver
               icon="ph:floppy-disk-bold"
@@ -151,9 +162,14 @@
 
         <!-- Disclaimer -->
         <div class="mb-6 space-y-3">
-          <div class="glass p-3 sm:p-4 rounded-2xl border-2 border-yellow-500/50 bg-yellow-500/10 max-w-2xl mx-auto">
+          <div
+            class="glass p-3 sm:p-4 rounded-2xl border-2 border-yellow-500/50 bg-yellow-500/10 max-w-2xl mx-auto"
+          >
             <div class="text-center">
-              <p class="text-yellow-400 font-bold text-xs sm:text-sm">⚠️ This website/app is in Beta and not finalized. Use at your own risk.</p>
+              <p class="text-yellow-400 font-bold text-xs sm:text-sm">
+                ⚠️ This website/app is in Beta and not finalized. Use at your
+                own risk.
+              </p>
             </div>
           </div>
         </div>
@@ -174,20 +190,41 @@
                 Important: Backup Your Recovery Phrase
               </div>
               <div class="text-xs text-white/60 mb-2 space-y-1">
-                <p><span class="text-red-300 font-medium">Think of your recovery phrase as the password to your money.</span></p>
+                <p>
+                  <span class="text-red-300 font-medium"
+                    >Think of your recovery phrase as the password to your
+                    money.</span
+                  >
+                </p>
                 <ul class="list-disc list-inside space-y-0.5 ml-2">
-                  <li><span class="text-red-300 font-medium">Write it down</span> and keep it safe - if you lose it, your funds are gone forever</li>
-                  <li><span class="text-green-300 font-medium">To use this same wallet on another device:</span>
+                  <li>
+                    <span class="text-red-300 font-medium">Write it down</span> and
+                    keep it safe - if you lose it, your funds are gone forever
+                  </li>
+                  <li>
+                    <span class="text-green-300 font-medium"
+                      >To use this same wallet on another device:</span
+                    >
                     <ul class="list-disc list-inside ml-4 mt-0.5">
-                      <li>Go to Settings → Security → Import your recovery phrase</li>
+                      <li>
+                        Go to Settings → Security → Import your recovery phrase
+                      </li>
                     </ul>
                   </li>
-                  <li>Without importing, opening DGEN on a new device creates a completely separate wallet</li>
-                  <li>We never store your recovery phrase - only you have it</li>
+                  <li>
+                    Without importing, opening DGEN on a new device creates a
+                    completely separate wallet
+                  </li>
+                  <li>
+                    We never store your recovery phrase - only you have it
+                  </li>
                 </ul>
               </div>
               <div class="flex flex-wrap gap-2">
-                <a href="/settings/security?autoReveal=true" class="inline-block">
+                <a
+                  href="/settings/security?autoReveal=true"
+                  class="inline-block"
+                >
                   <button
                     class="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/20 hover:bg-red-500/30 text-red-300 transition-all"
                   >
@@ -250,14 +287,18 @@
                   class="px-6 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center gap-2"
                   style="background: linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%); color: white;"
                 >
-                  <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                       style="background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);"></div>
+                  <div
+                    class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    style="background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);"
+                  ></div>
                   <iconify-icon
                     icon="ph:gear-bold"
                     width="24"
                     class="relative z-10 group-hover:rotate-90 transition-transform duration-300"
                   ></iconify-icon>
-                  <span class="relative z-10 font-semibold">Configure Settings</span>
+                  <span class="relative z-10 font-semibold"
+                    >Configure Settings</span
+                  >
                 </button>
               </a>
             </div>
@@ -302,8 +343,10 @@
                   class="px-6 py-3 rounded-2xl font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center gap-2"
                   style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white;"
                 >
-                  <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                       style="background: linear-gradient(135deg, #059669 0%, #10B981 100%);"></div>
+                  <div
+                    class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    style="background: linear-gradient(135deg, #059669 0%, #10B981 100%);"
+                  ></div>
                   <iconify-icon
                     icon="ph:rocket-launch"
                     width="24"
@@ -335,7 +378,6 @@
             </div>
           {/each}
         </div>
-
 
         {#if locked}
           <div
@@ -404,14 +446,16 @@
     >
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-xl font-bold text-white flex items-center gap-2">
-          <iconify-icon icon="ph:info-bold" width="24" class="text-blue-400"></iconify-icon>
+          <iconify-icon icon="ph:info-bold" width="24" class="text-blue-400"
+          ></iconify-icon>
           Install App
         </h3>
         <button
           onclick={() => (showIOSInstructions = false)}
           class="p-2 hover:bg-white/10 rounded-lg transition-all"
         >
-          <iconify-icon icon="ph:x-bold" width="24" class="text-white/60"></iconify-icon>
+          <iconify-icon icon="ph:x-bold" width="24" class="text-white/60"
+          ></iconify-icon>
         </button>
       </div>
 
@@ -420,26 +464,48 @@
 
         <ol class="space-y-3 text-sm">
           <li class="flex items-start gap-3">
-            <span class="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold">1</span>
+            <span
+              class="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold"
+              >1</span
+            >
             <div>
               <p class="font-medium text-white">Tap the Share button</p>
-              <p class="text-xs text-white/60">Look for <iconify-icon icon="ph:share" class="inline" width="16"></iconify-icon> in Safari's toolbar (bottom of screen)</p>
+              <p class="text-xs text-white/60">
+                Look for <iconify-icon icon="ph:share" class="inline" width="16"
+                ></iconify-icon> in Safari's toolbar (bottom of screen)
+              </p>
             </div>
           </li>
 
           <li class="flex items-start gap-3">
-            <span class="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold">2</span>
+            <span
+              class="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold"
+              >2</span
+            >
             <div>
-              <p class="font-medium text-white">Scroll and tap "Add to Home Screen"</p>
-              <p class="text-xs text-white/60">Look for <iconify-icon icon="ph:plus-square" class="inline" width="16"></iconify-icon> Add to Home Screen</p>
+              <p class="font-medium text-white">
+                Scroll and tap "Add to Home Screen"
+              </p>
+              <p class="text-xs text-white/60">
+                Look for <iconify-icon
+                  icon="ph:plus-square"
+                  class="inline"
+                  width="16"
+                ></iconify-icon> Add to Home Screen
+              </p>
             </div>
           </li>
 
           <li class="flex items-start gap-3">
-            <span class="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold">3</span>
+            <span
+              class="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold"
+              >3</span
+            >
             <div>
               <p class="font-medium text-white">Tap "Add"</p>
-              <p class="text-xs text-white/60">The app will appear on your home screen</p>
+              <p class="text-xs text-white/60">
+                The app will appear on your home screen
+              </p>
             </div>
           </li>
         </ol>
@@ -468,14 +534,16 @@
     >
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-xl font-bold text-white flex items-center gap-2">
-          <iconify-icon icon="ph:info-bold" width="24" class="text-blue-400"></iconify-icon>
+          <iconify-icon icon="ph:info-bold" width="24" class="text-blue-400"
+          ></iconify-icon>
           Install App
         </h3>
         <button
           onclick={() => (showAndroidInstructions = false)}
           class="p-2 hover:bg-white/10 rounded-lg transition-all"
         >
-          <iconify-icon icon="ph:x-bold" width="24" class="text-white/60"></iconify-icon>
+          <iconify-icon icon="ph:x-bold" width="24" class="text-white/60"
+          ></iconify-icon>
         </button>
       </div>
 
@@ -484,26 +552,47 @@
 
         <ol class="space-y-3 text-sm">
           <li class="flex items-start gap-3">
-            <span class="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold">1</span>
+            <span
+              class="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold"
+              >1</span
+            >
             <div>
               <p class="font-medium text-white">Tap the Menu button</p>
-              <p class="text-xs text-white/60">Look for <iconify-icon icon="ph:dots-three-vertical" class="inline" width="16"></iconify-icon> in Chrome's toolbar (top-right corner)</p>
+              <p class="text-xs text-white/60">
+                Look for <iconify-icon
+                  icon="ph:dots-three-vertical"
+                  class="inline"
+                  width="16"
+                ></iconify-icon> in Chrome's toolbar (top-right corner)
+              </p>
             </div>
           </li>
 
           <li class="flex items-start gap-3">
-            <span class="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold">2</span>
+            <span
+              class="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold"
+              >2</span
+            >
             <div>
-              <p class="font-medium text-white">Tap "Add to Home screen" or "Install app"</p>
-              <p class="text-xs text-white/60">This option appears in the menu list</p>
+              <p class="font-medium text-white">
+                Tap "Add to Home screen" or "Install app"
+              </p>
+              <p class="text-xs text-white/60">
+                This option appears in the menu list
+              </p>
             </div>
           </li>
 
           <li class="flex items-start gap-3">
-            <span class="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold">3</span>
+            <span
+              class="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold"
+              >3</span
+            >
             <div>
               <p class="font-medium text-white">Tap "Install" or "Add"</p>
-              <p class="text-xs text-white/60">The app will appear on your home screen</p>
+              <p class="text-xs text-white/60">
+                The app will appear on your home screen
+              </p>
             </div>
           </li>
         </ol>
@@ -522,7 +611,8 @@
 
 <style>
   @keyframes pulse-soft {
-    0%, 100% {
+    0%,
+    100% {
       opacity: 1;
       transform: scale(1);
     }

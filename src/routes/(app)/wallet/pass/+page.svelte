@@ -24,31 +24,31 @@
   import { goto } from "$app/navigation";
   import { saveMnemonic, initWallet } from "$lib/walletService";
   import { mnemonic as mnemonicStore } from "$lib/store";
-  
+
   let { data } = $props();
   let { user } = data;
-  
+
   let submitting = $state(false);
   let mnemonic = $state("");
-  
+
   let confirm = $state("");
   let password = $state("");
   let revealPassword = $state(false);
   let revealConfirm = $state(false);
-  
+
   onMount(() => {
     // Get mnemonic from store or URL params
     if ($mnemonicStore) {
       mnemonic = $mnemonicStore;
     } else {
       const urlParams = new URLSearchParams(window.location.search);
-      const seedParam = urlParams.get('seed');
-      
+      const seedParam = urlParams.get("seed");
+
       if (seedParam) {
         mnemonic = atob(seedParam);
       } else {
         // No seed, redirect to settings
-        goto('/settings/security');
+        goto("/settings/security");
       }
     }
   });
@@ -56,7 +56,7 @@
   let submit = async () => {
     submitting = true;
     await tick();
-    
+
     if (!password || password !== confirm) {
       fail($t("accounts.passwordMismatch"));
       submitting = false;
@@ -68,50 +68,61 @@
 
       // Save mnemonic to secure storage with password encryption
       await saveMnemonic(mnemonic, password, userId);
-      
+
       // Initialize wallet with mnemonic
       await initWallet(mnemonic, userId);
-      
+
       // Initialize wallet store
-      const { walletStore } = await import('$lib/stores/wallet');
+      const { walletStore } = await import("$lib/stores/wallet");
       await walletStore.init(password, userId);
-      
+
       // Send to server to create watch-only wallet (NO seed storage)
       // We only send public key info, not the seed
-      const walletInfo = await import('$lib/walletService').then(m => m.getWalletInfo());
-      
+      const walletInfo = await import("$lib/walletService").then((m) =>
+        m.getWalletInfo(),
+      );
+
       if (walletInfo) {
-        console.log('[Wallet Creation] WalletInfo:', walletInfo);
-        
+        console.log("[Wallet Creation] WalletInfo:", walletInfo);
+
         // Create watch-only account on server
         // Breez SDK Liquid uses different fields
         // Using the backend proxy path
-        const pubkey = walletInfo.pubkey || walletInfo.nodeState?.id || "breez_liquid_pubkey";
-        const fingerprint = walletInfo.fingerprint || walletInfo.nodeState?.id || "breez_liquid_id";
-        
+        const pubkey =
+          walletInfo.pubkey ||
+          walletInfo.nodeState?.id ||
+          "breez_liquid_pubkey";
+        const fingerprint =
+          walletInfo.fingerprint ||
+          walletInfo.nodeState?.id ||
+          "breez_liquid_id";
+
         try {
           // The post() function already adds /api/backend prefix
           await post("/wallet/create", {
             pubkey,
             fingerprint,
-            type: "liquid"
+            type: "liquid",
           });
-          console.log('[Wallet Creation] Watch-only wallet created on server');
+          console.log("[Wallet Creation] Watch-only wallet created on server");
         } catch (serverError) {
           // Server wallet creation failed, but local wallet is set up
-          console.warn('[Wallet Creation] Server wallet creation failed:', serverError);
+          console.warn(
+            "[Wallet Creation] Server wallet creation failed:",
+            serverError,
+          );
           // Continue anyway - wallet works locally
         }
       }
-      
+
       // No need to mark on server - everything is client-side
       // The wallet creation timestamp is already saved in localStorage
-      
+
       success("Wallet created successfully!");
-      
+
       // Clear mnemonic from memory
       mnemonic = "";
-      
+
       // Navigate to user profile
       goto(`/${user.username}`);
     } catch (e) {
@@ -125,9 +136,7 @@
 
 <div class="space-y-5">
   <div>
-    <h1 class="text-center text-3xl font-semibold">
-      Secure Your Wallet
-    </h1>
+    <h1 class="text-center text-3xl font-semibold">Secure Your Wallet</h1>
   </div>
 
   <form
@@ -144,7 +153,8 @@
         <div class="text-yellow-400">
           <p class="font-semibold">Important!</p>
           <p class="mt-1 text-sm">
-            This password encrypts your wallet locally. If you forget it, you'll need your seed phrase to recover your wallet.
+            This password encrypts your wallet locally. If you forget it, you'll
+            need your seed phrase to recover your wallet.
           </p>
         </div>
       </div>
@@ -177,7 +187,8 @@
         />
       {/if}
 
-      <iconify-icon noobserver
+      <iconify-icon
+        noobserver
         class="cursor-pointer ml-auto"
         onclick={() => (revealPassword = !revealPassword)}
         icon={revealPassword ? "ph:eye-bold" : "ph:eye-slash-bold"}
@@ -209,7 +220,8 @@
           class="clean"
         />
       {/if}
-      <iconify-icon noobserver
+      <iconify-icon
+        noobserver
         class="cursor-pointer ml-auto"
         onclick={() => (revealConfirm = !revealConfirm)}
         icon={revealConfirm ? "ph:eye-bold" : "ph:eye-slash-bold"}

@@ -55,7 +55,7 @@
   let notificationsEnabled = $state(false);
   let permission = $state();
   let showNotificationHelp = $state(false);
-  let showClearConfirm = $state(false)
+  let showClearConfirm = $state(false);
   let isExporting = $state(false);
 
   onMount(async () => {
@@ -120,7 +120,7 @@
   }
 
   async function exportLogs() {
-    if (isExporting) return;   // prevent double clicks
+    if (isExporting) return; // prevent double clicks
     isExporting = true;
 
     try {
@@ -129,19 +129,20 @@
         info("No logs to export");
         return;
       }
-      
+
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      
-      const now = new Date()
-      const date = now.toISOString()       
-        .replace(/T/, '_')                  
-        .replace(/:/g, '-')                 
-        .replace(/\..+/, '');
+
+      const now = new Date();
+      const date = now
+        .toISOString()
+        .replace(/T/, "_")
+        .replace(/:/g, "-")
+        .replace(/\..+/, "");
       a.download = `dgen-logs_${date}.log`;
       a.click();
-      
+
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Export failed:", err);
@@ -481,7 +482,8 @@
       <div>
         <span class="font-bold text-lg gradient-text">Application Logs</span>
         <p class="text-white/60 mt-1 text-sm">
-          Export technical logs from this device to share with support when troubleshooting issues.
+          Export technical logs from this device to share with support when
+          troubleshooting issues.
         </p>
       </div>
 
@@ -494,7 +496,8 @@
           disabled={isExporting}
         >
           <div class="flex items-center justify-center gap-2">
-            <iconify-icon icon="ph:export-bold" class="text-blue-300" width="24"></iconify-icon>
+            <iconify-icon icon="ph:export-bold" class="text-blue-300" width="24"
+            ></iconify-icon>
             <span class="font-semibold">
               {#if isExporting}
                 Exporting…
@@ -508,19 +511,22 @@
         <!-- Clear Logs -->
         <button
           type="button"
-          class="px-4 p-4 rounded-xl border border-red-500/50 bg-red-500/10 
-                text-red-300 text-xs md:text-sm 
-                hover:bg-red-500/20 hover:border-red-400 
+          class="px-4 p-4 rounded-xl border border-red-500/50 bg-red-500/10
+                text-red-300 text-xs md:text-sm
+                hover:bg-red-500/20 hover:border-red-400
                 transition-all flex items-center justify-center gap-2 flex-none"
-          onclick={() => showClearConfirm = true}
+          onclick={() => (showClearConfirm = true)}
         >
-          <iconify-icon icon="ph:trash-bold" class="text-red-300" width="18"></iconify-icon>
+          <iconify-icon icon="ph:trash-bold" class="text-red-300" width="18"
+          ></iconify-icon>
           <span>Clear Logs</span>
         </button>
       </div>
 
       {#if showClearConfirm}
-        <div class="mt-2 p-3 rounded-xl border border-red-500/40 bg-red-500/10 text-xs text-red-100 space-y-2">
+        <div
+          class="mt-2 p-3 rounded-xl border border-red-500/40 bg-red-500/10 text-xs text-red-100 space-y-2"
+        >
           <p class="font-semibold">Clear all logs from this device?</p>
           <p class="text-[11px] text-red-200/80">
             This only deletes logs stored in this browser. It cannot be undone.
@@ -529,7 +535,7 @@
             <button
               type="button"
               class="px-3 py-1.5 rounded-lg border border-white/20 text-xs hover:bg-white/5"
-              onclick={() => showClearConfirm = false}
+              onclick={() => (showClearConfirm = false)}
             >
               Cancel
             </button>

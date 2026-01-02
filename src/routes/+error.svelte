@@ -21,7 +21,9 @@
         <h1 class="text-2xl md:text-3xl font-semibold text-center">Error</h1>
       </div>
       <p class="text-secondary text-center">Something went wrong</p>
-      <p class="text-secondary text-center">{$page.error?.message || 'Unknown error occurred'}</p>
+      <p class="text-secondary text-center">
+        {$page.error?.message || "Unknown error occurred"}
+      </p>
 
       <div class="flex justify-center py-24">
         <a href={link}>

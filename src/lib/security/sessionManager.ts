@@ -6,11 +6,11 @@ class SecureSessionManager {
 
   private constructor() {
     // Clear on page unload
-    if (typeof window !== 'undefined') {
-      window.addEventListener('beforeunload', () => this.clearAll());
+    if (typeof window !== "undefined") {
+      window.addEventListener("beforeunload", () => this.clearAll());
 
       // Clear on visibility change (tab switch)
-      document.addEventListener('visibilitychange', () => {
+      document.addEventListener("visibilitychange", () => {
         if (document.hidden) {
           // Start aggressive timeout when tab hidden
           setTimeout(() => this.clearAll(), 5 * 60 * 1000); // 5 min

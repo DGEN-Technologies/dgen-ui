@@ -1,6 +1,6 @@
-import * as walletService from './walletService';
-import type * as breezSdk from '@breeztech/breez-sdk-liquid/web';
-import { ASSET_IDS } from './assets';
+import * as walletService from "./walletService";
+import type * as breezSdk from "@breeztech/breez-sdk-liquid/web";
+import { ASSET_IDS } from "./assets";
 
 // Prepare to receive an asset payment
 export async function prepareReceiveAsset(params: {
@@ -8,14 +8,14 @@ export async function prepareReceiveAsset(params: {
   payerAmount?: number;
 }): Promise<breezSdk.PrepareReceiveResponse> {
   const amount: breezSdk.ReceiveAmount = {
-    type: 'asset',
+    type: "asset",
     assetId: params.assetId,
-    payerAmount: params.payerAmount
+    payerAmount: params.payerAmount,
   };
 
   return await walletService.prepareReceivePayment({
-    paymentMethod: 'liquidAddress',
-    amount
+    paymentMethod: "liquidAddress",
+    amount,
   });
 }
 
@@ -38,16 +38,16 @@ export async function prepareSendAsset(params: {
   fromAsset?: string;
 }): Promise<breezSdk.PrepareSendResponse> {
   const amount: breezSdk.PayAmount = {
-    type: 'asset',
+    type: "asset",
     toAsset: params.toAsset,
     receiverAmount: params.receiverAmount,
     estimateAssetFees: params.estimateAssetFees,
-    fromAsset: params.fromAsset
+    fromAsset: params.fromAsset,
   };
 
   return await walletService.prepareSendPayment({
     destination: params.destination,
-    amount
+    amount,
   });
 }
 
@@ -60,27 +60,27 @@ export async function sendAsset(params: {
   return await walletService.sendPayment({
     prepareResponse: params.prepareResponse,
     useAssetFees: params.useAssetFees,
-    payerNote: params.payerNote
+    payerNote: params.payerNote,
   });
 }
 
 // Prepare to receive LBTC
 export async function prepareReceiveLBTC(
-  payerAmountSat?: number
+  payerAmountSat?: number,
 ): Promise<breezSdk.PrepareReceiveResponse> {
   return prepareReceiveAsset({
     assetId: ASSET_IDS.LBTC,
-    payerAmount: payerAmountSat
+    payerAmount: payerAmountSat,
   });
 }
 
 // Prepare to receive USDT
 export async function prepareReceiveUSDT(
-  payerAmount?: number
+  payerAmount?: number,
 ): Promise<breezSdk.PrepareReceiveResponse> {
   return prepareReceiveAsset({
     assetId: ASSET_IDS.USDT,
-    payerAmount
+    payerAmount,
   });
 }
 
@@ -94,7 +94,7 @@ export async function prepareSendLBTC(params: {
     destination: params.destination,
     toAsset: ASSET_IDS.LBTC,
     receiverAmount: params.receiverAmountSat,
-    estimateAssetFees: params.estimateAssetFees
+    estimateAssetFees: params.estimateAssetFees,
   });
 }
 
@@ -110,7 +110,7 @@ export async function prepareSendUSDT(params: {
     toAsset: ASSET_IDS.USDT,
     receiverAmount: params.receiverAmount,
     estimateAssetFees: params.estimateAssetFees,
-    fromAsset: params.fromAsset
+    fromAsset: params.fromAsset,
   });
 }
 
@@ -122,17 +122,17 @@ export async function exchangeAssets(params: {
 }): Promise<breezSdk.SendPaymentResponse> {
   // First, create a receive address for the target asset
   const receiveAmount: breezSdk.ReceiveAmount = {
-    type: 'asset',
-    assetId: params.toAsset
+    type: "asset",
+    assetId: params.toAsset,
   };
 
   const prepareReceiveRes = await walletService.prepareReceivePayment({
-    paymentMethod: 'liquidAddress',
-    amount: receiveAmount
+    paymentMethod: "liquidAddress",
+    amount: receiveAmount,
   });
 
   const receiveRes = await walletService.receivePayment({
-    prepareResponse: prepareReceiveRes
+    prepareResponse: prepareReceiveRes,
   });
 
   // Now send to that address with asset swap
@@ -140,10 +140,10 @@ export async function exchangeAssets(params: {
     destination: receiveRes.destination,
     toAsset: params.toAsset,
     receiverAmount: params.toAmount,
-    fromAsset: params.fromAsset
+    fromAsset: params.fromAsset,
   });
 
   return await sendAsset({
-    prepareResponse: prepareSendRes
+    prepareResponse: prepareSendRes,
   });
 }

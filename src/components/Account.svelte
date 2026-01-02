@@ -340,9 +340,17 @@
               goto("/swap");
             }}
           >
-            <span class="flex flex-col items-center justify-center gap-1.5 sm:gap-1">
-              <iconify-icon icon="ph:arrows-left-right-bold" width="22" class="flex-shrink-0"></iconify-icon>
-              <span class="text-xs sm:text-xs truncate w-full hidden sm:block">Swap</span>
+            <span
+              class="flex flex-col items-center justify-center gap-1.5 sm:gap-1"
+            >
+              <iconify-icon
+                icon="ph:arrows-left-right-bold"
+                width="22"
+                class="flex-shrink-0"
+              ></iconify-icon>
+              <span class="text-xs sm:text-xs truncate w-full hidden sm:block"
+                >Swap</span
+              >
             </span>
           </button>
         {/if}
