@@ -53,7 +53,6 @@
       const usdtInSats = Math.floor((usdtInUSD / rate) * sats);
       total += usdtInSats;
     }
-    // TODO: Add Lightning and Onchain BTC if available in balances
     return total;
   });
 
@@ -83,7 +82,7 @@
     try {
       await walletStore.refresh();
     } catch (e) {
-      console.error("Failed to refresh wallet balance on mount", e);
+      console.error(e);
     }
   });
 
