@@ -61,14 +61,12 @@
   let addr = $derived(`${username}@${$page.url.host}`);
 </script>
 
-<div class="space-y-2.5 md:space-y-4">
+<div class="space-y-6">
   <!-- Username Field -->
   <div
-    class="premium-card backdrop-blur-xl bg-white/5 border border-white/10 md:border-2 hover:border-purple-500/40 transition-all duration-500 animate-scaleIn"
+    class="premium-card backdrop-blur-xl bg-white/5 border-2 border-white/10 hover:border-purple-500/40 transition-all duration-500 animate-scaleIn"
   >
-    <label
-      for="username"
-      class="font-bold mb-1 md:mb-1.5 block text-xs md:text-sm gradient-text"
+    <label for="username" class="font-bold mb-2 block text-lg gradient-text"
       >{$t("user.settings.username")}</label
     >
     <div class="flex">
@@ -76,7 +74,7 @@
         type="text"
         name="username"
         bind:value={username}
-        class="glass rounded-xl md:rounded-2xl border border-white/20 md:border-2 focus:border-purple-500/50 bg-white/5 w-full p-2 md:p-3 text-xs md:text-sm text-white placeholder-white/40"
+        class="glass rounded-2xl border-2 border-white/20 focus:border-purple-500/50 bg-white/5 w-full p-4 text-white placeholder-white/40"
       />
     </div>
   </div>
@@ -85,54 +83,50 @@
 
   <!-- Password Field -->
   <div
-    class="premium-card backdrop-blur-xl bg-white/5 border border-white/10 md:border-2 hover:border-pink-500/40 transition-all duration-500 animate-scaleIn"
+    class="premium-card backdrop-blur-xl bg-white/5 border-2 border-white/10 hover:border-pink-500/40 transition-all duration-500 animate-scaleIn"
     style="animation-delay: 0.1s;"
   >
-    <label
-      for="password"
-      class="font-bold mb-1 md:mb-1.5 block text-xs md:text-sm gradient-text"
+    <label for="password" class="font-bold mb-2 block text-lg gradient-text"
       >{$t("user.settings.newPassword")}</label
     >
 
     <PasswordInput
       bind:value={password}
       placeholder="(Leave blank to keep unchanged)"
-      class="glass rounded-xl md:rounded-2xl border border-white/20 md:border-2 focus:border-pink-500/50 bg-white/5"
+      class="glass rounded-2xl border-2 border-white/20 focus:border-pink-500/50 bg-white/5"
     />
   </div>
 
   <!-- Display Name Field -->
   <div
-    class="premium-card backdrop-blur-xl bg-white/5 border border-white/10 md:border-2 hover:border-blue-500/40 transition-all duration-500 animate-scaleIn"
+    class="premium-card backdrop-blur-xl bg-white/5 border-2 border-white/10 hover:border-blue-500/40 transition-all duration-500 animate-scaleIn"
     style="animation-delay: 0.2s;"
   >
-    <label
-      for="display"
-      class="font-bold mb-1 md:mb-1.5 block text-xs md:text-sm gradient-text"
+    <label for="display" class="font-bold mb-2 block text-lg gradient-text"
       >{$t("user.settings.displayName")}</label
     >
     <input
       type="text"
       name="display"
       bind:value={display}
-      class="glass rounded-xl md:rounded-2xl border border-white/20 md:border-2 focus:border-blue-500/50 bg-white/5 w-full p-2 md:p-3 text-xs md:text-sm text-white placeholder-white/40"
+      class="glass rounded-2xl border-2 border-white/20 focus:border-blue-500/50 bg-white/5 w-full p-4 text-white placeholder-white/40"
     />
   </div>
 
   <!-- Profile Image Section -->
   <div
-    class="premium-card backdrop-blur-xl bg-white/5 border border-white/10 md:border-2 hover:border-yellow-500/40 transition-all duration-500 space-y-2 md:space-y-2.5 animate-scaleIn"
+    class="premium-card backdrop-blur-xl bg-white/5 border-2 border-white/10 hover:border-yellow-500/40 transition-all duration-500 space-y-3 animate-scaleIn"
     style="animation-delay: 0.3s;"
   >
-    <span class="font-bold text-xs md:text-sm gradient-text"
+    <span class="font-bold text-lg gradient-text"
       >{$t("user.settings.profileImage")}</span
     >
 
-    <div class="flex items-center gap-2 md:gap-3">
+    <div class="flex items-center gap-4">
       {#if $avatar?.src || (picture && picture !== "undefined" && picture !== undefined)}
         {@const avatarSrc = $avatar?.src || picture}
         <div
-          class="relative rounded-full overflow-hidden text-center w-14 h-14 md:w-16 md:h-16 hover:scale-110 transition-transform cursor-pointer group border border-purple-500/50 md:border-2 hover:border-purple-500 hover:shadow-2xl hover:shadow-purple-500/50"
+          class="relative rounded-full overflow-hidden text-center w-24 h-24 hover:scale-110 transition-transform cursor-pointer group border-2 border-purple-500/50 hover:border-purple-500 hover:shadow-2xl hover:shadow-purple-500/50"
           onclick={selectAvatar}
           onkeydown={selectAvatar}
         >
@@ -146,27 +140,27 @@
           <div
             class="absolute inset-0 bg-gradient-to-t from-purple-900/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
           >
-            <iconify-icon icon="ph:camera" class="text-white" width="18"
+            <iconify-icon icon="ph:camera" class="text-white" width="32"
             ></iconify-icon>
           </div>
         </div>
       {:else}
         <div
-          class="rounded-full p-2 md:p-3 glass w-14 h-14 md:w-16 md:h-16 hover:scale-110 transition-all cursor-pointer border border-white/20 md:border-2 hover:border-purple-500/50 hover:shadow-2xl hover:shadow-purple-500/50 flex items-center justify-center group"
+          class="rounded-full p-4 glass w-24 h-24 hover:scale-110 transition-all cursor-pointer border-2 border-white/20 hover:border-purple-500/50 hover:shadow-2xl hover:shadow-purple-500/50 flex items-center justify-center group"
           onclick={selectAvatar}
           onkeydown={selectAvatar}
         >
           <iconify-icon
             icon="ph:user-circle-plus"
             class="text-white/50 group-hover:text-purple-400"
-            width="28"
+            width="48"
           ></iconify-icon>
         </div>
       {/if}
       <div>
         <button
           type="button"
-          class="px-3 py-1.5 md:px-4 md:py-2 rounded-xl md:rounded-2xl text-xs md:text-sm font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group flex items-center gap-1 md:gap-1.5"
+          class="px-6 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group flex items-center gap-2"
           style="background: linear-gradient(135deg, #B794F4 0%, #9F7AEA 100%); color: white;"
           onclick={selectAvatar}
           onkeydown={selectAvatar}
@@ -178,7 +172,7 @@
           ></div>
           <iconify-icon
             icon="ph:camera-bold"
-            width="14"
+            width="24"
             class="relative z-10 group-hover:rotate-12 transition-transform duration-300"
           ></iconify-icon>
           <span class="relative z-10">{$t("user.settings.select")} Photo</span>
@@ -193,9 +187,7 @@
     </div>
 
     {#if tooLarge["avatar"]}
-      <div
-        class="text-red-400 text-xs md:text-sm glass p-2 md:p-2.5 rounded-lg md:rounded-xl border border-red-500/50"
-      >
+      <div class="text-red-400 glass p-3 rounded-xl border border-red-500/50">
         <iconify-icon icon="ph:warning-circle" class="inline mr-1"
         ></iconify-icon>
         Max file size 10MB
@@ -205,57 +197,56 @@
 
   <!-- Banner Image Section (Optional) -->
   <div
-    class="premium-card backdrop-blur-xl bg-white/5 dark:bg-black/30 border border-white/10 md:border-2 hover:border-green-500/40 transition-all duration-500 space-y-2 md:space-y-2.5 animate-scaleIn"
+    class="premium-card backdrop-blur-xl bg-white/5 dark:bg-black/30 border-2 border-white/10 hover:border-green-500/40 transition-all duration-500 space-y-3 animate-scaleIn"
     style="animation-delay: 0.4s;"
   >
     <div class="flex justify-between items-center">
-      <span class="font-bold text-xs md:text-sm gradient-text"
+      <span class="font-bold text-lg gradient-text"
         >{$t("user.settings.bannerImage")}
-        <span class="text-[10px] md:text-xs text-white/50">(Optional)</span
-        ></span
+        <span class="text-sm text-white/50">(Optional)</span></span
       >
     </div>
 
     {#if $bannerStore?.src || (banner && banner !== "undefined" && banner !== undefined)}
       {@const bannerSrc = $bannerStore?.src || banner}
       <div
-        class="relative group cursor-pointer rounded-xl md:rounded-2xl overflow-hidden"
+        class="relative group cursor-pointer rounded-2xl overflow-hidden"
         onclick={selectBanner}
         onkeydown={selectBanner}
       >
         {#if bannerSrc}
           <img
             src={bannerSrc}
-            class="w-full object-cover object-center visible overflow-hidden h-28 md:h-32 group-hover:scale-105 transition-transform"
+            class="w-full object-cover object-center visible overflow-hidden h-48 group-hover:scale-105 transition-transform"
             alt="Banner"
           />
         {:else}
-          <div class="w-full h-28 md:h-32 bg-gray-800"></div>
+          <div class="w-full h-48 bg-gray-800"></div>
         {/if}
         <div
           class="absolute inset-0 bg-gradient-to-t from-purple-900/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
         >
-          <iconify-icon icon="ph:camera" class="text-white" width="28"
+          <iconify-icon icon="ph:camera" class="text-white" width="48"
           ></iconify-icon>
         </div>
       </div>
     {:else}
       <div
-        class="glass w-full h-28 md:h-32 cursor-pointer hover:border-green-500/50 transition-all rounded-xl md:rounded-2xl border border-white/20 md:border-2 flex items-center justify-center group hover:shadow-lg hover:shadow-green-500/20"
+        class="glass w-full h-48 cursor-pointer hover:border-green-500/50 transition-all rounded-2xl border-2 border-white/20 flex items-center justify-center group hover:shadow-lg hover:shadow-green-500/20"
         onclick={selectBanner}
         onkeydown={selectBanner}
       >
         <iconify-icon
           icon="ph:image-square"
           class="text-white/50 group-hover:text-green-400"
-          width="38"
+          width="64"
         ></iconify-icon>
       </div>
     {/if}
 
     <button
       type="button"
-      class="px-3 py-1.5 md:px-4 md:py-2 rounded-xl md:rounded-2xl text-xs md:text-sm font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center gap-1 md:gap-1.5"
+      class="px-6 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center gap-2"
       style="background: linear-gradient(135deg, #68D391 0%, #48BB78 100%); color: white;"
       onclick={selectBanner}
       onkeydown={selectBanner}
@@ -267,7 +258,7 @@
       ></div>
       <iconify-icon
         icon="ph:image-bold"
-        width="14"
+        width="24"
         class="relative z-10 group-hover:rotate-12 transition-transform duration-300"
       ></iconify-icon>
       <span class="relative z-10">{$t("user.settings.select")} Banner</span>
@@ -280,9 +271,7 @@
     />
 
     {#if tooLarge["banner"]}
-      <div
-        class="text-red-400 text-xs md:text-sm glass p-2 md:p-2.5 rounded-lg md:rounded-xl border border-red-500/50"
-      >
+      <div class="text-red-400 glass p-3 rounded-xl border border-red-500/50">
         <iconify-icon icon="ph:warning-circle" class="inline mr-1"
         ></iconify-icon>
         Max file size 10MB
@@ -292,12 +281,10 @@
 
   <!-- About Section -->
   <div
-    class="premium-card backdrop-blur-xl bg-white/5 border border-white/10 md:border-2 hover:border-purple-500/40 transition-all duration-500 animate-scaleIn"
+    class="premium-card backdrop-blur-xl bg-white/5 border-2 border-white/10 hover:border-purple-500/40 transition-all duration-500 animate-scaleIn"
     style="animation-delay: 0.5s;"
   >
-    <label
-      for="about"
-      class="font-bold mb-1 md:mb-1.5 block text-xs md:text-sm gradient-text"
+    <label for="about" class="font-bold mb-2 block text-lg gradient-text"
       >{$t("user.settings.about")}</label
     >
     <textarea
@@ -305,31 +292,28 @@
       name="about"
       bind:value={about}
       placeholder={$t("user.settings.aboutPlaceholder")}
-      class="glass rounded-xl md:rounded-2xl border border-white/20 md:border-2 focus:border-purple-500/50 bg-white/5 w-full p-2 md:p-3 h-20 md:h-24 text-xs md:text-sm text-white placeholder-white/40"
+      class="glass rounded-2xl border-2 border-white/20 focus:border-purple-500/50 bg-white/5 w-full p-4 h-32 text-white placeholder-white/40"
     ></textarea>
   </div>
 
   <!-- PRO Mode Toggle -->
   <div
-    class="premium-card backdrop-blur-xl bg-white/5 border border-white/10 md:border-2 hover:border-cyan-500/40 transition-all duration-500 animate-scaleIn"
+    class="premium-card backdrop-blur-xl bg-white/5 border-2 border-white/10 hover:border-cyan-500/40 transition-all duration-500 animate-scaleIn"
     style="animation-delay: 0.6s;"
   >
     <div class="flex items-center justify-between">
       <div>
-        <label
-          for="proMode"
-          class="font-bold mb-0.5 md:mb-1 block text-xs md:text-sm gradient-text"
-        >
+        <label for="proMode" class="font-bold mb-1 block text-lg gradient-text">
           PRO Mode
         </label>
-        <p class="text-[10px] md:text-xs text-white/60">
+        <p class="text-sm text-white/60">
           Enable all animations and visual effects (uses more processing power)
         </p>
       </div>
       <label class="relative inline-flex items-center cursor-pointer">
         <input type="checkbox" bind:checked={$proMode} class="sr-only peer" />
         <div
-          class="w-8 h-4 md:w-10 md:h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 md:after:h-4 md:after:w-4 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-cyan-500 peer-checked:to-teal-500"
+          class="w-14 h-7 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-cyan-500 peer-checked:to-teal-500"
         ></div>
       </label>
     </div>

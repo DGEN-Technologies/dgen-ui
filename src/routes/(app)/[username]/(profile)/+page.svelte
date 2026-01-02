@@ -6,7 +6,6 @@
   import Account from "$comp/Account.svelte";
   import Balance from "$comp/Balance.svelte";
   import BuyBitcoin from "$comp/BuyBitcoin.svelte";
-  import RefundablesBanner from "$comp/RefundablesBanner.svelte";
   import { t } from "$lib/translations";
   import { installPrompt, password } from "$lib/store";
   import { afterNavigate, preloadData } from "$app/navigation";
@@ -132,7 +131,7 @@
 <div class="relative min-h-screen">
   <!-- Content Container -->
   <div
-    class="w-full px-3 sm:px-6 lg:px-8 sm:pt-4 pb-4 sm:py-6 pb-40 sm:pb-44 relative z-10"
+    class="w-full px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-40 sm:pb-44 relative z-10"
   >
     <div class="max-w-4xl mx-auto space-y-6">
       {#if user?.id && user.id === subject.id}
@@ -242,10 +241,6 @@
             </div>
           </div>
         </div>
-      {/if}
-
-      {#if user?.id && user.id === subject.id}
-        <RefundablesBanner />
       {/if}
 
       <!-- Syncing Indicator -->

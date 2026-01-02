@@ -1,7 +1,6 @@
 import * as breezSdk from "@breeztech/breez-sdk-liquid/web";
 import { writable, derived, get } from "svelte/store";
 import * as walletService from "./walletService";
-import { resolvePaymentStatus } from "./paymentStatus";
 
 // Transaction filtering and pagination
 export interface TransactionFilter {
@@ -464,8 +463,6 @@ function enhancePayment(
     id = `payment_${paymentTime}_${payment.amountSat}_${payment.paymentType}`;
   }
 
-  const status = resolvePaymentStatus(payment) ?? payment.status;
-
   const enhanced: EnhancedPayment = {
     ...payment,
     paymentTime,
@@ -476,11 +473,10 @@ function enhancePayment(
         : -payment.amountSat,
     fiatAmount: undefined,
     fiatCurrency: "USD",
-    status,
-    statusColor: getStatusColor(status),
-    statusIcon: getStatusIcon(status),
+    statusColor: getStatusColor(payment.status),
+    statusIcon: getStatusIcon(payment.status),
     isRefundable:
-      status === "failed" && payment.details?.swapInfo !== undefined,
+      payment.status === "failed" && payment.details?.swapInfo !== undefined,
     refundDetails: payment.details?.refundDetails,
     lnurlInfo: payment.details?.lnurlInfo,
     bip353Address: payment.details?.bip353Address,
@@ -598,7 +594,7 @@ function getStatusColor(status: string): string {
     case "refundPending":
       return "text-orange-500";
     case "refunded":
-      return "text-purple-500";
+      return "text-blue-500";
     default:
       return "text-gray-500";
   }

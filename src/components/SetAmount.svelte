@@ -1,10 +1,6 @@
 <script>
   import Numpad from "$comp/Numpad.svelte";
   import { sat } from "$lib/utils";
-  import {
-    getEffectiveOnchainReceiveMinSat,
-    getOnchainReceiveMaxSat,
-  } from "$lib/bitcoinLimits";
 
   let submit = $state();
 
@@ -24,20 +20,6 @@
     lightningLimits,
   } = $props();
 
-  let onchainMinSat = $derived.by(() => {
-    const minSat = getEffectiveOnchainReceiveMinSat(onchainLimits);
-    return Number.isFinite(minSat) ? minSat : null;
-  });
-  let onchainMaxSat = $derived.by(() => {
-    const maxSat = getOnchainReceiveMaxSat(onchainLimits);
-    return Number.isFinite(maxSat) ? maxSat : null;
-  });
-  let onchainMinBtc = $derived(
-    Number.isFinite(onchainMinSat)
-      ? (onchainMinSat / 100000000).toFixed(8)
-      : "--",
-  );
-
   // Determine what message to show based on payment type
   let minimumMessage = $derived(() => {
     if (invoiceType === "lightning") {
@@ -48,20 +30,18 @@
       }
       return "Minimum: 100 sats • Instant settlement";
     } else if (invoiceType === "bitcoin") {
-      if (Number.isFinite(onchainMinSat)) {
-        const min = sat(onchainMinSat);
-        if (Number.isFinite(onchainMaxSat)) {
-          const max = sat(onchainMaxSat);
-          return `Min: ${min} • Max: ${max} • Settles in ~10-60+ min`;
-        }
-        return `Minimum BTC deposit is ${onchainMinBtc} BTC (${min} sats) • Settles in ~10-60+ min`;
+      if (onchainLimits) {
+        const min = sat(onchainLimits.receive.minSat);
+        const max = sat(onchainLimits.receive.maxSat);
+        return `Min: ${min} • Max: ${max} • Settles in ~10-60+ min`;
       }
-      return "Bitcoin on-chain deposit • Settles in ~10-60+ min";
+      return "Minimum BTC deposit is 0.00025 BTC (25,000 Sats) • Settles in ~10-60+ min";
     } else if (invoiceType === "liquid") {
       if (selectedAsset === "usdt") {
         return "Enter USDT amount (e.g., 10 for $10)";
+      } else {
+        return "Liquid Bitcoin • Settles in ~2 min";
       }
-      return "Liquid Bitcoin • Settles in ~2 min";
     }
     return "Enter the amount to receive";
   });
@@ -74,8 +54,9 @@
     } else if (invoiceType === "liquid") {
       if (selectedAsset === "usdt") {
         return "Liquid USDT Amount";
+      } else {
+        return "Liquid Bitcoin Amount";
       }
-      return "Liquid Bitcoin Amount";
     }
     return "Set Amount";
   });
@@ -154,16 +135,12 @@
               <button
                 type="button"
                 class="glass w-full rounded-lg py-3 px-3 text-sm sm:text-base font-semibold hover:bg-white/20 border border-white/20 hover:border-white/40 transition-all hover:scale-105 flex flex-col items-center justify-center gap-1"
-                class:opacity-50={!Number.isFinite(onchainMinSat)}
-                class:cursor-not-allowed={!Number.isFinite(onchainMinSat)}
-                disabled={!Number.isFinite(onchainMinSat)}
                 onclick={() => {
-                  if (Number.isFinite(onchainMinSat)) {
-                    newAmount = onchainMinSat;
-                  }
+                  // Set to minimum 0.00025 BTC = 25,000 sats
+                  newAmount = 25000;
                 }}
               >
-                <span>{onchainMinBtc} BTC</span>
+                <span>0.00025 BTC</span>
                 <span class="text-xs text-white/60"
                   >(auto-populate minimum)</span
                 >
@@ -182,6 +159,7 @@
                     class="glass rounded-lg py-3 px-2 text-sm font-semibold hover:bg-white/20 border border-white/20 hover:border-white/40 transition-all hover:scale-105 flex items-center justify-center aspect-square"
                     title="${dollarAmount}"
                     onclick={() => {
+                      // Convert dollar amount to appropriate units
                       if (
                         invoiceType === "liquid" &&
                         selectedAsset === "usdt"
@@ -194,7 +172,13 @@
                         let calculatedSats = Math.round(
                           (dollarAmount * 100000000) / rate,
                         );
-                        newAmount = calculatedSats;
+
+                        // For Bitcoin on-chain, enforce minimum of 25,000 sats
+                        if (invoiceType === "bitcoin") {
+                          newAmount = Math.max(calculatedSats, 25000);
+                        } else {
+                          newAmount = calculatedSats;
+                        }
                       }
                     }}
                   >
