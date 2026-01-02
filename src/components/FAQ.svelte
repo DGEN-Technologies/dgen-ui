@@ -49,7 +49,7 @@
       category: "Security",
       question: "Who controls my Bitcoin?",
       answer:
-        "<p>With self-custody options, only you have access to your private kets (seed phrase). This DGEN wallet web-app cannot access your funds - that's the security of true ownership.</p><p> The DGEN CARD app is different, you can view the details on that website if you want.</p>",
+        "<p>With self-custody options, only you have access to your private keys (seed phrase). This DGEN wallet web-app cannot access your funds - that's the security of true ownership.</p><p> The DGEN CARD app is different, you can view the details on that website if you want.</p>",
       icon: "ph:key-bold",
       emoji: "🔑",
     },

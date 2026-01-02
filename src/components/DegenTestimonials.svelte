@@ -3,36 +3,6 @@
   import { fly, scale } from "svelte/transition";
 
   let mounted = $state(false);
-  // let activeTestimonial = $state(0);
-  // let isPaused = $state(false);
-  // let autoplayInterval = null;
-
-  // const features = [
-  //   {
-  //     title: "Security",
-  //     icon: "🔒",
-  //     description:
-  //       "Complete control over your assets. Advanced security with multi-signature support and hardware wallet integration.",
-  //     highlight: "Your keys",
-  //     category: "Security",
-  //   },
-  //   {
-  //     title: "Liquid Network Support",
-  //     icon: "💧",
-  //     description:
-  //       "Fast 2-minute block confirmations with confidential transactions. Good for institutional trading and high-value transfers.",
-  //     highlight: "Auto-managed",
-  //     category: "Network",
-  //   },
-  //   {
-  //     title: "Universal Access",
-  //     icon: "🌍",
-  //     description:
-  //       "Seamless experience across all platforms. Access your wallet from web, mobile, or desktop anywhere in the world (where bitcoin is legal).",
-  //     highlight: "",
-  //     category: "Access",
-  //   },
-  // ];
 
   const techSpecs = [
     { label: "Payment Speed", value: "<1s", icon: "ph:lightning-bold" },
@@ -41,32 +11,8 @@
     { label: "Open Source", value: "100%", icon: "ph:code-bold" },
   ];
 
-  // const startAutoplay = () => {
-  //   if (autoplayInterval) clearInterval(autoplayInterval);
-
-  //   autoplayInterval = setInterval(() => {
-  //     if (!isPaused) {
-  //       activeTestimonial = (activeTestimonial + 1) % features.length;
-  //     }
-  //   }, 3000); // 3 seconds between slides
-  // };
-
-  // const togglePlayPause = () => {
-  //   isPaused = !isPaused;
-  // };
-
-  // const goToSlide = (index) => {
-  //   activeTestimonial = index;
-  //   isPaused = true; // Pause when user manually selects a slide
-  // };
-
   onMount(() => {
     mounted = true;
-    // startAutoplay();
-
-    // return () => {
-    //   if (autoplayInterval) clearInterval(autoplayInterval);
-    // };
   });
 </script>
 
@@ -91,7 +37,6 @@
       </div>
 
       <!-- Features Showcase -->
-      
 
       <!-- CTA -->
       <div

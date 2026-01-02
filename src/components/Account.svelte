@@ -31,20 +31,6 @@
   let isHovered = $state(false);
   let mounted = $state(false);
 
-  // // Get individual asset balances
-  // let balances = $derived($assetBalances || []);
-  // let lbtcBalance = $derived(
-  //   balances.find((b) => b.assetId === ASSET_IDS.LBTC)?.balanceSat || 0,
-  // );
-  // let usdtBalance = $derived(
-  //   balances.find((b) => b.assetId === ASSET_IDS.USDT)?.balanceSat || 0,
-  // );
-
-  // // Use the SDK's total balance directly
-  // // The SDK already calculates the total balance across all assets
-  // // let totalBalance = $derived(balance);
-  // let totalBalance = $derived(balance);
-
   // Get all asset balances
   let balances = $derived($assetBalances || []);
   // Helper to get balance for a given assetId
@@ -90,9 +76,6 @@
     }
   }
 
-  // onMount(() => {
-  //   mounted = true;
-  // });
   onMount(async () => {
     mounted = true;
 
@@ -104,13 +87,6 @@
     }
   });
 
-  // let displayBalance = $derived(() => {
-  //   const displayTotal = totalBalance;
-  //   if (unit === "btc") return btc(displayTotal);
-  //   if (unit === "sats") return sat(displayTotal);
-  //   // Convert sats to BTC then multiply by rate
-  //   return f((displayTotal / 100000000) * rate, currency);
-  // });
   let displayBalance = $derived(() => {
     const total = unifiedTotalSats();
     if (unit === "btc") return btc(total);

@@ -79,8 +79,7 @@
             PrivKey
           </h3>
           <p class="text-sm text-white/80">
-            White-label key security & recovery partner. Font and logo rendered
-            fully in white as requested.
+            White-label key security & recovery partner.
           </p>
         </div>
       </div>
