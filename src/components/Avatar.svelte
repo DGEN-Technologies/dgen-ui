@@ -14,8 +14,7 @@
   let link = $derived(user?.anon ? `/${user.pubkey}` : `/${user.username}`);
 
   let profile = $derived(
-    user?.profile ? user.profile :
-    user?.picture ? user.picture : null,
+    user?.profile ? user.profile : user?.picture ? user.picture : null,
   );
   let tmp = $derived($avatar?.id && $avatar.id === user?.id && $avatar.src);
   // Convert relative URLs to full backend URLs for production compatibility

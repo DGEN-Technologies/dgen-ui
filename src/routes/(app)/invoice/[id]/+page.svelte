@@ -46,7 +46,7 @@
   let { memo } = $state(invoice);
   let { username, currency } = $derived(invoice.user);
   let locale = loc(user);
-  
+
   let isPaid = $state(invoice?.confirmed || invoice?.paid || false);
   let showingSuccess = $state(false);
 
@@ -64,15 +64,15 @@
   $effect(() => {
     if ($paymentReceived && browser) {
       const event = $paymentReceived;
-      console.log('[Invoice] Payment event received:', event);
+      console.log("[Invoice] Payment event received:", event);
 
       // For incoming payments, show success when we get 'confirmed' or 'complete' status
       // According to Breez SDK UX guide:
       // - 'confirmed' = Display successful payment feedback (claim tx broadcast/transaction seen)
       // - 'complete' = Show payment as complete (transaction confirmed)
 
-      if (event.status === 'confirmed' || event.status === 'complete') {
-        console.log('[Invoice] Payment received! Status:', event.status);
+      if (event.status === "confirmed" || event.status === "complete") {
+        console.log("[Invoice] Payment received! Status:", event.status);
         isPaid = true;
         showingSuccess = true;
 
@@ -80,9 +80,9 @@
         setTimeout(() => {
           goto(`/invoice/${id}/paid`);
         }, 2500);
-      } else if (event.status === 'pending') {
+      } else if (event.status === "pending") {
         // Show pending indicator
-        console.log('[Invoice] Payment pending...');
+        console.log("[Invoice] Payment pending...");
         // Could add a pending UI here if desired
       }
     }
@@ -189,12 +189,14 @@
 <div class="min-h-screen relative overflow-hidden bg-gradient-dark">
   <!-- Payment Success Overlay -->
   {#if showingSuccess}
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-lg">
+    <div
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-lg"
+    >
       <Success
         {amount}
         {rate}
         tip={tip || 0}
-        currency={invoice?.user?.currency || 'USD'}
+        currency={invoice?.user?.currency || "USD"}
         {locale}
         title={$t("invoice.paymentSuccessful") || "Payment Received!"}
       />
@@ -240,18 +242,36 @@
         <span class="text-yellow-400 lightning mx-2">⚡</span>
         <span class="gradient-text">Invoice</span>
       </h1>
-      <p class="text-xl text-white/70">{isPaid ? 'Payment Received!' : 'Scan, Pay, Done'}</p>
+      <p class="text-xl text-white/70">
+        {isPaid ? "Payment Received!" : "Scan, Pay, Done"}
+      </p>
     </div>
 
     <!-- Main content card with glassmorphism -->
     <div
-      class="premium-card backdrop-blur-xl bg-white/5 border-2 transition-all duration-500 space-y-4 animate-scaleIn {isPaid ? 'border-green-400 shadow-lg shadow-green-400/30' : 'border-white/10 hover:border-purple-500/40'}"
+      class="premium-card backdrop-blur-xl bg-white/5 border-2 transition-all duration-500 space-y-4 animate-scaleIn {isPaid
+        ? 'border-green-400 shadow-lg shadow-green-400/30'
+        : 'border-white/10 hover:border-purple-500/40'}"
     >
       {#if isPaid && !showingSuccess}
-        <div class="bg-green-500/20 border border-green-400 rounded-lg p-3 text-center">
-          <p class="text-green-400 font-bold flex items-center justify-center gap-2">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        <div
+          class="bg-green-500/20 border border-green-400 rounded-lg p-3 text-center"
+        >
+          <p
+            class="text-green-400 font-bold flex items-center justify-center gap-2"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"
+              ></path>
             </svg>
             Invoice Paid
           </p>
@@ -340,4 +360,3 @@
   {toggleType}
   t={$t}
 />
-

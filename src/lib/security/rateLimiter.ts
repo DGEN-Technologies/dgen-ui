@@ -25,7 +25,7 @@ class RateLimiter {
     // Clean up old attempts
     const attempts = this.attempts.get(key) || [];
     const recentAttempts = attempts.filter(
-      (timestamp) => now - timestamp < this.config.windowMs
+      (timestamp) => now - timestamp < this.config.windowMs,
     );
 
     // Check if limit exceeded
@@ -53,7 +53,7 @@ class RateLimiter {
 
 // Pre-configured rate limiters
 export const walletUnlockLimiter = new RateLimiter({
-  maxAttempts: 10,  // More forgiving for users who forgot password
+  maxAttempts: 10, // More forgiving for users who forgot password
   windowMs: 5 * 60 * 1000, // 5 minutes
   blockDurationMs: 5 * 60 * 1000, // 5 minutes (shorter lockout)
 });

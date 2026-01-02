@@ -224,8 +224,14 @@
       <div class="header animate-fadeInUp">
         <!-- Title with epic glow effect -->
         <h1 class="text-center text-4xl md:text-5xl font-bold mb-2">
-          <span class="bg-gradient-to-r from-dgen-aqua to-dgen-cyan bg-clip-text text-transparent">Settings </span>
-          <span class="bg-gradient-to-r from-dgen-cyan to-dgen-purple bg-clip-text text-transparent">Center</span>
+          <span
+            class="bg-gradient-to-r from-dgen-aqua to-dgen-cyan bg-clip-text text-transparent"
+            >Settings
+          </span>
+          <span
+            class="bg-gradient-to-r from-dgen-cyan to-dgen-purple bg-clip-text text-transparent"
+            >Center</span
+          >
         </h1>
         <p class="text-center text-lg sm:text-xl text-white/60 mb-8">
           Manage Your Preferences
@@ -275,13 +281,17 @@
           disabled={submitting}
         >
           <!-- Animated gradient overlay -->
-          <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" 
-               style="background: linear-gradient(135deg, #9688DD 0%, #74EBD5 100%);"></div>
-          
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+            style="background: linear-gradient(135deg, #9688DD 0%, #74EBD5 100%);"
+          ></div>
+
           {#if submitting}
             <Spinner />
           {:else}
-            <span class="relative z-10 flex items-center justify-center gap-3 text-white">
+            <span
+              class="relative z-10 flex items-center justify-center gap-3 text-white"
+            >
               <iconify-icon
                 icon="ph:floppy-disk-bold"
                 width={28}
@@ -295,10 +305,14 @@
               ></iconify-icon>
             </span>
           {/if}
-          
+
           <!-- Ripple effect on hover -->
-          <div class="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
-            <div class="absolute inset-0 scale-0 group-hover:scale-150 transition-transform duration-700 rounded-full bg-white/20"></div>
+          <div
+            class="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none"
+          >
+            <div
+              class="absolute inset-0 scale-0 group-hover:scale-150 transition-transform duration-700 rounded-full bg-white/20"
+            ></div>
           </div>
         </button>
       </div>

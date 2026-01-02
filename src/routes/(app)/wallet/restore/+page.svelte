@@ -26,8 +26,8 @@
     isRestoring = true;
     try {
       // Import wallet service
-      const walletService = await import('$lib/walletService');
-      
+      const walletService = await import("$lib/walletService");
+
       // Validate mnemonic
       if (!walletService.validateMnemonic(mnemonic)) {
         throw new Error("Invalid seed phrase. Please check your words.");
@@ -46,7 +46,7 @@
 
       // Save the mnemonic to secure storage with password
       await walletService.saveMnemonic(mnemonic, userPassword, userId);
-      
+
       // Check if wallet is already connected (from layout initialization)
       if (!walletService.isConnected()) {
         // Initialize wallet with the restored mnemonic
@@ -55,19 +55,19 @@
       } else {
         success("Wallet already connected, refreshing...");
       }
-      
+
       // Initialize wallet store
-      const { walletStore, transactions } = await import('$lib/stores/wallet');
+      const { walletStore, transactions } = await import("$lib/stores/wallet");
       await walletStore.init(userPassword, userId);
-      
+
       // Show sync progress
       isSyncing = true;
       syncMessage = "Syncing with network...";
       syncProgress = 20;
-      
+
       // Wait for SDK to stabilize
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       // Set up a one-time event listener for the synced event
       let syncedPromise = new Promise((resolve) => {
         const checkSync = async () => {
@@ -76,11 +76,11 @@
             console.log("Sync timeout reached, proceeding anyway");
             resolve(true);
           }, 10000); // 10 second timeout
-          
+
           // Add event listener for synced event
           const listenerId = await walletService.addEventListener((event) => {
             console.log("Restore page received event:", event);
-            if (event.type === 'synced') {
+            if (event.type === "synced") {
               clearTimeout(timeout);
               walletService.removeEventListener(listenerId);
               resolve(true);
@@ -89,72 +89,75 @@
         };
         checkSync();
       });
-      
+
       // Perform initial sync
       syncMessage = "Fetching wallet data...";
       syncProgress = 40;
-      
+
       try {
         // Don't manually sync - let the SDK handle it automatically
         // This avoids rate limiting issues with the blockchain API
         syncProgress = 60;
-        
+
         // Wait for synced event or timeout
         syncMessage = "Waiting for network sync...";
         await syncedPromise;
-        
+
         syncProgress = 70;
-        
+
         // After sync, refresh wallet info
         syncMessage = "Loading balance...";
         await walletStore.refresh();
         const info = await walletService.getWalletInfo();
-        
+
         syncProgress = 80;
-        
+
         // Load transactions
         syncMessage = "Loading transaction history...";
         await transactions.refresh();
         const txns = await walletService.getTransactions();
-        
+
         syncProgress = 90;
-        
+
         // Force one more refresh to ensure latest data
         await walletStore.refresh();
-        
+
         syncProgress = 100;
-        
+
         // Get final balance from store
         const finalInfo = await walletService.getWalletInfo();
         const balance = finalInfo?.walletInfo?.balanceSat || 0;
-        
+
         // Display success with balance
         success(`Wallet restored! Balance: ${balance.toLocaleString()} sats`);
-        
       } catch (syncError) {
-        console.warn("Initial sync failed, wallet will sync in background:", syncError);
+        console.warn(
+          "Initial sync failed, wallet will sync in background:",
+          syncError,
+        );
         // Even if sync fails, refresh the stores
         await walletStore.refresh();
         await transactions.refresh();
         success("Wallet restored! Syncing in background...");
       }
-      
+
       isSyncing = false;
       isRestoring = false;
-      
+
       // Force a final refresh before navigation
       await walletStore.refresh();
-      
+
       // Small delay for UI update
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
       // Trigger a page reload to ensure the layout picks up the new wallet
       // This ensures the balance is properly displayed
       window.location.href = `/${user.username}`;
-      
     } catch (e) {
       console.error("Restore error:", e);
-      fail(e.message || "Failed to restore wallet. Please check your seed phrase.");
+      fail(
+        e.message || "Failed to restore wallet. Please check your seed phrase.",
+      );
       isRestoring = false;
       isSyncing = false;
     }
@@ -262,14 +265,14 @@
             {/if}
           </button>
         </div>
-        
+
         {#if isSyncing}
           <div class="mt-6 space-y-3">
             <div class="text-center text-blue-400">
               <p class="text-sm font-medium">{syncMessage}</p>
             </div>
             <div class="w-full bg-black/30 rounded-full h-2 overflow-hidden">
-              <div 
+              <div
                 class="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-500"
                 style="width: {syncProgress}%"
               ></div>
@@ -293,7 +296,7 @@
   }
 
   .btn-gradient {
-    background: linear-gradient(135deg, #74EBD5, #9688DD);
+    background: linear-gradient(135deg, #74ebd5, #9688dd);
     color: black;
     border: none;
     border-radius: 1rem;

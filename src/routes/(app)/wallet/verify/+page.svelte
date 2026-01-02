@@ -24,52 +24,52 @@
       setupVerification();
     } else {
       const urlParams = new URLSearchParams(window.location.search);
-      const seedParam = urlParams.get('seed');
-      
+      const seedParam = urlParams.get("seed");
+
       if (seedParam) {
         mnemonic = atob(seedParam);
         setupVerification();
       } else {
         // If no seed, redirect to settings
-        goto('/settings/security');
+        goto("/settings/security");
       }
     }
   });
 
   function setupVerification() {
     if (!mnemonic) return;
-    
-    const words = mnemonic.split(' ');
+
+    const words = mnemonic.split(" ");
     // Pick 3-6 random words to verify
     const numWords = Math.min(6, Math.max(3, Math.floor(words.length / 4)));
     const indices = [];
-    
+
     while (indices.length < numWords) {
       const idx = Math.floor(Math.random() * words.length);
       if (!indices.includes(idx)) {
         indices.push(idx);
       }
     }
-    
+
     // Sort indices for better UX
     indices.sort((a, b) => a - b);
-    
-    verificationWords = indices.map(idx => ({
+
+    verificationWords = indices.map((idx) => ({
       index: idx,
       word: words[idx],
-      position: idx + 1
+      position: idx + 1,
     }));
-    
+
     // Initialize user inputs
-    verificationWords.forEach(w => {
-      userInputs[w.index] = '';
+    verificationWords.forEach((w) => {
+      userInputs[w.index] = "";
     });
   }
 
   async function verifyAndContinue() {
     isVerifying = true;
     showError = false;
-    
+
     // Check if all words match
     let allCorrect = true;
     let incorrectCount = 0;
@@ -80,20 +80,24 @@
         incorrectCount++;
       }
     }
-    
+
     if (!allCorrect) {
       showError = true;
       if (incorrectCount === verificationWords.length) {
-        fail("None of the words match. Please check your seed phrase carefully.");
+        fail(
+          "None of the words match. Please check your seed phrase carefully.",
+        );
       } else if (incorrectCount > 1) {
-        fail(`${incorrectCount} words don't match. Please check and try again.`);
+        fail(
+          `${incorrectCount} words don't match. Please check and try again.`,
+        );
       } else {
         fail("One word doesn't match. Please check and try again.");
       }
       isVerifying = false;
       return;
     }
-    
+
     // Verification successful - complete wallet setup (no password prompt needed)
     await completeWalletSetup();
   }
@@ -103,8 +107,8 @@
     showPasswordPrompt = false;
 
     try {
-      const { success } = await import('$lib/utils');
-      const walletService = await import('$lib/walletService');
+      const { success } = await import("$lib/utils");
+      const walletService = await import("$lib/walletService");
 
       const userId = user.id || user.username;
 
@@ -112,7 +116,7 @@
       const walletPassword = walletService.getWalletPassword(userId);
 
       if (!walletPassword) {
-        const { fail } = await import('$lib/utils');
+        const { fail } = await import("$lib/utils");
         fail("Session expired. Please log in again.");
         isVerifying = false;
         return;
@@ -125,52 +129,60 @@
       await walletService.saveMnemonic(mnemonic, walletPassword, userId);
 
       // Initialize wallet store with password
-      const { walletStore } = await import('$lib/stores/wallet');
+      const { walletStore } = await import("$lib/stores/wallet");
       await walletStore.init(walletPassword, userId);
-      
+
       // Get wallet info for server registration (optional)
       const walletInfo = await walletService.getWalletInfo();
-      
+
       if (walletInfo) {
         // Try to create watch-only account on server (optional)
         try {
-          const { post } = await import('$lib/utils');
-          const pubkey = walletInfo.pubkey || walletInfo.nodeState?.id || "breez_liquid_pubkey";
-          const fingerprint = walletInfo.fingerprint || walletInfo.nodeState?.id || "breez_liquid_id";
-          
+          const { post } = await import("$lib/utils");
+          const pubkey =
+            walletInfo.pubkey ||
+            walletInfo.nodeState?.id ||
+            "breez_liquid_pubkey";
+          const fingerprint =
+            walletInfo.fingerprint ||
+            walletInfo.nodeState?.id ||
+            "breez_liquid_id";
+
           await post("/wallet/create", {
             pubkey,
             fingerprint,
-            type: "liquid"
+            type: "liquid",
           });
         } catch (serverError) {
           // Server wallet creation failed, but local wallet is set up
-          console.warn('[Wallet Creation] Server wallet creation failed:', serverError);
+          console.warn(
+            "[Wallet Creation] Server wallet creation failed:",
+            serverError,
+          );
         }
       }
-      
+
       success("Wallet created successfully!");
 
       // Clear mnemonic from memory
       mnemonic = "";
       $mnemonicStore = "";
-      
+
       // Trigger wallet store refresh to update balance immediately
-      const { transactions } = await import('$lib/stores/wallet');
+      const { transactions } = await import("$lib/stores/wallet");
       await walletStore.refresh();
       await transactions.refresh();
-      
+
       // Use a full page navigation to ensure layout re-initializes properly
       // This ensures the wallet SDK is properly connected on the new page
       setTimeout(() => {
         window.location.href = `/${user.username}`;
       }, 500);
-      
     } catch (e) {
       console.error(e);
       // Clear any saved mnemonic on failure (wasm-example pattern)
       try {
-        const walletService = await import('$lib/walletService');
+        const walletService = await import("$lib/walletService");
         const userId = user?.id || user?.username;
         const password = walletService.getWalletPassword(userId);
         if (password) {
@@ -183,19 +195,19 @@
       isVerifying = false;
     }
   }
-  
+
   function isWordCorrect(index) {
     if (!showError) return true;
     const userWord = userInputs[index]?.trim().toLowerCase();
-    const correctWord = verificationWords.find(w => w.index === index)?.word.toLowerCase();
+    const correctWord = verificationWords
+      .find((w) => w.index === index)
+      ?.word.toLowerCase();
     return userWord === correctWord;
   }
 </script>
 
 <div class="space-y-5">
-  <h1 class="text-center text-3xl font-semibold">
-    Verify Your Seed Phrase
-  </h1>
+  <h1 class="text-center text-3xl font-semibold">Verify Your Seed Phrase</h1>
 
   <div class="container w-full mx-auto text-lg px-4 max-w-xl space-y-4">
     <div class="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
@@ -206,7 +218,10 @@
           width="24"
         ></iconify-icon>
         <div class="text-blue-400">
-          <p>To ensure you've written down your seed phrase correctly, please enter the following words:</p>
+          <p>
+            To ensure you've written down your seed phrase correctly, please
+            enter the following words:
+          </p>
         </div>
       </div>
     </div>
@@ -219,7 +234,10 @@
             type="text"
             bind:value={userInputs[wordData.index]}
             placeholder={`Enter word #${wordData.position}`}
-            class="input flex-1 lowercase {showError && !isWordCorrect(wordData.index) ? 'border-red-500' : ''}"
+            class="input flex-1 lowercase {showError &&
+            !isWordCorrect(wordData.index)
+              ? 'border-red-500'
+              : ''}"
             autocomplete="off"
             autocapitalize="off"
             spellcheck="false"
@@ -227,14 +245,14 @@
           />
           {#if showError}
             {#if isWordCorrect(wordData.index)}
-              <iconify-icon 
-                icon="ph:check-circle-fill" 
+              <iconify-icon
+                icon="ph:check-circle-fill"
                 class="text-green-500"
                 width="24"
               ></iconify-icon>
             {:else}
-              <iconify-icon 
-                icon="ph:x-circle-fill" 
+              <iconify-icon
+                icon="ph:x-circle-fill"
                 class="text-red-500"
                 width="24"
               ></iconify-icon>
@@ -253,7 +271,10 @@
             width="24"
           ></iconify-icon>
           <div class="text-red-400">
-            <p>Some words don't match. Please check your seed phrase and try again.</p>
+            <p>
+              Some words don't match. Please check your seed phrase and try
+              again.
+            </p>
           </div>
         </div>
       </div>
@@ -269,7 +290,8 @@
         type="button"
         class="btn btn-accent !w-auto grow"
         onclick={verifyAndContinue}
-        disabled={isVerifying || Object.values(userInputs).some(v => !v?.trim())}
+        disabled={isVerifying ||
+          Object.values(userInputs).some((v) => !v?.trim())}
       >
         {#if isVerifying}
           <Spinner />

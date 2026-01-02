@@ -123,7 +123,7 @@
     >
 
     <div class="flex items-center gap-4">
-      {#if $avatar?.src || (picture && picture !== 'undefined' && picture !== undefined)}
+      {#if $avatar?.src || (picture && picture !== "undefined" && picture !== undefined)}
         {@const avatarSrc = $avatar?.src || picture}
         <div
           class="relative rounded-full overflow-hidden text-center w-24 h-24 hover:scale-110 transition-transform cursor-pointer group border-2 border-purple-500/50 hover:border-purple-500 hover:shadow-2xl hover:shadow-purple-500/50"
@@ -166,9 +166,14 @@
           onkeydown={selectAvatar}
         >
           <!-- Shimmer effect -->
-          <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-               style="background: linear-gradient(135deg, #9F7AEA 0%, #B794F4 100%);"></div>
-          <iconify-icon icon="ph:camera-bold" width="24" class="relative z-10 group-hover:rotate-12 transition-transform duration-300"
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+            style="background: linear-gradient(135deg, #9F7AEA 0%, #B794F4 100%);"
+          ></div>
+          <iconify-icon
+            icon="ph:camera-bold"
+            width="24"
+            class="relative z-10 group-hover:rotate-12 transition-transform duration-300"
           ></iconify-icon>
           <span class="relative z-10">{$t("user.settings.select")} Photo</span>
         </button>
@@ -202,7 +207,7 @@
       >
     </div>
 
-    {#if $bannerStore?.src || (banner && banner !== 'undefined' && banner !== undefined)}
+    {#if $bannerStore?.src || (banner && banner !== "undefined" && banner !== undefined)}
       {@const bannerSrc = $bannerStore?.src || banner}
       <div
         class="relative group cursor-pointer rounded-2xl overflow-hidden"
@@ -247,9 +252,14 @@
       onkeydown={selectBanner}
     >
       <!-- Shimmer effect -->
-      <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-           style="background: linear-gradient(135deg, #48BB78 0%, #68D391 100%);"></div>
-      <iconify-icon icon="ph:image-bold" width="24" class="relative z-10 group-hover:rotate-12 transition-transform duration-300"
+      <div
+        class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+        style="background: linear-gradient(135deg, #48BB78 0%, #68D391 100%);"
+      ></div>
+      <iconify-icon
+        icon="ph:image-bold"
+        width="24"
+        class="relative z-10 group-hover:rotate-12 transition-transform duration-300"
       ></iconify-icon>
       <span class="relative z-10">{$t("user.settings.select")} Banner</span>
     </button>
@@ -301,12 +311,10 @@
         </p>
       </div>
       <label class="relative inline-flex items-center cursor-pointer">
-        <input
-          type="checkbox"
-          bind:checked={$proMode}
-          class="sr-only peer"
-        />
-        <div class="w-14 h-7 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-cyan-500 peer-checked:to-teal-500"></div>
+        <input type="checkbox" bind:checked={$proMode} class="sr-only peer" />
+        <div
+          class="w-14 h-7 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-cyan-500 peer-checked:to-teal-500"
+        ></div>
       </label>
     </div>
   </div>

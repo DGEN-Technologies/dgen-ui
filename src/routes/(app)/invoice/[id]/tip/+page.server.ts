@@ -18,7 +18,12 @@ export async function load({ cookies, params, parent, fetch }) {
         if (invoice.tip === null && invoice.user.prompt) {
           if (user.tip > 0) {
             invoice.tip = Math.round(invoice.amount * (user.tip / 100));
-            invoice = await p(`/invoice/${id}`, { invoice }, fetch, auth(cookies));
+            invoice = await p(
+              `/invoice/${id}`,
+              { invoice },
+              fetch,
+              auth(cookies),
+            );
           } else {
             throw new Error("tip");
           }
@@ -45,7 +50,11 @@ export const actions = {
       tip: form.tip ?? null,
     };
 
-    const { id } = await p(`/invoice/${form.id}`, { invoice }, fetch, auth(cookies),
+    const { id } = await p(
+      `/invoice/${form.id}`,
+      { invoice },
+      fetch,
+      auth(cookies),
     );
 
     redirect(307, `/invoice/${id}`);

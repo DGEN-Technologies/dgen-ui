@@ -17,13 +17,15 @@ export async function GET({ params }) {
 
     // Forward the response with proper headers
     const buffer = await response.arrayBuffer();
-    const contentType = response.headers.get("content-type") || "application/octet-stream";
+    const contentType =
+      response.headers.get("content-type") || "application/octet-stream";
 
     return new Response(buffer, {
       status: 200,
       headers: {
         "content-type": contentType,
-        "cache-control": response.headers.get("cache-control") || "public, max-age=3600",
+        "cache-control":
+          response.headers.get("cache-control") || "public, max-age=3600",
         "access-control-allow-origin": "*",
       },
     });

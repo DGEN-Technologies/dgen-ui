@@ -13,7 +13,9 @@
 
   // Use the actual Lightning Address from the user's profile
   let lightningAddress = $derived(subject?.lightningAddress);
-  let hasLightningAddress = $derived(!!lightningAddress && lightningAddress.length > 0);
+  let hasLightningAddress = $derived(
+    !!lightningAddress && lightningAddress.length > 0,
+  );
 
   // Redirect to user profile since /pay feature is disabled
   onMount(() => {
@@ -23,7 +25,9 @@
   });
 </script>
 
-<div class="min-h-screen relative overflow-hidden bg-gradient-dark flex items-center justify-center">
+<div
+  class="min-h-screen relative overflow-hidden bg-gradient-dark flex items-center justify-center"
+>
   <!-- Animated background mesh with aurora effect -->
   <div class="absolute inset-0">
     <div class="absolute inset-0 aurora-bg opacity-5"></div>
@@ -51,13 +55,21 @@
     >
       <div class="text-center py-12 space-y-6">
         <div class="flex justify-center">
-          <div class="w-20 h-20 rounded-full bg-yellow-400/10 border-2 border-yellow-400/30 flex items-center justify-center">
-            <iconify-icon icon="ph:warning-bold" class="text-yellow-400" width="40"></iconify-icon>
+          <div
+            class="w-20 h-20 rounded-full bg-yellow-400/10 border-2 border-yellow-400/30 flex items-center justify-center"
+          >
+            <iconify-icon
+              icon="ph:warning-bold"
+              class="text-yellow-400"
+              width="40"
+            ></iconify-icon>
           </div>
         </div>
 
         <div class="space-y-2">
-          <h3 class="text-2xl font-bold text-white">Feature Temporarily Disabled</h3>
+          <h3 class="text-2xl font-bold text-white">
+            Feature Temporarily Disabled
+          </h3>
           <p class="text-white/60 max-w-md mx-auto">
             Paying users directly via their profile page is currently disabled.
           </p>
@@ -68,12 +80,11 @@
             class="px-6 py-3 rounded-2xl font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center gap-2"
             style="background: linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%); color: white;"
           >
-            <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                 style="background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);"></div>
-            <iconify-icon
-              icon="ph:house-bold"
-              width="24"
-              class="relative z-10"
+            <div
+              class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              style="background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);"
+            ></div>
+            <iconify-icon icon="ph:house-bold" width="24" class="relative z-10"
             ></iconify-icon>
             <span class="relative z-10 font-bold">Go Home</span>
           </button>

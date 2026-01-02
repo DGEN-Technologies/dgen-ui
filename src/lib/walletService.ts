@@ -1,11 +1,11 @@
-import * as breezSdk from '@breeztech/breez-sdk-liquid/web';
-import init from '@breeztech/breez-sdk-liquid/web';
-import * as bip39 from 'bip39';
-import { SecureStorage } from './secureStorage';
-import { initBreezLogger, sdkLogger, lightningAddressLogger } from './logger';
-import { sha256 } from '@noble/hashes/sha256';
-import { bytesToHex } from '@noble/hashes/utils';
-import { walletUnlockLimiter, paymentLimiter } from './security/rateLimiter';
+import * as breezSdk from "@breeztech/breez-sdk-liquid/web";
+import init from "@breeztech/breez-sdk-liquid/web";
+import * as bip39 from "bip39";
+import { SecureStorage } from "./secureStorage";
+import { initBreezLogger, sdkLogger, lightningAddressLogger } from "./logger";
+import { sha256 } from "@noble/hashes/sha256";
+import { bytesToHex } from "@noble/hashes/utils";
+import { walletUnlockLimiter, paymentLimiter } from "./security/rateLimiter";
 
 // Private SDK instance - not exposed outside this module
 let sdk: breezSdk.BindingLiquidSdk | null = null;
@@ -29,7 +29,7 @@ const secureStorage = SecureStorage.getInstance();
  * Both encryption key and encrypted mnemonic are in IndexedDB, protected by browser same-origin policy.
  */
 export async function getWalletPassword(userId: string): Promise<string> {
-  if (typeof window === 'undefined') {
+  if (typeof window === "undefined") {
     return `wallet-key-${userId}`;
   }
 
@@ -52,22 +52,22 @@ export async function getWalletPassword(userId: string): Promise<string> {
     sdkLogger.info(`Generated new wallet encryption key for user ${userId}`);
     return newKey;
   } catch (error) {
-    sdkLogger.error('Failed to get/generate wallet password:', error);
+    sdkLogger.error("Failed to get/generate wallet password:", error);
     return `wallet-key-${userId}`;
   }
 }
 
 async function openWalletKeysDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open('dgen_wallet_keys', 1);
+    const request = indexedDB.open("dgen_wallet_keys", 1);
 
     request.onerror = () => reject(request.error);
     request.onsuccess = () => resolve(request.result);
 
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
-      if (!db.objectStoreNames.contains('keys')) {
-        db.createObjectStore('keys');
+      if (!db.objectStoreNames.contains("keys")) {
+        db.createObjectStore("keys");
       }
     };
   });
@@ -75,8 +75,8 @@ async function openWalletKeysDB(): Promise<IDBDatabase> {
 
 async function getFromDB(db: IDBDatabase, key: string): Promise<string | null> {
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(['keys'], 'readonly');
-    const store = transaction.objectStore('keys');
+    const transaction = db.transaction(["keys"], "readonly");
+    const store = transaction.objectStore("keys");
     const request = store.get(key);
 
     request.onsuccess = () => resolve(request.result || null);
@@ -84,10 +84,14 @@ async function getFromDB(db: IDBDatabase, key: string): Promise<string | null> {
   });
 }
 
-async function saveToDB(db: IDBDatabase, key: string, value: string): Promise<void> {
+async function saveToDB(
+  db: IDBDatabase,
+  key: string,
+  value: string,
+): Promise<void> {
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(['keys'], 'readwrite');
-    const store = transaction.objectStore('keys');
+    const transaction = db.transaction(["keys"], "readwrite");
+    const store = transaction.objectStore("keys");
     const request = store.put(value, key);
 
     request.onsuccess = () => resolve();
@@ -107,9 +111,9 @@ export const initWasm = async (): Promise<void> => {
 
     // Initialize Breez SDK logger
     initBreezLogger();
-    sdkLogger.info('WASM module initialized successfully');
+    sdkLogger.info("WASM module initialized successfully");
   } catch (error) {
-    sdkLogger.error('Failed to initialize WASM module:', error);
+    sdkLogger.error("Failed to initialize WASM module:", error);
     throw error;
   }
 };
@@ -120,7 +124,10 @@ export const isConnected = (): boolean => {
 };
 
 // Main wallet initialization function
-export const initWallet = async (mnemonic: string, userId?: string): Promise<void> => {
+export const initWallet = async (
+  mnemonic: string,
+  userId?: string,
+): Promise<void> => {
   // Prevent concurrent connections
   if (isConnecting) {
     return;
@@ -147,7 +154,6 @@ export const initWallet = async (mnemonic: string, userId?: string): Promise<voi
 
     // Connect to SDK with mnemonic
     await connectSdk(mnemonic);
-
   } catch (error) {
     throw error;
   } finally {
@@ -161,23 +167,23 @@ const connectSdk = async (mnemonic: string, retryCount = 0): Promise<void> => {
 
   try {
     if (!mnemonic) {
-      throw new Error('Mnemonic is required to connect SDK');
+      throw new Error("Mnemonic is required to connect SDK");
     }
 
     // Validate mnemonic before connecting
     if (!bip39.validateMnemonic(mnemonic)) {
-      throw new Error('Invalid mnemonic phrase');
+      throw new Error("Invalid mnemonic phrase");
     }
 
-    const config = breezSdk.defaultConfig('mainnet');
+    const config = breezSdk.defaultConfig("mainnet");
 
     // Configure working directory - same as wasm-example-app
-    config.workingDir = './breez_data';
+    config.workingDir = "./breez_data";
 
     // Get API key from environment
     const breezApiKey = import.meta.env.VITE_BREEZ_API_KEY;
     if (!breezApiKey) {
-      throw new Error('Breez API key not found in environment variables');
+      throw new Error("Breez API key not found in environment variables");
     }
     config.breezApiKey = breezApiKey;
 
@@ -187,18 +193,18 @@ const connectSdk = async (mnemonic: string, retryCount = 0): Promise<void> => {
     const bitcoinExplorerUrl = import.meta.env.VITE_BITCOIN_EXPLORER_URL;
 
     if (liquidExplorerUrl) {
-      sdkLogger.info('Using custom Liquid explorer:', liquidExplorerUrl);
+      sdkLogger.info("Using custom Liquid explorer:", liquidExplorerUrl);
       config.liquidExplorer = {
-        type: 'esplora',
+        type: "esplora",
         url: liquidExplorerUrl,
         useWaterfalls: false,
       };
     }
 
     if (bitcoinExplorerUrl) {
-      sdkLogger.info('Using custom Bitcoin explorer:', bitcoinExplorerUrl);
+      sdkLogger.info("Using custom Bitcoin explorer:", bitcoinExplorerUrl);
       config.bitcoinExplorer = {
-        type: 'esplora',
+        type: "esplora",
         url: bitcoinExplorerUrl,
         useWaterfalls: false,
       };
@@ -211,8 +217,10 @@ const connectSdk = async (mnemonic: string, retryCount = 0): Promise<void> => {
     // Add exponential backoff delay to help avoid blockstream.info rate limits (429 errors)
     // This is especially important when multiple apps are running or on retries
     const delayMs = 5000 * Math.pow(2, retryCount); // 5s, 10s, 20s
-    sdkLogger.info(`Connecting to SDK (attempt ${retryCount + 1}/${maxRetries + 1}) with ${delayMs}ms delay...`);
-    await new Promise(resolve => setTimeout(resolve, delayMs));
+    sdkLogger.info(
+      `Connecting to SDK (attempt ${retryCount + 1}/${maxRetries + 1}) with ${delayMs}ms delay...`,
+    );
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
 
     // Connect to Breez network with the mnemonic directly - exactly like wasm-example-app
     sdk = await breezSdk.connect({
@@ -220,23 +228,28 @@ const connectSdk = async (mnemonic: string, retryCount = 0): Promise<void> => {
       mnemonic,
     });
 
-    sdkLogger.info('SDK connected successfully');
+    sdkLogger.info("SDK connected successfully");
 
     // SDK handles syncing automatically - no manual sync needed
   } catch (error) {
-    sdkLogger.error(`Connection failed (attempt ${retryCount + 1}/${maxRetries + 1}):`, error);
+    sdkLogger.error(
+      `Connection failed (attempt ${retryCount + 1}/${maxRetries + 1}):`,
+      error,
+    );
 
     // Check if this is a rate limit or network error that we can retry
     const errorMessage = error instanceof Error ? error.message : String(error);
     const isRetryable =
-      errorMessage.includes('429') ||
-      errorMessage.includes('Too Many Requests') ||
-      errorMessage.includes('rate limit') ||
-      errorMessage.includes('network') ||
-      errorMessage.includes('fetch');
+      errorMessage.includes("429") ||
+      errorMessage.includes("Too Many Requests") ||
+      errorMessage.includes("rate limit") ||
+      errorMessage.includes("network") ||
+      errorMessage.includes("fetch");
 
     if (isRetryable && retryCount < maxRetries) {
-      sdkLogger.warn(`Retryable error detected, retrying connection (${retryCount + 1}/${maxRetries})...`);
+      sdkLogger.warn(
+        `Retryable error detected, retrying connection (${retryCount + 1}/${maxRetries})...`,
+      );
       sdk = null;
       // Recursive retry with incremented count
       return await connectSdk(mnemonic, retryCount + 1);
@@ -258,23 +271,30 @@ export const validateMnemonic = (mnemonic: string): boolean => {
 };
 
 // Save mnemonic to secure storage with user password
-export const saveMnemonic = async (mnemonic: string, userPassword: string, userId?: string): Promise<void> => {
+export const saveMnemonic = async (
+  mnemonic: string,
+  userPassword: string,
+  userId?: string,
+): Promise<void> => {
   await secureStorage.init();
-  const effectiveUserId = userId || currentUserId || 'default';
+  const effectiveUserId = userId || currentUserId || "default";
   await secureStorage.unlock(userPassword, effectiveUserId);
 
   const storageKey = `walletMnemonic_${effectiveUserId}`;
   await secureStorage.store(storageKey, mnemonic);
 
   // Clear from memory immediately after storing (MyAlgo vulnerability mitigation)
-  mnemonic = '';
+  mnemonic = "";
 };
 
 // Get saved mnemonic from secure storage with user password
-export const getSavedMnemonic = async (userPassword: string, userId?: string): Promise<string | null> => {
+export const getSavedMnemonic = async (
+  userPassword: string,
+  userId?: string,
+): Promise<string | null> => {
   try {
     await secureStorage.init();
-    const effectiveUserId = userId || currentUserId || 'default';
+    const effectiveUserId = userId || currentUserId || "default";
     const storageKey = `walletMnemonic_${effectiveUserId}`;
 
     // Try with new random key first
@@ -283,7 +303,9 @@ export const getSavedMnemonic = async (userPassword: string, userId?: string): P
       const mnemonic = await secureStorage.retrieve(storageKey);
 
       if (mnemonic) {
-        sdkLogger.info(`[Migration] Successfully retrieved wallet with new random key`);
+        sdkLogger.info(
+          `[Migration] Successfully retrieved wallet with new random key`,
+        );
         return mnemonic;
       }
     } catch (error) {
@@ -296,17 +318,23 @@ export const getSavedMnemonic = async (userPassword: string, userId?: string): P
       const mnemonic = await secureStorage.retrieve(storageKey);
 
       if (mnemonic) {
-        sdkLogger.info(`[Migration] Found wallet encrypted with userId (bug migration) - migrating to new random key`);
+        sdkLogger.info(
+          `[Migration] Found wallet encrypted with userId (bug migration) - migrating to new random key`,
+        );
 
         // Re-encrypt with new random key
         await secureStorage.unlock(userPassword, effectiveUserId);
         await secureStorage.store(storageKey, mnemonic);
 
-        sdkLogger.info(`[Migration] Successfully migrated wallet from buggy encryption to new random key`);
+        sdkLogger.info(
+          `[Migration] Successfully migrated wallet from buggy encryption to new random key`,
+        );
         return mnemonic;
       }
     } catch (migrationError) {
-      sdkLogger.info(`[Migration] userId key also failed, trying old static key...`);
+      sdkLogger.info(
+        `[Migration] userId key also failed, trying old static key...`,
+      );
     }
 
     // Fallback 2: Try with old static key for migration
@@ -316,55 +344,65 @@ export const getSavedMnemonic = async (userPassword: string, userId?: string): P
       const mnemonic = await secureStorage.retrieve(storageKey);
 
       if (mnemonic) {
-        sdkLogger.info(`[Migration] Found wallet encrypted with old static key - migrating to new random key`);
+        sdkLogger.info(
+          `[Migration] Found wallet encrypted with old static key - migrating to new random key`,
+        );
 
         // Re-encrypt with new random key
         await secureStorage.unlock(userPassword, effectiveUserId);
         await secureStorage.store(storageKey, mnemonic);
 
-        sdkLogger.info(`[Migration] Successfully migrated wallet to new random key`);
+        sdkLogger.info(
+          `[Migration] Successfully migrated wallet to new random key`,
+        );
         return mnemonic;
       }
     } catch (migrationError) {
-      sdkLogger.info(`[Migration] Old static key also failed - no wallet found`);
+      sdkLogger.info(
+        `[Migration] Old static key also failed - no wallet found`,
+      );
     }
 
     return null;
   } catch (error) {
-    sdkLogger.error('[getSavedMnemonic] Error:', error);
+    sdkLogger.error("[getSavedMnemonic] Error:", error);
     return null;
   }
 };
 
 // Clear mnemonic from secure storage
-export const clearMnemonic = async (userPassword: string, userId?: string): Promise<void> => {
+export const clearMnemonic = async (
+  userPassword: string,
+  userId?: string,
+): Promise<void> => {
   try {
     await secureStorage.init();
-    const effectiveUserId = userId || currentUserId || 'default';
+    const effectiveUserId = userId || currentUserId || "default";
     await secureStorage.unlock(userPassword, effectiveUserId);
 
     const storageKey = `walletMnemonic_${effectiveUserId}`;
     await secureStorage.remove(storageKey);
   } catch (error) {
-    console.error('Failed to clear mnemonic:', error);
+    console.error("Failed to clear mnemonic:", error);
   }
 };
 
 // Get wallet info
-export const getWalletInfo = async (): Promise<breezSdk.GetInfoResponse | null> => {
-  if (!sdk) {
-    sdkLogger.warn('Not initialized when getting wallet info');
-    return null;
-  }
+export const getWalletInfo =
+  async (): Promise<breezSdk.GetInfoResponse | null> => {
+    if (!sdk) {
+      sdkLogger.warn("Not initialized when getting wallet info");
+      return null;
+    }
 
-  try {
-    const info = await sdk.getInfo();
-    return info;
-  } catch (error) {
-    sdkLogger.error('Failed to get wallet info:', error);
-    return null;
-  }
-};
+    try {
+      const info = await sdk.getInfo();
+      return info;
+    } catch (error) {
+      sdkLogger.error("Failed to get wallet info:", error);
+      return null;
+    }
+  };
 
 // Get transactions with optional filtering
 export const getTransactions = async (filter?: {
@@ -375,7 +413,7 @@ export const getTransactions = async (filter?: {
   limit?: number;
 }): Promise<breezSdk.Payment[]> => {
   if (!sdk) {
-    sdkLogger.warn('Not initialized when getting transactions');
+    sdkLogger.warn("Not initialized when getting transactions");
     return [];
   }
 
@@ -386,11 +424,11 @@ export const getTransactions = async (filter?: {
       toTimestamp: filter?.toTimestamp,
       filters: filter?.filters,
       offset: filter?.offset,
-      limit: filter?.limit
+      limit: filter?.limit,
     });
     return payments;
   } catch (error) {
-    sdkLogger.error('Failed to get transactions:', error);
+    sdkLogger.error("Failed to get transactions:", error);
     return [];
   }
 };
@@ -399,101 +437,103 @@ export const getTransactions = async (filter?: {
 // The SDK will sync on its own schedule and emit 'synced' events
 
 // Payment Operations
-export const parseInput = async (input: string): Promise<breezSdk.InputType> => {
-  if (!sdk) throw new Error('SDK not initialized');
+export const parseInput = async (
+  input: string,
+): Promise<breezSdk.InputType> => {
+  if (!sdk) throw new Error("SDK not initialized");
   return await sdk.parse(input);
 };
 
 export const prepareSendPayment = async (
-  params: breezSdk.PrepareSendRequest
+  params: breezSdk.PrepareSendRequest,
 ): Promise<breezSdk.PrepareSendResponse> => {
-  if (!sdk) throw new Error('SDK not initialized');
+  if (!sdk) throw new Error("SDK not initialized");
   return await sdk.prepareSendPayment(params);
 };
 
 export const sendPayment = async (
-  params: breezSdk.SendPaymentRequest
+  params: breezSdk.SendPaymentRequest,
 ): Promise<breezSdk.SendPaymentResponse> => {
-  if (!sdk) throw new Error('SDK not initialized');
+  if (!sdk) throw new Error("SDK not initialized");
   return await sdk.sendPayment(params);
 };
 
 // Receiving Operations
-export const fetchLightningLimits = async (): Promise<breezSdk.LightningPaymentLimitsResponse> => {
-  if (!sdk) throw new Error('SDK not initialized');
-  return await sdk.fetchLightningLimits();
-};
+export const fetchLightningLimits =
+  async (): Promise<breezSdk.LightningPaymentLimitsResponse> => {
+    if (!sdk) throw new Error("SDK not initialized");
+    return await sdk.fetchLightningLimits();
+  };
 
-export const fetchOnchainLimits = async (): Promise<breezSdk.OnchainPaymentLimitsResponse> => {
-  if (!sdk) throw new Error('SDK not initialized');
-  return await sdk.fetchOnchainLimits();
-};
+export const fetchOnchainLimits =
+  async (): Promise<breezSdk.OnchainPaymentLimitsResponse> => {
+    if (!sdk) throw new Error("SDK not initialized");
+    return await sdk.fetchOnchainLimits();
+  };
 
 export const prepareReceivePayment = async (
-  params: breezSdk.PrepareReceiveRequest
+  params: breezSdk.PrepareReceiveRequest,
 ): Promise<breezSdk.PrepareReceiveResponse> => {
-  if (!sdk) throw new Error('SDK not initialized');
+  if (!sdk) throw new Error("SDK not initialized");
   return await sdk.prepareReceivePayment(params);
 };
 
-export const receivePayment = async (
-  params: {
-    prepareResponse: breezSdk.PrepareReceiveResponse;
-    description?: string;
-    useDescriptionHash?: boolean;
-    payerNote?: string;
-  }
-): Promise<breezSdk.ReceivePaymentResponse> => {
-  if (!sdk) throw new Error('SDK not initialized');
+export const receivePayment = async (params: {
+  prepareResponse: breezSdk.PrepareReceiveResponse;
+  description?: string;
+  useDescriptionHash?: boolean;
+  payerNote?: string;
+}): Promise<breezSdk.ReceivePaymentResponse> => {
+  if (!sdk) throw new Error("SDK not initialized");
   return await sdk.receivePayment(params);
 };
 
 // Fiat rate operations
 export const fetchFiatRates = async (): Promise<breezSdk.Rate[]> => {
-  if (!sdk) throw new Error('SDK not initialized');
+  if (!sdk) throw new Error("SDK not initialized");
   return await sdk.fetchFiatRates();
 };
 
 // Onchain operations
 export const recommendedFees = async (): Promise<breezSdk.RecommendedFees> => {
-  if (!sdk) throw new Error('SDK not initialized');
+  if (!sdk) throw new Error("SDK not initialized");
   return await sdk.recommendedFees();
 };
 
 export const preparePayOnchain = async (
-  params: breezSdk.PreparePayOnchainRequest
+  params: breezSdk.PreparePayOnchainRequest,
 ): Promise<breezSdk.PreparePayOnchainResponse> => {
-  if (!sdk) throw new Error('SDK not initialized');
+  if (!sdk) throw new Error("SDK not initialized");
   return await sdk.preparePayOnchain(params);
 };
 
 export const payOnchain = async (
-  params: breezSdk.PayOnchainRequest
+  params: breezSdk.PayOnchainRequest,
 ): Promise<breezSdk.SendPaymentResponse> => {
-  if (!sdk) throw new Error('SDK not initialized');
+  if (!sdk) throw new Error("SDK not initialized");
   return await sdk.payOnchain(params);
 };
 
 export const prepareBuyBitcoin = async (
-  params: breezSdk.PrepareBuyBitcoinRequest
+  params: breezSdk.PrepareBuyBitcoinRequest,
 ): Promise<breezSdk.PrepareBuyBitcoinResponse> => {
-  if (!sdk) throw new Error('SDK not initialized');
+  if (!sdk) throw new Error("SDK not initialized");
   return await sdk.prepareBuyBitcoin(params);
 };
 
 export const buyBitcoin = async (
-  params: breezSdk.BuyBitcoinRequest
+  params: breezSdk.BuyBitcoinRequest,
 ): Promise<string> => {
-  if (!sdk) throw new Error('SDK not initialized');
+  if (!sdk) throw new Error("SDK not initialized");
   return await sdk.buyBitcoin(params);
 };
 
 // Event handling
 export const addEventListener = async (
-  callback: (event: breezSdk.SdkEvent) => void
+  callback: (event: breezSdk.SdkEvent) => void,
 ): Promise<string> => {
   if (!sdk) {
-    throw new Error('SDK not initialized');
+    throw new Error("SDK not initialized");
   }
 
   try {
@@ -506,13 +546,15 @@ export const addEventListener = async (
     eventListeners.set(listenerId, listenerId);
     return listenerId;
   } catch (error) {
-    sdkLogger.error('Failed to add event listener:', error);
+    sdkLogger.error("Failed to add event listener:", error);
     throw error;
   }
 };
 
 // Remove event listener
-export const removeEventListener = async (listenerId: string): Promise<void> => {
+export const removeEventListener = async (
+  listenerId: string,
+): Promise<void> => {
   if (!sdk || !listenerId) return;
 
   try {
@@ -525,9 +567,8 @@ export const removeEventListener = async (listenerId: string): Promise<void> => 
         break;
       }
     }
-
   } catch (error) {
-    sdkLogger.error('Failed to remove event listener:', error);
+    sdkLogger.error("Failed to remove event listener:", error);
   }
 };
 
@@ -549,9 +590,8 @@ export const disconnect = async (): Promise<void> => {
       await sdk.disconnect();
       sdk = null;
       currentUserId = null;
-
     } catch (error) {
-      sdkLogger.error('Failed to disconnect:', error);
+      sdkLogger.error("Failed to disconnect:", error);
       sdk = null;
       currentUserId = null;
     }
@@ -565,14 +605,17 @@ export const lockWallet = async (): Promise<void> => {
 };
 
 // Unlock wallet (restore session)
-export const unlockWallet = async (password: string, userId?: string): Promise<void> => {
-  const effectiveUserId = userId || currentUserId || 'default';
+export const unlockWallet = async (
+  password: string,
+  userId?: string,
+): Promise<void> => {
+  const effectiveUserId = userId || currentUserId || "default";
 
   // Check rate limit
   const rateLimitCheck = walletUnlockLimiter.checkLimit(effectiveUserId);
   if (!rateLimitCheck.allowed) {
     throw new Error(
-      `Too many unlock attempts. Please try again in ${rateLimitCheck.retryAfter} seconds.`
+      `Too many unlock attempts. Please try again in ${rateLimitCheck.retryAfter} seconds.`,
     );
   }
 
@@ -586,7 +629,7 @@ export const unlockWallet = async (password: string, userId?: string): Promise<v
       // Success - reset rate limit
       walletUnlockLimiter.reset(effectiveUserId);
     } else {
-      throw new Error('No saved wallet found');
+      throw new Error("No saved wallet found");
     }
   } catch (error) {
     // Failed attempt recorded by rate limiter
@@ -627,45 +670,45 @@ export const getNodeInfo = async (): Promise<breezSdk.NodeState | null> => {
     const info = await sdk.getInfo();
     return info.nodeState;
   } catch (error) {
-    sdkLogger.error('Failed to get node info:', error);
+    sdkLogger.error("Failed to get node info:", error);
     return null;
   }
 };
 
 // Lightning Address / LNURL Operations
 export const registerWebhook = async (webhookUrl: string): Promise<void> => {
-  if (!sdk) throw new Error('SDK not initialized');
-  sdkLogger.info('Registering webhook:', webhookUrl);
+  if (!sdk) throw new Error("SDK not initialized");
+  sdkLogger.info("Registering webhook:", webhookUrl);
   await sdk.registerWebhook(webhookUrl);
-  sdkLogger.info('Webhook registered successfully');
+  sdkLogger.info("Webhook registered successfully");
 };
 
 export const unregisterWebhook = async (): Promise<void> => {
-  if (!sdk) throw new Error('SDK not initialized');
-  sdkLogger.info('Unregistering webhook');
+  if (!sdk) throw new Error("SDK not initialized");
+  sdkLogger.info("Unregistering webhook");
   await sdk.unregisterWebhook();
-  sdkLogger.info('Webhook unregistered successfully');
+  sdkLogger.info("Webhook unregistered successfully");
 };
 
 export const signMessage = async (message: string): Promise<string> => {
-  if (!sdk) throw new Error('SDK not initialized');
-  sdkLogger.debug('Signing message');
+  if (!sdk) throw new Error("SDK not initialized");
+  sdkLogger.debug("Signing message");
   const result = await sdk.signMessage({ message });
   return result.signature;
 };
 
 // LNURL Payment Operations (for sending to Lightning addresses)
 export const prepareLnurlPay = async (
-  params: breezSdk.PrepareLnUrlPayRequest
+  params: breezSdk.PrepareLnUrlPayRequest,
 ): Promise<breezSdk.PrepareLnUrlPayResponse> => {
-  if (!sdk) throw new Error('SDK not initialized');
+  if (!sdk) throw new Error("SDK not initialized");
   return await sdk.prepareLnurlPay(params);
 };
 
 export const lnurlPay = async (
-  params: breezSdk.LnUrlPayRequest
+  params: breezSdk.LnUrlPayRequest,
 ): Promise<breezSdk.LnUrlPayResult> => {
-  if (!sdk) throw new Error('SDK not initialized');
+  if (!sdk) throw new Error("SDK not initialized");
   return await sdk.lnurlPay(params);
 };
 
@@ -674,15 +717,15 @@ export interface LnAddressRegistrationResult {
   lnurl: string;
   lightningAddress?: string;
   bip353Address?: string;
-  usernameModified?: boolean;  // True if discriminator was added
-  requestedUsername?: string;   // Original username requested
-  actualUsername?: string;      // Actual username registered (with discriminator if added)
+  usernameModified?: boolean; // True if discriminator was added
+  requestedUsername?: string; // Original username requested
+  actualUsername?: string; // Actual username registered (with discriminator if added)
 }
 
 export class UsernameConflictError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'UsernameConflictError';
+    this.name = "UsernameConflictError";
   }
 }
 
@@ -690,8 +733,8 @@ export class UsernameConflictError extends Error {
 export const formatUsername = (name: string): string => {
   return name
     .toLowerCase()
-    .replace(/\s+/g, '')  // Remove spaces: "Red Panda" → "redpanda"
-    .replace(/[^a-z0-9_-]/g, '');  // Remove invalid chars
+    .replace(/\s+/g, "") // Remove spaces: "Red Panda" → "redpanda"
+    .replace(/[^a-z0-9_-]/g, ""); // Remove invalid chars
 };
 
 // No longer needed - using sequential numbers instead
@@ -700,16 +743,18 @@ export const formatUsername = (name: string): string => {
 // };
 
 // Helper to generate BOLT12 offer for Lightning Address
-const generateLightningAddressOffer = async (username: string): Promise<string> => {
-  if (!sdk) throw new Error('SDK not initialized');
+const generateLightningAddressOffer = async (
+  username: string,
+): Promise<string> => {
+  if (!sdk) throw new Error("SDK not initialized");
 
   const prepareResponse = await prepareReceivePayment({
-    paymentMethod: 'bolt12Offer'
+    paymentMethod: "bolt12Offer",
   });
 
   const receiveResponse = await receivePayment({
     prepareResponse,
-    description: `${username}@breez.fun Lightning Address`
+    description: `${username}@breez.fun Lightning Address`,
   });
 
   return receiveResponse.destination;
@@ -717,16 +762,16 @@ const generateLightningAddressOffer = async (username: string): Promise<string> 
 
 // Recover existing Lightning Address from webhook
 export const recoverLightningAddress = async (
-  webhookUrl: string
+  webhookUrl: string,
 ): Promise<LnAddressRegistrationResult | null> => {
-  if (!sdk) throw new Error('SDK not initialized');
+  if (!sdk) throw new Error("SDK not initialized");
 
-  lightningAddressLogger.info('Attempting recovery with webhook:', webhookUrl);
+  lightningAddressLogger.info("Attempting recovery with webhook:", webhookUrl);
 
   try {
     // Get wallet info for pubkey
     const info = await getWalletInfo();
-    if (!info?.walletInfo) throw new Error('Failed to get wallet info');
+    if (!info?.walletInfo) throw new Error("Failed to get wallet info");
     const pubkey = info.walletInfo.pubkey;
 
     // Sign recovery message
@@ -742,45 +787,49 @@ export const recoverLightningAddress = async (
     let response;
     try {
       response = await fetch(`https://breez.fun/lnurlpay/${pubkey}/recover`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           time,
           webhook_url: webhookUrl,
-          signature
+          signature,
         }),
-        signal: controller.signal
+        signal: controller.signal,
       });
       clearTimeout(timeoutId);
     } catch (fetchError: any) {
       clearTimeout(timeoutId);
       // Timeout, CORS, or network error - treat as "not found"
-      if (fetchError.name === 'AbortError') {
-        lightningAddressLogger.info('Recovery request timed out after 30 seconds, will register new address');
+      if (fetchError.name === "AbortError") {
+        lightningAddressLogger.info(
+          "Recovery request timed out after 30 seconds, will register new address",
+        );
       } else {
-        lightningAddressLogger.info('Recovery request failed (likely CORS), will register new address');
+        lightningAddressLogger.info(
+          "Recovery request failed (likely CORS), will register new address",
+        );
       }
       return null;
     }
 
     if (!response.ok) {
       if (response.status === 404) {
-        lightningAddressLogger.info('No existing registration found');
+        lightningAddressLogger.info("No existing registration found");
         return null;
       }
       throw new Error(`Recovery failed: ${response.status}`);
     }
 
     const result = await response.json();
-    lightningAddressLogger.info('Recovery successful:', result);
+    lightningAddressLogger.info("Recovery successful:", result);
 
     return {
       lnurl: result.lnurl,
       lightningAddress: result.lightning_address,
-      bip353Address: result.bip353_address
+      bip353Address: result.bip353_address,
     };
   } catch (error) {
-    lightningAddressLogger.error('Recovery failed:', error);
+    lightningAddressLogger.error("Recovery failed:", error);
     return null;
   }
 };
@@ -788,11 +837,11 @@ export const recoverLightningAddress = async (
 // Update Lightning Address username
 export const updateLightningAddress = async (
   newUsername: string,
-  webhookUrl: string
+  webhookUrl: string,
 ): Promise<LnAddressRegistrationResult> => {
-  if (!sdk) throw new Error('SDK not initialized');
+  if (!sdk) throw new Error("SDK not initialized");
 
-  lightningAddressLogger.info('Updating to username:', newUsername);
+  lightningAddressLogger.info("Updating to username:", newUsername);
 
   try {
     // Generate new BOLT12 offer
@@ -801,23 +850,23 @@ export const updateLightningAddress = async (
     // Register with new username (which updates existing registration)
     return await registerLightningAddress(newUsername, webhookUrl, offer);
   } catch (error) {
-    lightningAddressLogger.error('Update failed:', error);
+    lightningAddressLogger.error("Update failed:", error);
     throw error;
   }
 };
 
 // Unregister Lightning Address
 export const unregisterLightningAddress = async (
-  webhookUrl: string
+  webhookUrl: string,
 ): Promise<void> => {
-  if (!sdk) throw new Error('SDK not initialized');
+  if (!sdk) throw new Error("SDK not initialized");
 
-  lightningAddressLogger.info('Unregistering...');
+  lightningAddressLogger.info("Unregistering...");
 
   try {
     // Get wallet info for pubkey
     const info = await getWalletInfo();
-    if (!info?.walletInfo) throw new Error('Failed to get wallet info');
+    if (!info?.walletInfo) throw new Error("Failed to get wallet info");
     const pubkey = info.walletInfo.pubkey;
 
     // Sign unregister message
@@ -827,13 +876,13 @@ export const unregisterLightningAddress = async (
 
     // Unregister from Breez service
     const response = await fetch(`https://breez.fun/lnurlpay/${pubkey}`, {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         time,
         webhook_url: webhookUrl,
-        signature
-      })
+        signature,
+      }),
     });
 
     if (!response.ok && response.status !== 404) {
@@ -843,9 +892,9 @@ export const unregisterLightningAddress = async (
     // Unregister webhook from SDK
     await unregisterWebhook();
 
-    lightningAddressLogger.info('Unregistered successfully');
+    lightningAddressLogger.info("Unregistered successfully");
   } catch (error) {
-    lightningAddressLogger.error('Unregister failed:', error);
+    lightningAddressLogger.error("Unregister failed:", error);
     throw error;
   }
 };
@@ -854,73 +903,78 @@ export const unregisterLightningAddress = async (
 const registerLightningAddressSingle = async (
   username: string,
   webhookUrl: string,
-  offer?: string
+  offer?: string,
 ): Promise<LnAddressRegistrationResult> => {
-  if (!sdk) throw new Error('SDK not initialized');
+  if (!sdk) throw new Error("SDK not initialized");
 
-  lightningAddressLogger.info('Starting registration for username:', username);
+  lightningAddressLogger.info("Starting registration for username:", username);
 
   try {
     // 1. Get wallet info for pubkey
     const info = await getWalletInfo();
-    if (!info?.walletInfo) throw new Error('Failed to get wallet info');
+    if (!info?.walletInfo) throw new Error("Failed to get wallet info");
     const pubkey = info.walletInfo.pubkey;
 
-    lightningAddressLogger.info('Wallet pubkey:', pubkey);
+    lightningAddressLogger.info("Wallet pubkey:", pubkey);
 
     // 2. Generate BOLT12 offer (or use provided one for updates)
     let bolt12Offer = offer;
     if (!bolt12Offer) {
-      lightningAddressLogger.info('Generating BOLT12 offer...');
+      lightningAddressLogger.info("Generating BOLT12 offer...");
       bolt12Offer = await generateLightningAddressOffer(username);
-      lightningAddressLogger.info('BOLT12 offer generated:', bolt12Offer.substring(0, 50) + '...');
+      lightningAddressLogger.info(
+        "BOLT12 offer generated:",
+        bolt12Offer.substring(0, 50) + "...",
+      );
     }
 
     // 3. Clean up any existing webhook before registering new one
     try {
-      lightningAddressLogger.info('Unregistering any existing webhook...');
+      lightningAddressLogger.info("Unregistering any existing webhook...");
       await unregisterWebhook();
-      lightningAddressLogger.info('Existing webhook unregistered');
+      lightningAddressLogger.info("Existing webhook unregistered");
     } catch (error) {
       // Ignore errors - webhook might not exist
-      lightningAddressLogger.info('No existing webhook to unregister (this is fine)');
+      lightningAddressLogger.info(
+        "No existing webhook to unregister (this is fine)",
+      );
     }
 
     // 4. Register new webhook with Breez SDK
-    lightningAddressLogger.info('Registering webhook with SDK...');
+    lightningAddressLogger.info("Registering webhook with SDK...");
     await registerWebhook(webhookUrl);
 
     // 5. Sign registration message
     const time = Math.floor(Date.now() / 1000);
     const message = `${time}-${webhookUrl}-${username}-${bolt12Offer}`;
-    lightningAddressLogger.info('Signing registration message...');
+    lightningAddressLogger.info("Signing registration message...");
     const signature = await signMessage(message);
 
     // 6. Register with Breez LNURL service
     // Add 30-second timeout like misty-breez
-    lightningAddressLogger.info('Registering with Breez LNURL service...');
+    lightningAddressLogger.info("Registering with Breez LNURL service...");
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000);
 
     let response;
     try {
       response = await fetch(`https://breez.fun/lnurlpay/${pubkey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           time,
           webhook_url: webhookUrl,
           username,
           offer: bolt12Offer,
-          signature
+          signature,
         }),
-        signal: controller.signal
+        signal: controller.signal,
       });
       clearTimeout(timeoutId);
     } catch (fetchError: any) {
       clearTimeout(timeoutId);
-      if (fetchError.name === 'AbortError') {
-        throw new Error('Registration request timed out after 30 seconds');
+      if (fetchError.name === "AbortError") {
+        throw new Error("Registration request timed out after 30 seconds");
       }
       throw fetchError;
     }
@@ -930,22 +984,24 @@ const registerLightningAddressSingle = async (
 
       // Check for username conflict (409 Conflict)
       if (response.status === 409) {
-        throw new UsernameConflictError('Username is already taken');
+        throw new UsernameConflictError("Username is already taken");
       }
 
-      throw new Error(`Breez registration failed: ${response.status} - ${errorText}`);
+      throw new Error(
+        `Breez registration failed: ${response.status} - ${errorText}`,
+      );
     }
 
     const result = await response.json();
-    lightningAddressLogger.info('Registration successful:', result);
+    lightningAddressLogger.info("Registration successful:", result);
 
     return {
       lnurl: result.lnurl,
       lightningAddress: result.lightning_address,
-      bip353Address: result.bip353_address
+      bip353Address: result.bip353_address,
     };
   } catch (error) {
-    lightningAddressLogger.error('Registration failed:', error);
+    lightningAddressLogger.error("Registration failed:", error);
     throw error;
   }
 };
@@ -955,9 +1011,9 @@ export const registerLightningAddress = async (
   username: string,
   webhookUrl: string,
   offer?: string,
-  maxRetries: number = 20
+  maxRetries: number = 20,
 ): Promise<LnAddressRegistrationResult> => {
-  if (!sdk) throw new Error('SDK not initialized');
+  if (!sdk) throw new Error("SDK not initialized");
 
   const requestedUsername = username;
   let currentUsername = username;
@@ -970,25 +1026,33 @@ export const registerLightningAddress = async (
       // Third attempt: try username2, etc.
       currentUsername = attempt === 0 ? username : `${username}${attempt}`;
 
-      lightningAddressLogger.info(`Registration attempt ${attempt + 1}/${maxRetries} with username: ${currentUsername}`);
+      lightningAddressLogger.info(
+        `Registration attempt ${attempt + 1}/${maxRetries} with username: ${currentUsername}`,
+      );
 
-      const result = await registerLightningAddressSingle(currentUsername, webhookUrl, offer);
+      const result = await registerLightningAddressSingle(
+        currentUsername,
+        webhookUrl,
+        offer,
+      );
 
       // Add metadata about username modification
       return {
         ...result,
         usernameModified: currentUsername !== requestedUsername,
         requestedUsername: requestedUsername,
-        actualUsername: currentUsername
+        actualUsername: currentUsername,
       };
     } catch (error) {
       if (error instanceof UsernameConflictError && attempt < maxRetries - 1) {
-        lightningAddressLogger.warn(`Username conflict for: ${currentUsername}, trying next number...`);
+        lightningAddressLogger.warn(
+          `Username conflict for: ${currentUsername}, trying next number...`,
+        );
 
         // Progressive backoff to prevent DOS: 100ms, 200ms, 300ms, etc.
         // After 5 attempts, use longer backoff (500ms)
         const backoffMs = attempt < 5 ? (attempt + 1) * 100 : 500;
-        await new Promise(resolve => setTimeout(resolve, backoffMs));
+        await new Promise((resolve) => setTimeout(resolve, backoffMs));
         continue;
       }
 
@@ -997,7 +1061,7 @@ export const registerLightningAddress = async (
     }
   }
 
-  throw lastError || new Error('Registration failed after retries');
+  throw lastError || new Error("Registration failed after retries");
 };
 
 // Setup Lightning Address with automatic recovery
@@ -1006,11 +1070,11 @@ export const registerLightningAddress = async (
 export const setupLightningAddress = async (
   username: string | null,
   webhookUrl: string,
-  isRecover: boolean = false
+  isRecover: boolean = false,
 ): Promise<LnAddressRegistrationResult> => {
-  if (!sdk) throw new Error('SDK not initialized');
+  if (!sdk) throw new Error("SDK not initialized");
 
-  lightningAddressLogger.info('Setup started', { username, isRecover });
+  lightningAddressLogger.info("Setup started", { username, isRecover });
 
   try {
     // Try recovery first if requested
@@ -1018,20 +1082,30 @@ export const setupLightningAddress = async (
     if (isRecover) {
       const recovered = await recoverLightningAddress(webhookUrl);
       if (recovered && recovered.lightningAddress) {
-        lightningAddressLogger.info('Recovered existing address for this seed:', recovered.lightningAddress);
+        lightningAddressLogger.info(
+          "Recovered existing address for this seed:",
+          recovered.lightningAddress,
+        );
 
         // Same seed restored - just update the webhook URL (no username change)
-        const recoveredUsername = recovered.lightningAddress.split('@')[0];
+        const recoveredUsername = recovered.lightningAddress.split("@")[0];
 
         // Generate new BOLT12 offer
         const offer = await generateLightningAddressOffer(recoveredUsername);
 
         // Re-register to update webhook URL (same pubkey, same username)
-        const result = await registerLightningAddress(recoveredUsername, webhookUrl, offer);
-        lightningAddressLogger.info('Webhook updated for recovered address:', result.lightningAddress);
+        const result = await registerLightningAddress(
+          recoveredUsername,
+          webhookUrl,
+          offer,
+        );
+        lightningAddressLogger.info(
+          "Webhook updated for recovered address:",
+          result.lightningAddress,
+        );
         return result;
       }
-      lightningAddressLogger.info('No existing registration for this seed');
+      lightningAddressLogger.info("No existing registration for this seed");
     }
 
     // New seed - register new address
@@ -1039,16 +1113,18 @@ export const setupLightningAddress = async (
     let effectiveUsername = username;
     if (!effectiveUsername) {
       const info = await getWalletInfo();
-      if (!info?.walletInfo) throw new Error('Failed to get wallet info');
+      if (!info?.walletInfo) throw new Error("Failed to get wallet info");
       effectiveUsername = info.walletInfo.pubkey.substring(0, 16);
     }
 
     // Register with automatic discriminator if username taken
-    lightningAddressLogger.info('Registering new address for new seed:', effectiveUsername);
+    lightningAddressLogger.info(
+      "Registering new address for new seed:",
+      effectiveUsername,
+    );
     return await registerLightningAddress(effectiveUsername, webhookUrl);
-
   } catch (error) {
-    lightningAddressLogger.error('Setup failed:', error);
+    lightningAddressLogger.error("Setup failed:", error);
     throw error;
   }
 };

@@ -1,6 +1,11 @@
 <script>
   import { prepareSendAsset, sendAsset } from "$lib/assetService";
-  import { ASSET_IDS, getAssetTicker, formatAssetAmount, supportsAssetFees } from "$lib/assets";
+  import {
+    ASSET_IDS,
+    getAssetTicker,
+    formatAssetAmount,
+    supportsAssetFees,
+  } from "$lib/assets";
   import { assetBalances } from "$lib/stores/wallet";
   import Numpad from "./Numpad.svelte";
   import getRates from "$lib/rates";
@@ -33,13 +38,23 @@
   });
 
   const assets = [
-    { id: ASSET_IDS.LBTC, name: "Bitcoin", ticker: "BTC", icon: "cryptocurrency:btc" },
-    { id: ASSET_IDS.USDT, name: "Tether USD", ticker: "USDT", icon: "cryptocurrency:usdt" }
+    {
+      id: ASSET_IDS.LBTC,
+      name: "Bitcoin",
+      ticker: "BTC",
+      icon: "cryptocurrency:btc",
+    },
+    {
+      id: ASSET_IDS.USDT,
+      name: "Tether USD",
+      ticker: "USDT",
+      icon: "cryptocurrency:usdt",
+    },
   ];
 
   let balances = $derived($assetBalances);
   let selectedAssetBalance = $derived(
-    balances.find(b => b.assetId === selectedAsset)?.balanceSat || 0
+    balances.find((b) => b.assetId === selectedAsset)?.balanceSat || 0,
   );
 
   $effect(() => {
@@ -69,16 +84,17 @@
       // Convert amount from satoshis to asset units
       // For LBTC: 1 BTC = 100,000,000 sats, so divide by 100000000
       // For USDT: amount is already in smallest units (same as sats precision)
-      const receiverAmount = selectedAsset === ASSET_IDS.USDT
-        ? amount / 100000000  // USDT uses same precision as BTC
-        : amount / 100000000; // LBTC is BTC on Liquid
+      const receiverAmount =
+        selectedAsset === ASSET_IDS.USDT
+          ? amount / 100000000 // USDT uses same precision as BTC
+          : amount / 100000000; // LBTC is BTC on Liquid
 
       prepareResponse = await prepareSendAsset({
         destination,
         toAsset: selectedAsset,
         receiverAmount,
         estimateAssetFees,
-        fromAsset: fromAsset || undefined
+        fromAsset: fromAsset || undefined,
       });
 
       // If asset fees are available and not already set, enable them
@@ -103,7 +119,7 @@
       const result = await sendAsset({
         prepareResponse,
         useAssetFees,
-        payerNote
+        payerNote,
       });
 
       if (onSuccess) {
@@ -139,8 +155,10 @@
         <div class="grid grid-cols-2 gap-3">
           {#each assets as asset}
             <button
-              class="btn btn-outline {selectedAsset === asset.id ? 'btn-primary' : ''}"
-              onclick={() => selectedAsset = asset.id}
+              class="btn btn-outline {selectedAsset === asset.id
+                ? 'btn-primary'
+                : ''}"
+              onclick={() => (selectedAsset = asset.id)}
             >
               <iconify-icon icon={asset.icon} width="24"></iconify-icon>
               {asset.ticker}
@@ -183,7 +201,8 @@
       <!-- From Asset (for swapping) -->
       <div>
         <label class="label">
-          <span class="label-text font-semibold">Pay From Asset (Optional)</span>
+          <span class="label-text font-semibold">Pay From Asset (Optional)</span
+          >
           <span class="label-text-alt">Leave empty to use same asset</span>
         </label>
         <select bind:value={fromAsset} class="select select-bordered w-full">
@@ -191,7 +210,10 @@
           {#each balances as balance}
             {#if balance.assetId !== selectedAsset}
               <option value={balance.assetId}>
-                {balance.ticker || balance.name} - {formatAssetAmount(balance.balanceSat, balance.assetId)}
+                {balance.ticker || balance.name} - {formatAssetAmount(
+                  balance.balanceSat,
+                  balance.assetId,
+                )}
               </option>
             {/if}
           {/each}
@@ -215,7 +237,11 @@
         <div class="form-control">
           <label class="label cursor-pointer">
             <span class="label-text">Estimate fees in asset currency</span>
-            <input type="checkbox" bind:checked={estimateAssetFees} class="checkbox" />
+            <input
+              type="checkbox"
+              bind:checked={estimateAssetFees}
+              class="checkbox"
+            />
           </label>
         </div>
       {/if}
@@ -242,9 +268,7 @@
           Continue
         </button>
         {#if onCancel}
-          <button class="btn btn-ghost" onclick={onCancel}>
-            Cancel
-          </button>
+          <button class="btn btn-ghost" onclick={onCancel}> Cancel </button>
         {/if}
       </div>
     </div>
@@ -263,7 +287,10 @@
         </div>
         <div class="flex justify-between">
           <span class="opacity-60">Amount:</span>
-          <span class="font-semibold">{(amount / 100000000).toFixed(8)} {getAssetTicker(selectedAsset)}</span>
+          <span class="font-semibold"
+            >{(amount / 100000000).toFixed(8)}
+            {getAssetTicker(selectedAsset)}</span
+          >
         </div>
         {#if rate > 0}
           <div class="flex justify-between">
@@ -271,8 +298,7 @@
             <span class="font-semibold">
               {selectedAsset === ASSET_IDS.USDT
                 ? `${(amount / 100000000).toFixed(2)} ${currency}`
-                : `${((amount * rate) / 100000000).toFixed(2)} ${currency}`
-              }
+                : `${((amount * rate) / 100000000).toFixed(2)} ${currency}`}
             </span>
           </div>
         {/if}
@@ -285,25 +311,38 @@
         {#if prepareResponse.estimatedAssetFees}
           <div class="flex justify-between">
             <span class="opacity-60">Asset Fees:</span>
-            <span class="font-semibold">~{prepareResponse.estimatedAssetFees} {getAssetTicker(selectedAsset)}</span>
+            <span class="font-semibold"
+              >~{prepareResponse.estimatedAssetFees}
+              {getAssetTicker(selectedAsset)}</span
+            >
           </div>
           <div class="form-control">
             <label class="label cursor-pointer">
-              <span class="label-text">Pay fees in {getAssetTicker(selectedAsset)}</span>
-              <input type="checkbox" bind:checked={useAssetFees} class="checkbox" />
+              <span class="label-text"
+                >Pay fees in {getAssetTicker(selectedAsset)}</span
+              >
+              <input
+                type="checkbox"
+                bind:checked={useAssetFees}
+                class="checkbox"
+              />
             </label>
           </div>
         {/if}
         {#if prepareResponse.exchangeAmountSat}
           <div class="flex justify-between">
             <span class="opacity-60">Exchange Amount:</span>
-            <span class="font-semibold">{prepareResponse.exchangeAmountSat} sats</span>
+            <span class="font-semibold"
+              >{prepareResponse.exchangeAmountSat} sats</span
+            >
           </div>
         {/if}
         <div class="divider my-2"></div>
         <div class="flex justify-between text-sm">
           <span class="opacity-60">Destination:</span>
-          <span class="font-mono text-xs break-all">{destination.slice(0, 20)}...{destination.slice(-20)}</span>
+          <span class="font-mono text-xs break-all"
+            >{destination.slice(0, 20)}...{destination.slice(-20)}</span
+          >
         </div>
       </div>
 
@@ -315,9 +354,7 @@
       {/if}
 
       <div class="flex gap-3">
-        <button class="btn btn-ghost flex-1" onclick={reset}>
-          Back
-        </button>
+        <button class="btn btn-ghost flex-1" onclick={reset}> Back </button>
         <button
           class="btn btn-primary flex-1"
           onclick={confirmSend}

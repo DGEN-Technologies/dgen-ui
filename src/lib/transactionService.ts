@@ -1,13 +1,13 @@
-import * as breezSdk from '@breeztech/breez-sdk-liquid/web';
-import { writable, derived, get } from 'svelte/store';
-import * as walletService from './walletService';
+import * as breezSdk from "@breeztech/breez-sdk-liquid/web";
+import { writable, derived, get } from "svelte/store";
+import * as walletService from "./walletService";
 
 // Transaction filtering and pagination
 export interface TransactionFilter {
   startDate?: Date;
   endDate?: Date;
-  type?: 'send' | 'receive' | 'swap' | 'all';
-  status?: 'pending' | 'complete' | 'failed' | 'all';
+  type?: "send" | "receive" | "swap" | "all";
+  status?: "pending" | "complete" | "failed" | "all";
   searchText?: string;
   minAmount?: number;
   maxAmount?: number;
@@ -16,8 +16,8 @@ export interface TransactionFilter {
 export interface PaginationOptions {
   page: number;
   limit: number;
-  sortBy?: 'time' | 'amount';
-  sortOrder?: 'asc' | 'desc';
+  sortBy?: "time" | "amount";
+  sortOrder?: "asc" | "desc";
 }
 
 export interface TransactionPage {
@@ -45,8 +45,8 @@ export interface EnhancedPayment extends breezSdk.Payment {
 
 // Transaction cache using IndexedDB
 class TransactionCache {
-  private dbName = 'dgen_transactions';
-  private storeName = 'payments';
+  private dbName = "dgen_transactions";
+  private storeName = "payments";
   private db: IDBDatabase | null = null;
 
   async init(): Promise<void> {
@@ -64,11 +64,11 @@ class TransactionCache {
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
         if (!db.objectStoreNames.contains(this.storeName)) {
-          const store = db.createObjectStore(this.storeName, { keyPath: 'id' });
-          store.createIndex('paymentTime', 'paymentTime');
-          store.createIndex('paymentType', 'paymentType');
-          store.createIndex('status', 'status');
-          store.createIndex('amountSat', 'amountSat');
+          const store = db.createObjectStore(this.storeName, { keyPath: "id" });
+          store.createIndex("paymentTime", "paymentTime");
+          store.createIndex("paymentType", "paymentType");
+          store.createIndex("status", "status");
+          store.createIndex("amountSat", "amountSat");
         }
       };
     });
@@ -78,14 +78,18 @@ class TransactionCache {
     await this.init();
     if (!this.db) return;
 
-    const transaction = this.db.transaction([this.storeName], 'readwrite');
+    const transaction = this.db.transaction([this.storeName], "readwrite");
     const store = transaction.objectStore(this.storeName);
 
     for (const tx of transactions) {
       // Ensure each transaction has an id field for IndexedDB
       const txWithId = {
         ...tx,
-        id: tx.id || tx.paymentHash || tx.details?.paymentHash || `payment_${Date.now()}_${Math.random()}`
+        id:
+          tx.id ||
+          tx.paymentHash ||
+          tx.details?.paymentHash ||
+          `payment_${Date.now()}_${Math.random()}`,
       };
       store.put(txWithId);
     }
@@ -96,12 +100,14 @@ class TransactionCache {
     });
   }
 
-  async getTransactions(filter?: TransactionFilter): Promise<breezSdk.Payment[]> {
+  async getTransactions(
+    filter?: TransactionFilter,
+  ): Promise<breezSdk.Payment[]> {
     await this.init();
     if (!this.db) return [];
 
     return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction([this.storeName], 'readonly');
+      const transaction = this.db!.transaction([this.storeName], "readonly");
       const store = transaction.objectStore(this.storeName);
       const request = store.getAll();
 
@@ -110,45 +116,49 @@ class TransactionCache {
 
         // Apply filters
         if (filter) {
-          if (filter.type && filter.type !== 'all') {
-            results = results.filter(tx =>
-              filter.type === 'send' ? tx.paymentType === 'send' :
-              filter.type === 'receive' ? tx.paymentType === 'receive' :
-              tx.details?.swapInfo !== undefined
+          if (filter.type && filter.type !== "all") {
+            results = results.filter((tx) =>
+              filter.type === "send"
+                ? tx.paymentType === "send"
+                : filter.type === "receive"
+                  ? tx.paymentType === "receive"
+                  : tx.details?.swapInfo !== undefined,
             );
           }
 
-          if (filter.status && filter.status !== 'all') {
-            results = results.filter(tx => tx.status === filter.status);
+          if (filter.status && filter.status !== "all") {
+            results = results.filter((tx) => tx.status === filter.status);
           }
 
           if (filter.startDate) {
             const startTime = Math.floor(filter.startDate.getTime() / 1000);
-            results = results.filter(tx => tx.paymentTime >= startTime);
+            results = results.filter((tx) => tx.paymentTime >= startTime);
           }
 
           if (filter.endDate) {
             const endTime = Math.floor(filter.endDate.getTime() / 1000);
-            results = results.filter(tx => tx.paymentTime <= endTime);
+            results = results.filter((tx) => tx.paymentTime <= endTime);
           }
 
           if (filter.minAmount) {
-            results = results.filter(tx => tx.amountSat >= filter.minAmount);
+            results = results.filter((tx) => tx.amountSat >= filter.minAmount);
           }
 
           if (filter.maxAmount) {
-            results = results.filter(tx => tx.amountSat <= filter.maxAmount);
+            results = results.filter((tx) => tx.amountSat <= filter.maxAmount);
           }
 
           if (filter.searchText) {
             const search = filter.searchText.toLowerCase();
-            results = results.filter(tx => {
-              const description = tx.details?.description?.toLowerCase() || '';
-              const destination = tx.details?.destination?.toLowerCase() || '';
-              const paymentHash = tx.details?.paymentHash?.toLowerCase() || '';
-              return description.includes(search) ||
-                     destination.includes(search) ||
-                     paymentHash.includes(search);
+            results = results.filter((tx) => {
+              const description = tx.details?.description?.toLowerCase() || "";
+              const destination = tx.details?.destination?.toLowerCase() || "";
+              const paymentHash = tx.details?.paymentHash?.toLowerCase() || "";
+              return (
+                description.includes(search) ||
+                destination.includes(search) ||
+                paymentHash.includes(search)
+              );
             });
           }
         }
@@ -164,7 +174,7 @@ class TransactionCache {
     await this.init();
     if (!this.db) return;
 
-    const transaction = this.db.transaction([this.storeName], 'readwrite');
+    const transaction = this.db.transaction([this.storeName], "readwrite");
     const store = transaction.objectStore(this.storeName);
     store.clear();
 
@@ -195,22 +205,25 @@ function createTransactionStore() {
     filteredTransactions: [],
     currentPage: null,
     filter: {},
-    pagination: { page: 1, limit: 50, sortBy: 'time', sortOrder: 'desc' },
+    pagination: { page: 1, limit: 50, sortBy: "time", sortOrder: "desc" },
     isLoading: false,
     error: null,
     lastSync: 0,
-    fiatRates: new Map([['USD', 50000]]) // Default rate
+    fiatRates: new Map([["USD", 50000]]), // Default rate
   });
 
   // Payment tracking for specific invoices
-  const trackedPayments = new Map<string, (payment: breezSdk.Payment) => void>();
+  const trackedPayments = new Map<
+    string,
+    (payment: breezSdk.Payment) => void
+  >();
 
   return {
     subscribe,
 
     // Load transactions with caching
     async loadTransactions(forceRefresh = false): Promise<void> {
-      update(state => ({ ...state, isLoading: true, error: null }));
+      update((state) => ({ ...state, isLoading: true, error: null }));
 
       try {
         let transactions: breezSdk.Payment[] = [];
@@ -231,16 +244,24 @@ function createTransactionStore() {
             // Build SDK filter with timestamps (in seconds, not milliseconds)
             const sdkFilter: any = {};
             if (filter.startDate) {
-              sdkFilter.fromTimestamp = Math.floor(filter.startDate.getTime() / 1000);
+              sdkFilter.fromTimestamp = Math.floor(
+                filter.startDate.getTime() / 1000,
+              );
             }
             if (filter.endDate) {
-              sdkFilter.toTimestamp = Math.floor(filter.endDate.getTime() / 1000);
+              sdkFilter.toTimestamp = Math.floor(
+                filter.endDate.getTime() / 1000,
+              );
             }
 
             transactions = await walletService.getTransactions(sdkFilter);
             // Only log on initial load or significant changes
             if (transactions.length === 0 || forceRefresh) {
-              console.log('[Transactions] Loaded', transactions.length, 'transactions');
+              console.log(
+                "[Transactions] Loaded",
+                transactions.length,
+                "transactions",
+              );
             }
 
             // Save to cache
@@ -253,42 +274,44 @@ function createTransactionStore() {
         try {
           if (walletService.isConnected()) {
             const fiatRates = await walletService.fetchFiatRates();
-            fiatRates.forEach(rate => {
+            fiatRates.forEach((rate) => {
               rates.set(rate.coin.toUpperCase(), rate.value);
             });
           }
         } catch (e) {
-          console.warn('Failed to fetch fiat rates, using defaults');
+          console.warn("Failed to fetch fiat rates, using defaults");
         }
 
         // Enhance transactions with additional fields
-        const enhanced = transactions.map(tx => enhancePayment(tx, rates));
+        const enhanced = transactions.map((tx) => enhancePayment(tx, rates));
 
-        update(state => ({
+        update((state) => ({
           ...state,
           allTransactions: enhanced,
           isLoading: false,
           lastSync: Date.now(),
-          fiatRates: rates
+          fiatRates: rates,
         }));
 
         // Apply current filter (for client-side filtering of type, status, search)
         const currentState = get({ subscribe });
         this.applyFilter(currentState.filter);
-
       } catch (error) {
-        console.error('Failed to load transactions:', error);
-        update(state => ({
+        console.error("Failed to load transactions:", error);
+        update((state) => ({
           ...state,
           isLoading: false,
-          error: error instanceof Error ? error.message : 'Failed to load transactions'
+          error:
+            error instanceof Error
+              ? error.message
+              : "Failed to load transactions",
         }));
       }
     },
 
     // Apply filter to transactions
     applyFilter(filter: TransactionFilter): void {
-      update(state => {
+      update((state) => {
         const filtered = filterTransactions(state.allTransactions, filter);
         const page = paginateTransactions(filtered, state.pagination);
 
@@ -296,33 +319,36 @@ function createTransactionStore() {
           ...state,
           filter,
           filteredTransactions: filtered,
-          currentPage: page
+          currentPage: page,
         };
       });
     },
 
     // Update pagination
     setPagination(options: Partial<PaginationOptions>): void {
-      update(state => {
+      update((state) => {
         const newPagination = { ...state.pagination, ...options };
-        const page = paginateTransactions(state.filteredTransactions, newPagination);
+        const page = paginateTransactions(
+          state.filteredTransactions,
+          newPagination,
+        );
 
         return {
           ...state,
           pagination: newPagination,
-          currentPage: page
+          currentPage: page,
         };
       });
     },
 
     // Add new transaction (optimistic update)
     addTransaction(payment: breezSdk.Payment, optimistic = false): void {
-      update(state => {
+      update((state) => {
         const enhanced = enhancePayment(payment, state.fiatRates);
 
         // Mark as pending if optimistic
         if (optimistic) {
-          enhanced.status = 'pending';
+          enhanced.status = "pending";
         }
 
         const allTransactions = [enhanced, ...state.allTransactions];
@@ -336,16 +362,19 @@ function createTransactionStore() {
           ...state,
           allTransactions,
           filteredTransactions: filtered,
-          currentPage: page
+          currentPage: page,
         };
       });
     },
 
     // Update transaction status
-    updateTransaction(paymentId: string, updates: Partial<breezSdk.Payment>): void {
-      update(state => {
-        const allTransactions = state.allTransactions.map(tx =>
-          tx.id === paymentId ? { ...tx, ...updates } : tx
+    updateTransaction(
+      paymentId: string,
+      updates: Partial<breezSdk.Payment>,
+    ): void {
+      update((state) => {
+        const allTransactions = state.allTransactions.map((tx) =>
+          tx.id === paymentId ? { ...tx, ...updates } : tx,
         );
 
         const filtered = filterTransactions(allTransactions, state.filter);
@@ -355,13 +384,16 @@ function createTransactionStore() {
           ...state,
           allTransactions,
           filteredTransactions: filtered,
-          currentPage: page
+          currentPage: page,
         };
       });
     },
 
     // Track specific payment by invoice
-    trackPayment(invoice: string, callback: (payment: breezSdk.Payment) => void): void {
+    trackPayment(
+      invoice: string,
+      callback: (payment: breezSdk.Payment) => void,
+    ): void {
       trackedPayments.set(invoice, callback);
     },
 
@@ -384,7 +416,9 @@ function createTransactionStore() {
 
       // Update or add transaction
       const currentState = get({ subscribe });
-      const existing = currentState.allTransactions.find(tx => tx.id === payment.id);
+      const existing = currentState.allTransactions.find(
+        (tx) => tx.id === payment.id,
+      );
 
       if (existing) {
         this.updateTransaction(payment.id, payment);
@@ -401,26 +435,28 @@ function createTransactionStore() {
         filteredTransactions: [],
         currentPage: null,
         filter: {},
-        pagination: { page: 1, limit: 50, sortBy: 'time', sortOrder: 'desc' },
+        pagination: { page: 1, limit: 50, sortBy: "time", sortOrder: "desc" },
         isLoading: false,
         error: null,
         lastSync: 0,
-        fiatRates: new Map([['USD', 50000]])
+        fiatRates: new Map([["USD", 50000]]),
       });
-    }
+    },
   };
 }
 
 // Helper functions
-function enhancePayment(payment: breezSdk.Payment, fiatRates: Map<string, number>): EnhancedPayment {
+function enhancePayment(
+  payment: breezSdk.Payment,
+  fiatRates: Map<string, number>,
+): EnhancedPayment {
   // Normalize timestamp field first
-  const paymentTime = (payment as any).paymentTime || (payment as any).timestamp || 0;
+  const paymentTime =
+    (payment as any).paymentTime || (payment as any).timestamp || 0;
 
   // Create a deterministic ID based on payment data
   // Priority: txId > paymentHash > details.paymentHash > deterministic fallback
-  let id = payment.txId ||
-           payment.paymentHash ||
-           payment.details?.paymentHash;
+  let id = payment.txId || payment.paymentHash || payment.details?.paymentHash;
 
   // If still no ID (rare case), create deterministic ID from payment data
   if (!id) {
@@ -431,19 +467,23 @@ function enhancePayment(payment: breezSdk.Payment, fiatRates: Map<string, number
     ...payment,
     paymentTime,
     id,
-    displayAmount: payment.paymentType === 'receive' ? payment.amountSat : -payment.amountSat,
+    displayAmount:
+      payment.paymentType === "receive"
+        ? payment.amountSat
+        : -payment.amountSat,
     fiatAmount: undefined,
-    fiatCurrency: 'USD',
+    fiatCurrency: "USD",
     statusColor: getStatusColor(payment.status),
     statusIcon: getStatusIcon(payment.status),
-    isRefundable: payment.status === 'failed' && payment.details?.swapInfo !== undefined,
+    isRefundable:
+      payment.status === "failed" && payment.details?.swapInfo !== undefined,
     refundDetails: payment.details?.refundDetails,
     lnurlInfo: payment.details?.lnurlInfo,
-    bip353Address: payment.details?.bip353Address
+    bip353Address: payment.details?.bip353Address,
   };
 
   // Calculate fiat amount
-  const rate = fiatRates.get('USD') || 50000;
+  const rate = fiatRates.get("USD") || 50000;
   enhanced.fiatAmount = (payment.amountSat / 100000000) * rate;
 
   return enhanced;
@@ -451,52 +491,54 @@ function enhancePayment(payment: breezSdk.Payment, fiatRates: Map<string, number
 
 function filterTransactions(
   transactions: EnhancedPayment[],
-  filter: TransactionFilter
+  filter: TransactionFilter,
 ): EnhancedPayment[] {
   let filtered = [...transactions];
 
-  if (filter.type && filter.type !== 'all') {
-    filtered = filtered.filter(tx => {
-      if (filter.type === 'send') return tx.paymentType === 'send';
-      if (filter.type === 'receive') return tx.paymentType === 'receive';
-      if (filter.type === 'swap') return tx.details?.swapInfo !== undefined;
+  if (filter.type && filter.type !== "all") {
+    filtered = filtered.filter((tx) => {
+      if (filter.type === "send") return tx.paymentType === "send";
+      if (filter.type === "receive") return tx.paymentType === "receive";
+      if (filter.type === "swap") return tx.details?.swapInfo !== undefined;
       return true;
     });
   }
 
-  if (filter.status && filter.status !== 'all') {
-    filtered = filtered.filter(tx => tx.status === filter.status);
+  if (filter.status && filter.status !== "all") {
+    filtered = filtered.filter((tx) => tx.status === filter.status);
   }
 
   if (filter.startDate) {
     const startTime = Math.floor(filter.startDate.getTime() / 1000);
-    filtered = filtered.filter(tx => tx.paymentTime >= startTime);
+    filtered = filtered.filter((tx) => tx.paymentTime >= startTime);
   }
 
   if (filter.endDate) {
     const endTime = Math.floor(filter.endDate.getTime() / 1000);
-    filtered = filtered.filter(tx => tx.paymentTime <= endTime);
+    filtered = filtered.filter((tx) => tx.paymentTime <= endTime);
   }
 
   if (filter.minAmount) {
-    filtered = filtered.filter(tx => tx.amountSat >= filter.minAmount);
+    filtered = filtered.filter((tx) => tx.amountSat >= filter.minAmount);
   }
 
   if (filter.maxAmount) {
-    filtered = filtered.filter(tx => tx.amountSat <= filter.maxAmount);
+    filtered = filtered.filter((tx) => tx.amountSat <= filter.maxAmount);
   }
 
   if (filter.searchText) {
     const search = filter.searchText.toLowerCase();
-    filtered = filtered.filter(tx => {
-      const description = tx.details?.description?.toLowerCase() || '';
-      const destination = tx.details?.destination?.toLowerCase() || '';
-      const paymentHash = tx.details?.paymentHash?.toLowerCase() || '';
-      const invoice = tx.details?.invoice?.toLowerCase() || '';
-      return description.includes(search) ||
-             destination.includes(search) ||
-             paymentHash.includes(search) ||
-             invoice.includes(search);
+    filtered = filtered.filter((tx) => {
+      const description = tx.details?.description?.toLowerCase() || "";
+      const destination = tx.details?.destination?.toLowerCase() || "";
+      const paymentHash = tx.details?.paymentHash?.toLowerCase() || "";
+      const invoice = tx.details?.invoice?.toLowerCase() || "";
+      return (
+        description.includes(search) ||
+        destination.includes(search) ||
+        paymentHash.includes(search) ||
+        invoice.includes(search)
+      );
     });
   }
 
@@ -505,19 +547,19 @@ function filterTransactions(
 
 function paginateTransactions(
   transactions: EnhancedPayment[],
-  options: PaginationOptions
+  options: PaginationOptions,
 ): TransactionPage {
   // Sort transactions
   const sorted = [...transactions].sort((a, b) => {
     let compareValue = 0;
 
-    if (options.sortBy === 'time') {
+    if (options.sortBy === "time") {
       compareValue = a.paymentTime - b.paymentTime;
-    } else if (options.sortBy === 'amount') {
+    } else if (options.sortBy === "amount") {
       compareValue = a.amountSat - b.amountSat;
     }
 
-    return options.sortOrder === 'desc' ? -compareValue : compareValue;
+    return options.sortOrder === "desc" ? -compareValue : compareValue;
   });
 
   // Calculate pagination
@@ -533,50 +575,50 @@ function paginateTransactions(
     totalPages,
     currentPage,
     hasNext: currentPage < totalPages,
-    hasPrevious: currentPage > 1
+    hasPrevious: currentPage > 1,
   };
 }
 
 function getStatusColor(status: string): string {
   switch (status) {
-    case 'complete':
-    case 'success':
-      return 'text-green-500';
-    case 'pending':
-    case 'waitingConfirmation':
-    case 'waitingFeeAcceptance':
-      return 'text-yellow-500';
-    case 'failed':
-      return 'text-red-500';
-    case 'refundable':
-    case 'refundPending':
-      return 'text-orange-500';
-    case 'refunded':
-      return 'text-blue-500';
+    case "complete":
+    case "success":
+      return "text-green-500";
+    case "pending":
+    case "waitingConfirmation":
+    case "waitingFeeAcceptance":
+      return "text-yellow-500";
+    case "failed":
+      return "text-red-500";
+    case "refundable":
+    case "refundPending":
+      return "text-orange-500";
+    case "refunded":
+      return "text-blue-500";
     default:
-      return 'text-gray-500';
+      return "text-gray-500";
   }
 }
 
 function getStatusIcon(status: string): string {
   switch (status) {
-    case 'complete':
-    case 'success':
-      return 'ph:check-circle';
-    case 'pending':
-    case 'waitingConfirmation':
-      return 'ph:clock';
-    case 'waitingFeeAcceptance':
-      return 'ph:currency-dollar';
-    case 'failed':
-      return 'ph:x-circle';
-    case 'refundable':
-    case 'refundPending':
-      return 'ph:arrow-counter-clockwise';
-    case 'refunded':
-      return 'ph:arrow-u-up-left';
+    case "complete":
+    case "success":
+      return "ph:check-circle";
+    case "pending":
+    case "waitingConfirmation":
+      return "ph:clock";
+    case "waitingFeeAcceptance":
+      return "ph:currency-dollar";
+    case "failed":
+      return "ph:x-circle";
+    case "refundable":
+    case "refundPending":
+      return "ph:arrow-counter-clockwise";
+    case "refunded":
+      return "ph:arrow-u-up-left";
     default:
-      return 'ph:question';
+      return "ph:question";
   }
 }
 
@@ -586,22 +628,22 @@ export const transactionStore = createTransactionStore();
 // Export derived stores for easy access
 export const allTransactions = derived(
   transactionStore,
-  $store => $store.allTransactions
+  ($store) => $store.allTransactions,
 );
 
 export const currentTransactionPage = derived(
   transactionStore,
-  $store => $store.currentPage
+  ($store) => $store.currentPage,
 );
 
 export const isLoadingTransactions = derived(
   transactionStore,
-  $store => $store.isLoading
+  ($store) => $store.isLoading,
 );
 
 export const transactionError = derived(
   transactionStore,
-  $store => $store.error
+  ($store) => $store.error,
 );
 
 // Auto-refresh transactions on SDK events
@@ -609,49 +651,48 @@ export async function initTransactionEventHandling(): Promise<void> {
   try {
     // Check if SDK is connected first
     if (!walletService.isConnected()) {
-      throw new Error('SDK not initialized');
+      throw new Error("SDK not initialized");
     }
 
     await walletService.addEventListener((event: breezSdk.SdkEvent) => {
       // Handle all payment state events based on Breez SDK event flows
       switch (event.type) {
         // Send Payment Events (Lightning, Bitcoin, Liquid)
-        case 'paymentPending':
-        case 'paymentWaitingConfirmation':
+        case "paymentPending":
+        case "paymentWaitingConfirmation":
           handlePaymentUpdate(event);
           break;
 
-        case 'paymentSucceeded':
-          handlePaymentUpdate(event);
-          transactionStore.loadTransactions(true);
-          break;
-
-        case 'paymentFailed':
+        case "paymentSucceeded":
           handlePaymentUpdate(event);
           transactionStore.loadTransactions(true);
           break;
 
-        case 'paymentRefundPending':
-          handlePaymentUpdate(event);
-          break;
-
-        case 'paymentRefunded':
+        case "paymentFailed":
           handlePaymentUpdate(event);
           transactionStore.loadTransactions(true);
           break;
 
-        case 'paymentWaitingFeeAcceptance':
-        case 'paymentRefundable':
+        case "paymentRefundPending":
           handlePaymentUpdate(event);
           break;
 
-        case 'synced':
+        case "paymentRefunded":
+          handlePaymentUpdate(event);
+          transactionStore.loadTransactions(true);
+          break;
 
+        case "paymentWaitingFeeAcceptance":
+        case "paymentRefundable":
+          handlePaymentUpdate(event);
+          break;
+
+        case "synced":
           // Mark initial sync as complete
-          import('$lib/stores/wallet').then(({ walletStore }) => {
-            walletStore.update(state => ({
+          import("$lib/stores/wallet").then(({ walletStore }) => {
+            walletStore.update((state) => ({
               ...state,
-              didCompleteInitialSync: true
+              didCompleteInitialSync: true,
             }));
           });
 
@@ -659,22 +700,25 @@ export async function initTransactionEventHandling(): Promise<void> {
           transactionStore.loadTransactions(true);
           break;
 
-        case 'dataSynced':
+        case "dataSynced":
           const didPull = (event as any).didPullNewRecords;
 
           // Import wallet store dynamically to avoid circular dependencies
-          import('$lib/stores/wallet').then(async ({ walletStore }) => {
+          import("$lib/stores/wallet").then(async ({ walletStore }) => {
             try {
               const info = await walletService.getWalletInfo();
-              walletStore.update(state => ({
+              walletStore.update((state) => ({
                 ...state,
                 isConnecting: false,
                 didCompleteInitialSync: true,
                 info: info || state.info,
-                error: null
+                error: null,
               }));
             } catch (e) {
-              console.error('[TransactionService] Failed to load wallet info after data sync:', e);
+              console.error(
+                "[TransactionService] Failed to load wallet info after data sync:",
+                e,
+              );
             }
           });
 
@@ -689,7 +733,7 @@ export async function initTransactionEventHandling(): Promise<void> {
       }
     });
   } catch (error) {
-    console.error('[TransactionService] Failed to init event handling:', error);
+    console.error("[TransactionService] Failed to init event handling:", error);
     throw error;
   }
 }

@@ -93,7 +93,7 @@
         },
       );
     }
-    
+
     // Cleanup on unmount
     return () => {
       domSecurityMonitor.stopMonitoring();
@@ -136,10 +136,7 @@
 
 <!-- Chat Widget - loads after initial render -->
 {#if showChatWidget}
-  <ChatWidget 
-    apiBase={PUBLIC_WIDGET_API_BASE}
-    userId={userId}
-  />
+  <ChatWidget apiBase={PUBLIC_WIDGET_API_BASE} {userId} />
 {/if}
 
 <style global>

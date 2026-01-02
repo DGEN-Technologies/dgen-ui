@@ -36,10 +36,13 @@ export default async (s, host) => {
       const parsed = await walletService.parseInput(t);
 
       switch (parsed.type) {
-        case 'bitcoinAddress': {
+        case "bitcoinAddress": {
           // Extract amount from BIP21 if present
           let amount;
-          if (t.toLowerCase().startsWith("bitcoin:") || t.toLowerCase().startsWith("liquidnetwork:")) {
+          if (
+            t.toLowerCase().startsWith("bitcoin:") ||
+            t.toLowerCase().startsWith("liquidnetwork:")
+          ) {
             try {
               const decoded = decode(t);
               amount = decoded.options?.amount;
@@ -55,11 +58,12 @@ export default async (s, host) => {
           break;
         }
 
-        case 'bolt11': {
+        case "bolt11": {
           // Check if this is an invoice in our database first
           try {
             invoice = await get(`/invoice/${t}`);
-            if (invoice?.user?.username === "mint") throw new Error("mint payment");
+            if (invoice?.user?.username === "mint")
+              throw new Error("mint payment");
             redirect(307, `/invoice/${invoice.id}`);
           } catch (e) {
             // Not in our DB, proceed with payment
@@ -68,25 +72,25 @@ export default async (s, host) => {
           break;
         }
 
-        case 'bolt12Offer': {
+        case "bolt12Offer": {
           // BOLT12 offers - redirect to send page
           redirect(307, `/send/lightning/${t}`);
           break;
         }
 
-        case 'lnUrlPay': {
+        case "lnUrlPay": {
           // LNURL-Pay and Lightning addresses - redirect to LNURL handler
           redirect(307, `/ln/${t}`);
           break;
         }
 
-        case 'lnUrlWithdraw': {
+        case "lnUrlWithdraw": {
           // LNURL-Withdraw - redirect to LNURL handler
           redirect(307, `/ln/${t}`);
           break;
         }
 
-        case 'lnUrlAuth': {
+        case "lnUrlAuth": {
           // LNURL-Auth - redirect to LNURL handler
           redirect(307, `/ln/${t}`);
           break;
@@ -94,11 +98,11 @@ export default async (s, host) => {
 
         default:
           // Unknown SDK type, fall through to legacy handling
-          console.log('[Parse] Unknown SDK parse type:', parsed.type);
+          console.log("[Parse] Unknown SDK parse type:", parsed.type);
           break;
       }
     } catch (sdkError) {
-      console.log('[Parse] SDK parse failed, trying legacy methods:', sdkError);
+      console.log("[Parse] SDK parse failed, trying legacy methods:", sdkError);
       // Fall through to legacy handling
     }
   }

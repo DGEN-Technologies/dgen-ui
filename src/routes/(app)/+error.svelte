@@ -9,14 +9,16 @@
   let { user } = data;
 
   let link = user ? `/${user.username}` : "/";
-  
-  let isRetryable = $derived($page.error?.retryable || 
-                            $page.error?.message?.includes("syncing") ||
-                            $page.status === 503);
-  
+
+  let isRetryable = $derived(
+    $page.error?.retryable ||
+      $page.error?.message?.includes("syncing") ||
+      $page.status === 503,
+  );
+
   let autoRetryCountdown = $state(5);
   let isRetrying = $state(false);
-  
+
   onMount(() => {
     if (isRetryable) {
       const interval = setInterval(() => {
@@ -26,11 +28,11 @@
           handleRetry();
         }
       }, 1000);
-      
+
       return () => clearInterval(interval);
     }
   });
-  
+
   function handleRetry() {
     isRetrying = true;
     window.location.reload();
@@ -51,25 +53,32 @@
           {isRetryable ? "Wallet Syncing" : "Error"}
         </h1>
       </div>
-      
+
       {#if isRetryable}
         <div class="space-y-4">
           <p class="text-secondary text-center">
-            {$page.error?.message || "Your wallet is still syncing. Please wait a moment."}
+            {$page.error?.message ||
+              "Your wallet is still syncing. Please wait a moment."}
           </p>
-          
+
           <div class="flex justify-center">
-            <div class="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 max-w-sm">
+            <div
+              class="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 max-w-sm"
+            >
               <div class="flex items-center gap-3">
                 <Spinner />
                 <div class="text-blue-400">
-                  <p class="text-sm">Auto-refreshing in {autoRetryCountdown} seconds...</p>
-                  <p class="text-xs mt-1 opacity-70">Your wallet data is being synchronized</p>
+                  <p class="text-sm">
+                    Auto-refreshing in {autoRetryCountdown} seconds...
+                  </p>
+                  <p class="text-xs mt-1 opacity-70">
+                    Your wallet data is being synchronized
+                  </p>
                 </div>
               </div>
             </div>
           </div>
-          
+
           <div class="flex justify-center gap-4 pt-8">
             <button
               onclick={handleRetry}
@@ -85,9 +94,11 @@
                 Refresh Now
               {/if}
             </button>
-            
+
             <a href={link}>
-              <button class="bg-white/10 backdrop-blur text-white px-6 py-3 rounded-full font-bold hover:bg-white/20 transition-all">
+              <button
+                class="bg-white/10 backdrop-blur text-white px-6 py-3 rounded-full font-bold hover:bg-white/20 transition-all"
+              >
                 Go Back
               </button>
             </a>
@@ -95,7 +106,9 @@
         </div>
       {:else}
         <p class="text-secondary text-center">Something went wrong</p>
-        <p class="text-secondary text-center">{$page.error?.message || 'Unknown error occurred'}</p>
+        <p class="text-secondary text-center">
+          {$page.error?.message || "Unknown error occurred"}
+        </p>
 
         <div class="flex justify-center py-24">
           <a href={link}>

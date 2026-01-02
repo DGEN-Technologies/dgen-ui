@@ -17,17 +17,17 @@ export async function load({ cookies, params, url }) {
   if (parts.length === 1) [page] = parts;
   if (parts.length === 2) [start, page] = parts;
   if (parts.length === 3) [start, end, page] = parts;
-  
+
   // Parse page number properly
   page = parseInt(page) || 1;
   if (page < 1) page = 1;
 
   // Browser SDK will handle fetching transactions
   // Just pass pagination params to the client
-  return { 
-    page, 
+  return {
+    page,
     limit,
-    start, 
-    end
+    start,
+    end,
   };
 }
