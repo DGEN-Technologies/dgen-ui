@@ -170,7 +170,7 @@
     input = "";
     abortController = new AbortController();
     const timeoutId = window.setTimeout(() => {
-      abortController?.abort();
+      abortController?.abort(new Error("TIMEOUT"));
     }, REQUEST_TIMEOUT_MS);
 
     try {
@@ -241,12 +241,18 @@
       appendMessage(assistantMessage);
     } catch (err) {
       if (err instanceof Error && err.name === "AbortError") {
-        return;
+        const reason = abortController?.signal?.reason;
+        if (reason instanceof Error && reason.message === "UNMOUNT") {
+          return; // Silent cleanup on unmount
+        }
       }
 
-      let message = "Something unexpected went wrong. Please try again later.";
-
-      if (err instanceof Error && err.message === "INVALID_JSON") {
+      let message =
+        "Something unexpected went wrong. Please try asking your question again.";
+      if (err instanceof Error && err.name === "AbortError") {
+        message =
+          "The request took too long and timed out. Please try again later.";
+      } else if (err instanceof Error && err.message === "INVALID_JSON") {
         message =
           "Unexpected response from the server. Please try again later.";
       } else if (err instanceof Error && err.message === "INSECURE_PROTOCOL") {
@@ -270,7 +276,14 @@
           "There was a problem with this request. Please double-check and try again.";
       }
 
-      error = message;
+      // Always add a fallback assistant message when an error occurs
+      const fallbackMessage: ChatMessage = {
+        id: `assistant-error-${Date.now()}`,
+        role: "assistant",
+        content: message,
+        createdAt: Date.now(),
+      };
+      appendMessage(fallbackMessage);
     } finally {
       isSending = false;
       abortController = null;
@@ -354,7 +367,7 @@
 
       // Abort any in-flight requests on unmount
       if (abortController) {
-        abortController.abort();
+        abortController.abort(new Error("UNMOUNT"));
       }
       window.clearTimeout(promptTimer);
     };
@@ -573,7 +586,7 @@
           regarding accuracy, completeness, or reliability.
         </p>
         <p>
-          <strong>No Financial Advice:</strong> Nothing here constitutes financial,
+          <strong>Not Financial Advice:</strong> Nothing here constitutes financial,
           investment, tax, accounting, legal, or professional advice. Do not use
           the Chatbot for financial decisions.
         </p>
