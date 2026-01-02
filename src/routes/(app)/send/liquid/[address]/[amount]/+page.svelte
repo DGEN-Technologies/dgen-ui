@@ -3,7 +3,11 @@
   import { s, sat } from "$lib/utils";
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
-  import { prepareSendPayment, sendPayment, parseInput } from "$lib/walletService";
+  import {
+    prepareSendPayment,
+    sendPayment,
+    parseInput,
+  } from "$lib/walletService";
   import { ASSET_IDS } from "$lib/assets";
   import { onMount } from "svelte";
 
@@ -30,12 +34,20 @@
       console.log("Parsing destination:", address);
 
       const parseTimeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Request timeout - network may be slow or rate limited')), timeout)
+        setTimeout(
+          () =>
+            reject(
+              new Error(
+                "Request timeout - network may be slow or rate limited",
+              ),
+            ),
+          timeout,
+        ),
       );
 
       parsedDestination = await Promise.race([
         parseInput(address),
-        parseTimeoutPromise
+        parseTimeoutPromise,
       ]);
       console.log("Parsed destination:", parsedDestination);
 
@@ -43,42 +55,51 @@
       const amountSat = parseInt(amount);
 
       // Determine payment type based on parsed input
-      if (parsedDestination.type === 'liquidAddress') {
+      if (parsedDestination.type === "liquidAddress") {
         // Liquid address send - check asset type
         let prepareRequest;
 
-        if (asset === 'usdt') {
+        if (asset === "usdt") {
           // Sending USDT
-          const usdtAssetId = 'ce091c998b83c78bb71a632313ba3760f1763d9cfcffae02258ffa9865a37bd2';
+          const usdtAssetId =
+            "ce091c998b83c78bb71a632313ba3760f1763d9cfcffae02258ffa9865a37bd2";
           prepareRequest = {
             destination: address,
             amount: {
-              type: 'asset',
+              type: "asset",
               toAsset: usdtAssetId,
-              receiverAmount: amountSat / 100000000,  // Convert from smallest unit to USDT amount
-              estimateAssetFees: true  // Estimate fees in USDT
-            }
+              receiverAmount: amountSat / 100000000, // Convert from smallest unit to USDT amount
+              estimateAssetFees: true, // Estimate fees in USDT
+            },
           };
         } else {
           // Sending LBTC (default)
           prepareRequest = {
             destination: address,
             amount: {
-              type: 'bitcoin',  // For LBTC
-              receiverAmountSat: amountSat
-            }
+              type: "bitcoin", // For LBTC
+              receiverAmountSat: amountSat,
+            },
           };
         }
 
         console.log("Preparing Liquid send:", prepareRequest);
 
         const prepareTimeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Payment preparation timeout - network may be slow or rate limited')), timeout)
+          setTimeout(
+            () =>
+              reject(
+                new Error(
+                  "Payment preparation timeout - network may be slow or rate limited",
+                ),
+              ),
+            timeout,
+          ),
         );
 
         prepareResponse = await Promise.race([
           prepareSendPayment(prepareRequest),
-          prepareTimeoutPromise
+          prepareTimeoutPromise,
         ]);
         console.log("Prepare response:", prepareResponse);
 
@@ -90,7 +111,8 @@
       }
     } catch (e) {
       console.error("Failed to prepare payment:", e);
-      error = e.message || "Failed to prepare payment. Please try again in a moment.";
+      error =
+        e.message || "Failed to prepare payment. Please try again in a moment.";
     } finally {
       preparing = false;
     }
@@ -108,11 +130,12 @@
     try {
       // Step 3: Execute the send payment
       // For USDT, use asset fees if available
-      const useAssetFees = asset === 'usdt' && prepareResponse.estimatedAssetFees ? true : false;
+      const useAssetFees =
+        asset === "usdt" && prepareResponse.estimatedAssetFees ? true : false;
 
       const sendRequest = {
         prepareResponse,
-        useAssetFees
+        useAssetFees,
       };
 
       console.log("Sending payment...", { useAssetFees });
@@ -125,7 +148,7 @@
         if (paymentId) {
           goto(`/payment/${paymentId}`);
         } else {
-          goto(`/`);  // Navigate to home on success
+          goto(`/`); // Navigate to home on success
         }
       } else {
         error = "Failed to send payment";
@@ -169,11 +192,14 @@
         <div class="text-3xl font-bold">
           {#if asset === "usdt"}
             <span class="text-green-400">
-              <span class="text-2xl">₮</span> {(parseInt(amount) / 100000000).toFixed(2)} USDT
+              <span class="text-2xl">₮</span>
+              {(parseInt(amount) / 100000000).toFixed(2)} USDT
             </span>
           {:else}
             <span class="text-cyan-400">
-              <iconify-icon icon="cryptocurrency:lbtc" width="32"></iconify-icon> {s(amount)}
+              <iconify-icon icon="cryptocurrency:lbtc" width="32"
+              ></iconify-icon>
+              {s(amount)}
             </span>
           {/if}
         </div>
@@ -199,10 +225,18 @@
           <p class="text-sm text-white/60">Total Amount</p>
           {#if asset === "usdt"}
             <div class="text-2xl font-bold text-primary">
-              ₮ {((parseInt(amount) + (prepareResponse.estimatedAssetFees ? Math.floor(prepareResponse.estimatedAssetFees * 100000000) : prepareResponse.feesSat)) / 100000000).toFixed(2)} USDT
+              ₮ {(
+                (parseInt(amount) +
+                  (prepareResponse.estimatedAssetFees
+                    ? Math.floor(prepareResponse.estimatedAssetFees * 100000000)
+                    : prepareResponse.feesSat)) /
+                100000000
+              ).toFixed(2)} USDT
             </div>
             <p class="text-xs text-white/40">
-              {(parseInt(amount) / 100000000).toFixed(2)} USDT + {prepareResponse.estimatedAssetFees ? `~${prepareResponse.estimatedAssetFees} USDT` : `${(prepareResponse.feesSat / 100000000).toFixed(2)} USDT`} fee
+              {(parseInt(amount) / 100000000).toFixed(2)} USDT + {prepareResponse.estimatedAssetFees
+                ? `~${prepareResponse.estimatedAssetFees} USDT`
+                : `${(prepareResponse.feesSat / 100000000).toFixed(2)} USDT`} fee
             </p>
           {:else}
             <div class="text-2xl font-bold text-primary">
@@ -216,16 +250,18 @@
       {/if}
 
       {#if asset === "usdt"}
-        <div class="bg-green-500/10 border border-green-500/30 rounded-lg p-3 mt-4">
+        <div
+          class="bg-green-500/10 border border-green-500/30 rounded-lg p-3 mt-4"
+        >
           <p class="text-sm text-green-400">
             Sending USDT (Tether) on Liquid Network
           </p>
         </div>
       {:else}
-        <div class="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-3 mt-4">
-          <p class="text-sm text-cyan-400">
-            Sending L-BTC on Liquid Network
-          </p>
+        <div
+          class="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-3 mt-4"
+        >
+          <p class="text-sm text-cyan-400">Sending L-BTC on Liquid Network</p>
         </div>
       {/if}
     </div>
@@ -237,13 +273,7 @@
       <span>{error}</span>
     </div>
     <div class="flex gap-3">
-      <button
-        type="button"
-        class="btn flex-1"
-        onclick={cancel}
-      >
-        Back
-      </button>
+      <button type="button" class="btn flex-1" onclick={cancel}> Back </button>
       <button
         type="button"
         class="btn flex-1 btn-accent"
@@ -264,7 +294,9 @@
       </button>
       <button
         type="button"
-        class="btn flex-1 {asset === 'usdt' ? 'bg-green-500 hover:bg-green-600' : 'btn-accent'}"
+        class="btn flex-1 {asset === 'usdt'
+          ? 'bg-green-500 hover:bg-green-600'
+          : 'btn-accent'}"
         onclick={send}
         disabled={loading || preparing || !prepareResponse}
       >

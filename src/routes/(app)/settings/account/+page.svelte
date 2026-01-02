@@ -62,12 +62,12 @@
     if (!browser) return;
 
     // Check browser notification permission
-    const { getNotificationPermission } = await import('$lib/notifications');
+    const { getNotificationPermission } = await import("$lib/notifications");
     permission = getNotificationPermission();
 
     // Load saved preference from localStorage
-    const savedPref = localStorage.getItem('notifications_enabled');
-    notificationsEnabled = savedPref === 'true';
+    const savedPref = localStorage.getItem("notifications_enabled");
+    notificationsEnabled = savedPref === "true";
 
     // Push notifications (VAPID) disabled for now - using browser Notification API instead
     // try {
@@ -96,24 +96,26 @@
   async function handleNotificationToggle() {
     if (!browser) return;
 
-    const { requestNotificationPermission } = await import('$lib/notifications');
+    const { requestNotificationPermission } = await import(
+      "$lib/notifications"
+    );
 
     if (notificationsEnabled) {
       // Request permission
       permission = await requestNotificationPermission();
-      if (permission === 'granted') {
-        localStorage.setItem('notifications_enabled', 'true');
-        success('Browser notifications enabled');
+      if (permission === "granted") {
+        localStorage.setItem("notifications_enabled", "true");
+        success("Browser notifications enabled");
       } else {
         // Permission denied, revert toggle
         notificationsEnabled = false;
-        localStorage.setItem('notifications_enabled', 'false');
-        fail('Permission denied. Check your browser settings.');
+        localStorage.setItem("notifications_enabled", "false");
+        fail("Permission denied. Check your browser settings.");
       }
     } else {
       // Disable notifications
-      localStorage.setItem('notifications_enabled', 'false');
-      success('Browser notifications disabled');
+      localStorage.setItem("notifications_enabled", "false");
+      success("Browser notifications disabled");
     }
   }
 
@@ -227,7 +229,7 @@
   </div>
 
   <!-- Bitcoin Unit Settings -->
-  <div
+  <!-- <div
     class="premium-card backdrop-blur-xl bg-white/5 border-2 border-white/10 hover:border-orange-500/40 transition-all duration-500 animate-scaleIn"
     style="animation-delay: 0.2s;"
   >
@@ -261,7 +263,7 @@
         <p class="text-xs text-white/60 mt-1">e.g., 3,824</p>
       </button>
     </div>
-  </div>
+  </div> -->
 
   <!-- Email Settings (temporarily disabled) -->
   <!-- <div
@@ -306,9 +308,13 @@
     class="premium-card backdrop-blur-xl bg-white/5 border-2 border-white/10 hover:border-yellow-500/40 transition-all duration-500 animate-scaleIn"
     style="animation-delay: 0.3s;"
   >
-    <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
+    <div
+      class="flex flex-col md:flex-row md:justify-between md:items-center gap-3"
+    >
       <div>
-        <span class="font-bold text-lg gradient-text">Browser Notifications</span>
+        <span class="font-bold text-lg gradient-text"
+          >Browser Notifications</span
+        >
         <p class="text-white/60 mt-1">
           {#if permission === "denied"}
             Notifications are blocked. Enable them in your browser settings.
@@ -318,15 +324,24 @@
         </p>
       </div>
       {#if permission !== "denied"}
-        <Toggle id="notifications" bind:value={notificationsEnabled} onclick={handleNotificationToggle} />
+        <Toggle
+          id="notifications"
+          bind:value={notificationsEnabled}
+          onclick={handleNotificationToggle}
+        />
       {:else}
         <button
           type="button"
           class="px-4 py-2 rounded-lg bg-yellow-500/20 border border-yellow-500/50 text-yellow-400 text-sm hover:bg-yellow-500/30 transition-all flex items-center justify-center gap-2 w-full md:w-auto"
-          onclick={() => showNotificationHelp = !showNotificationHelp}
+          onclick={() => (showNotificationHelp = !showNotificationHelp)}
         >
-          {showNotificationHelp ? 'Hide' : 'Show'} Instructions
-          <iconify-icon icon={showNotificationHelp ? 'ph:caret-up-bold' : 'ph:caret-down-bold'} width="16"></iconify-icon>
+          {showNotificationHelp ? "Hide" : "Show"} Instructions
+          <iconify-icon
+            icon={showNotificationHelp
+              ? "ph:caret-up-bold"
+              : "ph:caret-down-bold"}
+            width="16"
+          ></iconify-icon>
         </button>
       {/if}
     </div>
@@ -335,15 +350,29 @@
       <div class="mt-4 space-y-3 border-t border-white/10 pt-4">
         <!-- Chrome Instructions -->
         <details class="group">
-          <summary class="cursor-pointer p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-all flex items-center justify-between">
+          <summary
+            class="cursor-pointer p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-all flex items-center justify-between"
+          >
             <div class="flex items-center gap-2">
               <iconify-icon icon="logos:chrome" width="20"></iconify-icon>
               <span class="font-semibold">Google Chrome</span>
             </div>
-            <iconify-icon icon="ph:caret-down-bold" width="16" class="group-open:rotate-180 transition-transform"></iconify-icon>
+            <iconify-icon
+              icon="ph:caret-down-bold"
+              width="16"
+              class="group-open:rotate-180 transition-transform"
+            ></iconify-icon>
           </summary>
-          <ol class="mt-2 ml-8 space-y-1 text-sm text-white/80 list-decimal list-inside">
-            <li>Click the <span class="inline-flex items-center gap-1 whitespace-nowrap">lock icon <iconify-icon icon="ph:lock-fill" width="14"></iconify-icon></span> in the address bar</li>
+          <ol
+            class="mt-2 ml-8 space-y-1 text-sm text-white/80 list-decimal list-inside"
+          >
+            <li>
+              Click the <span
+                class="inline-flex items-center gap-1 whitespace-nowrap"
+                >lock icon <iconify-icon icon="ph:lock-fill" width="14"
+                ></iconify-icon></span
+              > in the address bar
+            </li>
             <li>Find "Notifications" in the permissions list</li>
             <li>Change it from "Block" to "Allow"</li>
             <li>Refresh this page and toggle notifications on</li>
@@ -352,15 +381,30 @@
 
         <!-- Edge Instructions -->
         <details class="group">
-          <summary class="cursor-pointer p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-all flex items-center justify-between">
+          <summary
+            class="cursor-pointer p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-all flex items-center justify-between"
+          >
             <div class="flex items-center gap-2">
-              <iconify-icon icon="logos:microsoft-edge" width="20"></iconify-icon>
+              <iconify-icon icon="logos:microsoft-edge" width="20"
+              ></iconify-icon>
               <span class="font-semibold">Microsoft Edge</span>
             </div>
-            <iconify-icon icon="ph:caret-down-bold" width="16" class="group-open:rotate-180 transition-transform"></iconify-icon>
+            <iconify-icon
+              icon="ph:caret-down-bold"
+              width="16"
+              class="group-open:rotate-180 transition-transform"
+            ></iconify-icon>
           </summary>
-          <ol class="mt-2 ml-8 space-y-1 text-sm text-white/80 list-decimal list-inside">
-            <li>Click the <span class="inline-flex items-center gap-1 whitespace-nowrap">lock icon <iconify-icon icon="ph:lock-fill" width="14"></iconify-icon></span> in the address bar</li>
+          <ol
+            class="mt-2 ml-8 space-y-1 text-sm text-white/80 list-decimal list-inside"
+          >
+            <li>
+              Click the <span
+                class="inline-flex items-center gap-1 whitespace-nowrap"
+                >lock icon <iconify-icon icon="ph:lock-fill" width="14"
+                ></iconify-icon></span
+              > in the address bar
+            </li>
             <li>Click "Permissions for this site"</li>
             <li>Find "Notifications" and change to "Allow"</li>
             <li>Refresh this page and toggle notifications on</li>
@@ -369,31 +413,55 @@
 
         <!-- Firefox Instructions -->
         <details class="group">
-          <summary class="cursor-pointer p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-all flex items-center justify-between">
+          <summary
+            class="cursor-pointer p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-all flex items-center justify-between"
+          >
             <div class="flex items-center gap-2">
               <iconify-icon icon="logos:firefox" width="20"></iconify-icon>
               <span class="font-semibold">Firefox</span>
             </div>
-            <iconify-icon icon="ph:caret-down-bold" width="16" class="group-open:rotate-180 transition-transform"></iconify-icon>
+            <iconify-icon
+              icon="ph:caret-down-bold"
+              width="16"
+              class="group-open:rotate-180 transition-transform"
+            ></iconify-icon>
           </summary>
-          <ol class="mt-2 ml-8 space-y-1 text-sm text-white/80 list-decimal list-inside">
-            <li>Click the <span class="inline-flex items-center gap-1 whitespace-nowrap">lock icon <iconify-icon icon="ph:lock-fill" width="14"></iconify-icon></span> in the address bar</li>
+          <ol
+            class="mt-2 ml-8 space-y-1 text-sm text-white/80 list-decimal list-inside"
+          >
+            <li>
+              Click the <span
+                class="inline-flex items-center gap-1 whitespace-nowrap"
+                >lock icon <iconify-icon icon="ph:lock-fill" width="14"
+                ></iconify-icon></span
+              > in the address bar
+            </li>
             <li>Click the arrow next to "Blocked" under Permissions</li>
-            <li>Find "Receive Notifications" and click the X to remove the block</li>
+            <li>
+              Find "Receive Notifications" and click the X to remove the block
+            </li>
             <li>Refresh this page and toggle notifications on</li>
           </ol>
         </details>
 
         <!-- Safari Instructions -->
         <details class="group">
-          <summary class="cursor-pointer p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-all flex items-center justify-between">
+          <summary
+            class="cursor-pointer p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-all flex items-center justify-between"
+          >
             <div class="flex items-center gap-2">
               <iconify-icon icon="logos:safari" width="20"></iconify-icon>
               <span class="font-semibold">Safari</span>
             </div>
-            <iconify-icon icon="ph:caret-down-bold" width="16" class="group-open:rotate-180 transition-transform"></iconify-icon>
+            <iconify-icon
+              icon="ph:caret-down-bold"
+              width="16"
+              class="group-open:rotate-180 transition-transform"
+            ></iconify-icon>
           </summary>
-          <ol class="mt-2 ml-8 space-y-1 text-sm text-white/80 list-decimal list-inside">
+          <ol
+            class="mt-2 ml-8 space-y-1 text-sm text-white/80 list-decimal list-inside"
+          >
             <li>Go to Safari → Settings → Websites</li>
             <li>Click "Notifications" in the left sidebar</li>
             <li>Find this website and change to "Allow"</li>
@@ -663,5 +731,4 @@
       </div>
     </div>
   {/if}
-
 </div>

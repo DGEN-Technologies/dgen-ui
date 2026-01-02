@@ -16,9 +16,11 @@
   let bannerUrl = $derived(
     $banner?.id && $banner.id === subject?.id && $banner.src
       ? $banner.src
-      : subject?.banner && subject.banner !== 'undefined' && subject.banner !== undefined
+      : subject?.banner &&
+          subject.banner !== "undefined" &&
+          subject.banner !== undefined
         ? subject.banner
-        : null
+        : null,
   );
 
   // Convert relative URLs to full backend URLs for production compatibility
@@ -64,17 +66,27 @@
 
 {#if !$loading}
   <header
-    class="glass backdrop-blur-xl h-[175px] w-full relative mb-16 !z-30 border-b dark:border-white/10 border-gray-300/50 {bg ? 'dark:bg-black/40 bg-white/40' : ''}"
+    class="glass backdrop-blur-xl h-[175px] w-full relative mb-16 !z-30 border-b dark:border-white/10 border-gray-300/50 {bg
+      ? 'dark:bg-black/40 bg-white/40'
+      : ''}"
     style:background-image={bg}
   >
-    <nav class="flex justify-end items-center space-x-2 sm:space-x-4 p-3 sm:p-5 pr-2 sm:pr-5">
+    <nav
+      class="flex justify-end items-center space-x-2 sm:space-x-4 p-3 sm:p-5 pr-2 sm:pr-5"
+    >
       {#if user}
         {#each links as { href, icon, flip, label }}
           <a {href} data-sveltekit-preload-data="off">
-            <button class="btn-menu {opacity(href)} flex-col gap-1" aria-label={label}>
+            <button
+              class="btn-menu {opacity(href)} flex-col gap-1"
+              aria-label={label}
+            >
               <iconify-icon noobserver {icon} width={w > 640 ? 32 : 24} {flip}
               ></iconify-icon>
-              <span class="hidden md:block text-xs font-semibold whitespace-nowrap">{label}</span>
+              <span
+                class="hidden md:block text-xs font-semibold whitespace-nowrap"
+                >{label}</span
+              >
             </button>
           </a>
         {/each}
@@ -100,7 +112,7 @@
 
 <style>
   .btn-menu {
-    @apply flex justify-center items-center glass backdrop-blur-xl dark:bg-black/50 bg-white/80 dark:border-dgen-aqua/20 border-dgen-cyan/30 border dark:text-dgen-aqua text-gray-800 p-2 rounded-full w-12 h-12 sm:w-16 sm:h-16 md:w-auto md:h-auto md:rounded-2xl md:px-3 md:py-2 drop-shadow-xl hover:border-dgen-aqua/50 hover:bg-dgen-aqua/10 transition-all duration-300;
+    @apply flex justify-center items-center glass backdrop-blur-xl bg-black/50 border-dgen-aqua/20 border-dgen-cyan/30 border text-dgen-aqua p-2 rounded-full w-12 h-12 sm:w-16 sm:h-16 md:w-auto md:h-auto md:rounded-2xl md:px-3 md:py-2 drop-shadow-xl hover:border-dgen-aqua/50 hover:bg-dgen-aqua/10 transition-all duration-300;
   }
 
   header {

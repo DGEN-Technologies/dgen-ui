@@ -56,8 +56,8 @@ export const messages = (data) => ({
       if (
         iid && // Only redirect if we have a valid invoice ID
         (pathname.includes(`/${username}`) ||
-        pathname.includes("/receive") ||
-        pathname.includes("/invoice"))
+          pathname.includes("/receive") ||
+          pathname.includes("/invoice"))
       ) {
         await wait(() => !get(navigating));
         await goto(`/invoice/${iid}`);
@@ -100,8 +100,8 @@ export const messages = (data) => ({
 
     // Show green checkmark if on receive-related pages
     if (currentPath.includes('/receive') ||
-        currentPath.includes(`/${username}`) ||
-        currentPath.includes('/invoice')) {
+      currentPath.includes(`/${username}`) ||
+      currentPath.includes('/invoice')) {
       await wait(() => !get(navigating));
       setTimeout(() => {
         goto('/payment-received');
@@ -142,8 +142,8 @@ export const messages = (data) => ({
 
     // Show green checkmark if on receive-related pages
     if (currentPath.includes('/receive') ||
-        currentPath.includes(`/${username}`) ||
-        currentPath.includes('/invoice')) {
+      currentPath.includes(`/${username}`) ||
+      currentPath.includes('/invoice')) {
       await wait(() => !get(navigating));
       setTimeout(() => {
         goto('/payment-received');
@@ -153,13 +153,13 @@ export const messages = (data) => ({
 
   async balanceUpdated() {
     const { balanceSat } = data;
-    
+
     // Just invalidate user data to refresh balance
     invalidate("app:user");
-    
+
     // Optional: Could update a balance store directly here
   },
-  
+
   async balance_update() {
     // Handle the new balance_update message from the server
     const { balanceSat, pendingSendSat, pendingReceiveSat } = data;
@@ -276,23 +276,23 @@ export async function connect(t) {
 
   // WebSocket URL resolution with proper fallback chain
   let wsUrl = PUBLIC_SOCKET;
-  
+
   // Logging utility for debugging (only in development)
   const log = (message: string, data?: any) => {
     if (import.meta.env.DEV || window.location.hostname === 'localhost') {
       console.log(`[WebSocket] ${message}`, data || '');
     }
   };
-  
+
   // Handle Netlify's environment variable masking (occurs in netlify serve and production)
   if (!wsUrl || wsUrl.includes('*')) {
     log('Environment variable is masked or empty, fetching runtime config', wsUrl);
-    
+
     // Fetch runtime config from server (this bypasses Netlify's masking)
     try {
       await loadRuntimeConfig();
       const config = get(runtimeConfig);
-      
+
       if (config.PUBLIC_SOCKET && !config.PUBLIC_SOCKET.includes('*')) {
         wsUrl = config.PUBLIC_SOCKET;
         log('Using runtime config from server', wsUrl);
@@ -300,22 +300,22 @@ export async function connect(t) {
     } catch (error) {
       console.error('Failed to load runtime config:', error);
     }
-    
+
     // Fallback chain if runtime config fails
     if (!wsUrl || wsUrl.includes('*')) {
       if (typeof window !== 'undefined' && window.location) {
         // Try window-based configs (for backwards compatibility)
-        const fallbackUrl = (window as any).__PUBLIC_SOCKET__ || 
-                           (window as any).__ENV__?.PUBLIC_SOCKET ||
-                           (window as any).__RUNTIME_CONFIG__?.PUBLIC_SOCKET;
-        
+        const fallbackUrl = (window as any).__PUBLIC_SOCKET__ ||
+          (window as any).__ENV__?.PUBLIC_SOCKET ||
+          (window as any).__RUNTIME_CONFIG__?.PUBLIC_SOCKET;
+
         if (fallbackUrl && !fallbackUrl.includes('*')) {
           wsUrl = fallbackUrl;
           log('Using window fallback URL', wsUrl);
         } else {
           // Use localhost fallback for development
           wsUrl = 'ws://localhost:3119/ws';
-          
+
           // Only warn in development
           if (import.meta.env.DEV) {
             console.warn('WebSocket using localhost fallback. Set PUBLIC_SOCKET in .env for production.');
@@ -342,7 +342,7 @@ export async function connect(t) {
   }
 
   log('Connecting to WebSocket', wsUrl);
-  
+
   try {
     socket = new WebSocket(wsUrl);
   } catch (error) {
