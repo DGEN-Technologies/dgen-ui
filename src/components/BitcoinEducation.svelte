@@ -138,13 +138,11 @@
 </script>
 
 {#if mounted}
-  <section id="education" class="relative sm:py-32">
+  <section id="education" class="relative py-32">
     <div class="container mx-auto px-4 relative z-10">
       <!-- Header -->
       <div class="text-center mb-16" in:fly={{ y: 30, duration: 800 }}>
-        <h2
-          class="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 heading-condensed"
-        >
+        <h2 class="text-5xl md:text-6xl font-bold mb-4 heading-condensed">
           <span
             class="bg-gradient-to-r from-dgen-aqua to-dgen-cyan bg-clip-text text-transparent"
           >

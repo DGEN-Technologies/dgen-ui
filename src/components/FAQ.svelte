@@ -40,7 +40,7 @@
       category: "Education",
       question: "What is self-custody?",
       answer:
-        "<p>DGEN Technologies Corp never custodies your crypto or fiat/dollars.</p> <p>Self-custody (non-custodial) means YOU control your Bitcoin's private keys (via your seed phrase) - not an exchange or bank.</p> <p>With this DGEN web-app, your seed phrase (key) gives you complete ownership. No one else can access, freeze, or confiscate your funds if you do not give out your seed phrase to anyone. It’s your responsibility to take care of your seed phrase and store it properly somewhere that you think is very safe and it won’t get stolen & compromised etc.</p> <p>If you prefer to not want the hassle of managing your own seed phrase “keys’ and prefer a custodial solution (like an exchange for example) you can use our DGEN CARD app which is custodial - <a href='http://card.dgentech.io' target='_blank' class='text-dgen-aqua hover:underline'>card.dgentech.io</a></p> <p>For examples and extra information of what custodial and non-custodial means, we highly recommend you doing your own research to understand these things, before using DGEN’s apps & products.</p>",
+        "<p>Self-custody (non-custodial) means YOU control your Bitcoin's private keys (via your seed phrase) - not an exchange or bank.</p><p> With this DGEN web-app, your seed phrase (key) gives you complete ownership. No one else can access, freeze, or confiscate your funds if you do not give out your seed phrase to anyone. It’s your responsibility to take care of your seed phrase and store it properly somewhere that you think is very safe and it won’t get stolen & compromised etc.</p><p> If you prefer to not want the hassle of managing your own seed phrase “keys’ and prefer a custodial solution (like an exchange for example) you can use our DGEN CARD app which is custodial - <a href='http://card.dgentech.io' target='_blank' class='text-dgen-aqua hover:underline'>card.dgentech.io</a></p><p> Examples of Custodial options are: Exchanges, not wallets. The Custodian holds your seed phrase. The DGEN CARD app is custodial.</p><p> Example of Non-custodial options: Wallets, not exchanges. This DGEN web-app you are currently on does not hold your seed phrase, it is your responsibility to manage your seed phrase</p>",
       icon: "ph:vault-bold",
       emoji: "🔐",
     },
@@ -67,7 +67,7 @@
       category: "Swapping",
       question: "How does the swap feature work?",
       answer:
-        "<p>The swap feature allows you to exchange one cryptocurrency for another directly within the wallet (even if they are completely different networks).</p> <ol class='pl-5'><li>1. Select the crypto to send and the one to receive.</li> <li>2. Enter the amount – you'll see competitive rates aggregated from exchanges. You can potentially be getting the best swapping/exchange price/rate that is available on the whole market with using this feature.</li> <li>3. Provide your receiving wallet address (also the swap refund wallet address in the case of the swap failing, which can happen outside of DGEN’s control).</li> <li>4. Send the funds to the provided deposit address.</li> <li>5. SAVE YOUR EXCHANGE ID. This Exchange ID would be used in the case of your swap failing and you didn’t provide your refund address. Or, if your swap is taking more than 24 hours, then you can send a message to our live chat and request support. Without you having your Exchange ID,  DGEN can not guarantee that you will recover your funds.</li> <li class='flex flex-col'><span>Example of Point 5 :-</span><img src='/images/FAQ-swap.png' class='rounded-lg'></ol></li> <p>The exchange/swap feature is done by a 3rd party and DGEN is not the custodian of any of your cryptocurrency that you wish to swap.</p> <p>Swap/Exchange Processing typically completes in minutes to an hour (or more), depending on network conditions & market congestion, which DGEN has zero control over.</p>",
+        "<p>The swap feature allows you to instantly exchange one cryptocurrency for another directly within the wallet.</p> <ol class='pl-5'><li>1. Select the crypto to send and the one to receive.</li> <li>2. Enter the amount – you'll see competitive rates aggregated from trusted partners.</li> <li>3. Provide your receiving wallet address.</li> <li>4. Send the funds to the provided deposit address.</li></ol> <p>The exchange action is non-custodial: no account or KYC required, and DGEN is not the custodian of any cryptocurrency. Processing typically completes in minutes to an hour, depending on network conditions, which DGEN has no control over.</p>",
       icon: "uiw:swap",
       emoji: "🔁",
     },
@@ -85,7 +85,7 @@
       category: "DGEN",
       question: "Why DGEN over other wallets?",
       answer:
-        "<p>Built by Bitcoin enthusiasts. Features accessible on the DGEN web-app include atomic swaps, submarine swaps, cross-chain swaps with 3,500 coins across almost all the main blockchains, cutting-edge Lightning & Liquid technology, Non-custodial, and the DGEN CARD app which is a crypto mastercard that can be used internationally (more info on the DGEN CARD app at <a href='http://card.dgentech.io' target='_blank' class='text-dgen-aqua hover:underline'>card.dgentech.io</a>).</p> <p>There are not many crypto wallets/apps on the market that have all these value points together.</p>",
+        "<p>Built by Bitcoin enthusiasts. Features accessible on the DGEN web-app include atomic swaps, submarine swaps, cross-chain swaps with 4,500 coins across almost all the main blockchains, cutting-edge Lightning & Liquid technology, Non-custodial, and our custodial DGEN CARD app which is a crypto mastercard that can be used internationally (more info on the DGEN CARD app at <a href='http://card.dgentech.io' target='_blank' class='text-dgen-aqua hover:underline'>card.dgentech.io</a>).</p><p> There are not many wallets on the market that have all these value points together.</p>",
       icon: "ph:rocket-bold",
       emoji: "🚀",
     },
@@ -113,7 +113,7 @@
       category: "Business",
       question: "Can businesses use DGEN?",
       answer:
-        "<p>Yes, businesses may accept cryptocurrency payments wherever such transactions are legally permitted and the business complies fully with applicable regulations and laws.</p><p>Features include:</p> <ul class='pl-5'> <li>• Full access to DGEN web app functionality: depositing, withdrawing, cross-chain swapping, and more.</li> <li>• Generating invoices and QR codes for payments for goods & services.</li> <li>• API integration for seamless processing.</li> <li>• Zero chargeback risk and simplified accounting with Bitcoin and supported cryptocurrencies.</li> <li>• This app would then potentially become another asset owned by your company potentially generating more revenue, especially with offering more options for your customers to pay you.</li></ul> <p>Additionally, businesses (or individuals) can white-label a customized version of the DGEN CARD app.</p> <p>DGEN does not provide business advice, tax advice, financial advice in any way. Consult a licenced professional that you trust if you want advice on anything being said here.</p>",
+        "<p>Yes, businesses may accept cryptocurrency payments wherever such transactions are legally permitted and the business complies fully with applicable regulations and laws.</p><p>Features include:</p> <ul class='pl-5'> <li>• Full access to DGEN web app functionality: depositing, withdrawing, cross-chain swapping, and more.</li> <li>• Generating invoices and QR codes for payments for goods & services.</li> <li>• API integration for seamless processing.</li> <li>• Zero chargeback risk and simplified accounting with Bitcoin and supported cryptocurrencies.</li> <li>• This app would then become another asset owned by your company potentially generating more revenue, especially with offering more options for your customers to pay you.</li></ul> <p>Additionally, businesses (or individuals) can white-label a customized version of the DGEN CARD app.</p>",
       icon: "ph:storefront-bold",
       emoji: "🏪",
     },
@@ -122,7 +122,7 @@
       category: "Tech",
       question: "Do I need to manage channels?",
       answer:
-        "No 😊. DGEN uses Breez SDK - which eliminates channel management entirely. No channel opening, no rebalancing, and no liquidity balancing needed to be done when you are using the DGEN apps.</p> <p>For technical users, you can learn more at <a href='https://sdk-doc-liquid.breez.technology/' target='_blank' class='text-dgen-aqua hover:underline'>Breez SDK Liquid Documentation</a>",
+        'No! DGEN uses Breez SDK Liquid - a next-generation Lightning solution that eliminates channel management entirely. No channel opening, no rebalancing, no liquidity concerns. Learn more at <a href="https://sdk-doc-liquid.breez.technology" target="_blank" class="text-dgen-aqua hover:underline">Breez SDK Liquid Documentation</a>',
       icon: "ph:cpu-bold",
       emoji: "🤖",
     },
@@ -131,7 +131,7 @@
       category: "Tech",
       question: "What is Liquid Network?",
       answer:
-        "Liquid is a Bitcoin sidechain. Fast 2-minute blocks/transactions, and can peg Bitcoin in/out between networks.",
+        "Liquid is Bitcoin's sidechain. Faster 2-minute blocks, transactions, perfect for trading and high-value transfers. Peg Bitcoin in/out seamlessly.",
       icon: "ph:drop-bold",
       emoji: "💧",
     },

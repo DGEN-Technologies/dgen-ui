@@ -45,17 +45,22 @@
   // Initialize on mount
   onMount(async () => {
     // Wait for SDK to be ready
-    const waitForSdkReady = async () => {
+    const waitForSdk = async () => {
       try {
-        const { waitForSdk } = await import("$lib/walletService");
-        return await waitForSdk();
+        const { isConnected } = await import("$lib/walletService");
+        let attempts = 0;
+        while (!isConnected() && attempts < 20) {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          attempts++;
+        }
+        return isConnected();
       } catch (error) {
         console.warn("[PaymentsList] Error checking SDK connection:", error);
         return false;
       }
     };
 
-    const sdkReady = await waitForSdkReady();
+    const sdkReady = await waitForSdk();
 
     if (sdkReady) {
       // Fetch current fiat rate
@@ -812,29 +817,6 @@
             </div>
           </div>
         </div>
-
-        <button
-          class="card bg-purple-500/10 border border-purple-500/30 text-left hover:bg-purple-500/15 transition-colors"
-          onclick={() => goto("/refunds")}
-        >
-          <div class="card-body p-3 sm:p-4">
-            <div class="flex items-center gap-2 sm:gap-3">
-              <div class="text-purple-400 flex-shrink-0">
-                <iconify-icon
-                  icon="ph:arrow-u-up-left"
-                  width="24"
-                  class="sm:w-8"
-                ></iconify-icon>
-              </div>
-              <div class="min-w-0">
-                <div class="text-xs sm:text-sm text-white/60">Refunds</div>
-                <div class="text-base sm:text-xl font-bold text-purple-300">
-                  View
-                </div>
-              </div>
-            </div>
-          </div>
-        </button>
       </div>
     {/if}
 
@@ -1067,7 +1049,7 @@
                         </span>
                       {:else if payment.status === "refunded"}
                         <span
-                          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-500/20 to-violet-500/20 border border-purple-400/30 text-xs font-medium text-purple-300"
+                          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-blue-500/20 to-indigo-500/20 border border-blue-400/30 text-xs font-medium text-blue-300"
                         >
                           <iconify-icon icon="ph:arrow-u-up-left" width="12"
                           ></iconify-icon>

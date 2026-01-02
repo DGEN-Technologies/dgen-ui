@@ -11,24 +11,24 @@
   const roadmapItems = [
     {
       phase: "Phase 1",
-      title: "Public Listing & Fiat POS System",
-      icon: "ph:chart-line-up-bold",
-      color: "from-green-400 to-emerald-400",
+      title: "Launch of DGEN Crypto Wallet",
+      icon: "ph:wallet-bold",
+      color: "from-yellow-400 to-orange-400",
       items: [
-        "Stock exchange listing (subject to approvals)",
-        "Enhanced visibility & liquidity",
-        "Launch of fiat Point-of-Sale system",
-        "Seamless fiat transactions & merchant adoption",
+        "Secure web-based cryptocurrency wallet",
+        "Robust security infrastructure",
+        "Supports Bitcoin, Lightning, Liquid & Tether",
+        "Premium experience for retail & institutional clients",
       ],
-      status: "upcoming",
+      status: "in-progress",
     },
     {
       phase: "Phase 2",
-      title: "Introduction of DGEN Crypto MasterCard",
+      title: "Introduction of DGEN Crypto Visa & MasterCard",
       icon: "ph:credit-card-bold",
       color: "from-cyan-400 to-blue-400",
       items: [
-        "Branded MasterCard for crypto spending",
+        "Branded Visa & MasterCard for crypto spending",
         "Global merchant acceptance",
         "Low fees",
         "Bridging Crypto with Traditional Finance",
@@ -50,16 +50,16 @@
     },
     {
       phase: "Phase 4",
-      title: "Launch of DGEN Crypto Wallet",
-      icon: "ph:wallet-bold",
-      color: "from-yellow-400 to-orange-400",
+      title: "Public Listing & Fiat POS System",
+      icon: "ph:chart-line-up-bold",
+      color: "from-green-400 to-emerald-400",
       items: [
-        "Secure web-based cryptocurrency wallet",
-        "Robust security infrastructure",
-        "Supports Bitcoin, Lightning, Liquid & Tether",
-        "Premium experience for retail & institutional clients",
+        "Stock exchange listing (subject to approvals)",
+        "Enhanced visibility & liquidity",
+        "Launch of fiat Point-of-Sale system",
+        "Seamless fiat transactions & merchant adoption",
       ],
-      status: "in-progress",
+      status: "upcoming",
     },
   ];
 </script>
@@ -69,6 +69,20 @@
     {#if mounted}
       <!-- Section Header -->
       <div class="text-center mb-16" in:fade={{ duration: 800, delay: 200 }}>
+        <div
+          class="inline-flex items-center gap-3 mb-4 px-6 py-3 rounded-full glass border border-dgen-cyan/30"
+        >
+          <iconify-icon
+            icon="ph:map-trifold-bold"
+            class="text-dgen-cyan"
+            width="24"
+          ></iconify-icon>
+          <span
+            class="text-dgen-cyan font-bold uppercase tracking-wider text-sm"
+            >Roadmap</span
+          >
+        </div>
+
         <h2
           class="text-4xl sm:text-5xl md:text-6xl font-bold mb-4 heading-condensed"
         >
@@ -167,11 +181,11 @@
       >
         <div class="glass border border-white/10 rounded-lg p-6">
           <h4
-            class="text-base sm:text-xl font-bold text-yellow-300/70 mb-3 uppercase tracking-wider"
+            class="text-xl font-bold text-white/70 mb-3 uppercase tracking-wider"
           >
             Disclaimer
           </h4>
-          <p class="text-xs sm:text-lg text-yellow-400/60 leading-relaxed">
+          <p class="text-lg text-white/60 leading-relaxed">
             The roadmap presented herein reflects DGEN's current intentions and
             plans for the development and release of its products and services,
             as outlined in the specified phases. However, DGEN expressly

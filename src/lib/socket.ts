@@ -83,16 +83,14 @@ export const messages = (data) => ({
     // Broadcast to payment events store for green checkmark UI
     const amount = payment?.amountSat || payment?.amount || 0;
     if (amount > 0) {
-      const { notifyPaymentReceived } = await import(
-        "$lib/stores/paymentEvents"
-      );
+      const { notifyPaymentReceived } = await import('$lib/stores/paymentEvents');
       notifyPaymentReceived(
         {
           amountSat: amount,
-          paymentType: "receive",
-          ...payment,
+          paymentType: 'receive',
+          ...payment
         },
-        "confirmed",
+        'confirmed'
       );
     }
 
@@ -101,14 +99,12 @@ export const messages = (data) => ({
     const username = cookies.get("username");
 
     // Show green checkmark if on receive-related pages
-    if (
-      currentPath.includes("/receive") ||
+    if (currentPath.includes('/receive') ||
       currentPath.includes(`/${username}`) ||
-      currentPath.includes("/invoice")
-    ) {
+      currentPath.includes('/invoice')) {
       await wait(() => !get(navigating));
       setTimeout(() => {
-        goto("/payment-received");
+        goto('/payment-received');
       }, 1000);
     }
   },
@@ -129,16 +125,14 @@ export const messages = (data) => ({
 
     // Broadcast to payment events store for green checkmark UI
     if (amountSat > 0) {
-      const { notifyPaymentReceived } = await import(
-        "$lib/stores/paymentEvents"
-      );
+      const { notifyPaymentReceived } = await import('$lib/stores/paymentEvents');
       notifyPaymentReceived(
         {
           amountSat,
-          paymentType: "receive",
-          id: invoiceId,
+          paymentType: 'receive',
+          id: invoiceId
         },
-        "complete",
+        'complete'
       );
     }
 
@@ -147,14 +141,12 @@ export const messages = (data) => ({
     const username = cookies.get("username");
 
     // Show green checkmark if on receive-related pages
-    if (
-      currentPath.includes("/receive") ||
+    if (currentPath.includes('/receive') ||
       currentPath.includes(`/${username}`) ||
-      currentPath.includes("/invoice")
-    ) {
+      currentPath.includes('/invoice')) {
       await wait(() => !get(navigating));
       setTimeout(() => {
-        goto("/payment-received");
+        goto('/payment-received');
       }, 1000);
     }
   },
@@ -177,32 +169,25 @@ export const messages = (data) => ({
     invalidate("app:wallet");
 
     // Log for debugging
-    console.log(
-      `[WebSocket] Balance update received: ${balanceSat} sats (pending send: ${pendingSendSat}, pending receive: ${pendingReceiveSat})`,
-    );
+    console.log(`[WebSocket] Balance update received: ${balanceSat} sats (pending send: ${pendingSendSat}, pending receive: ${pendingReceiveSat})`);
   },
 
-  async "webhook-request"() {
+  async 'webhook-request'() {
     // Handle webhook request from Breez service for Lightning Address payments
     const { requestId, payload } = data;
-    console.log("[WebSocket] Webhook request received:", {
-      requestId,
-      payload,
-    });
+    console.log('[WebSocket] Webhook request received:', { requestId, payload });
 
     try {
       const { template, data: webhookData } = payload;
 
       // Dynamically import walletService to avoid circular deps
-      const { prepareReceivePayment, receivePayment } = await import(
-        "$lib/walletService"
-      );
+      const { prepareReceivePayment, receivePayment } = await import('$lib/walletService');
 
-      if (template === "lnurlpay_info") {
+      if (template === 'lnurlpay_info') {
         // LNURL-Pay info request - return min/max amounts
-        console.log("[Webhook] Handling lnurlpay_info request");
+        console.log('[Webhook] Handling lnurlpay_info request');
 
-        const { fetchLightningLimits } = await import("$lib/walletService");
+        const { fetchLightningLimits } = await import('$lib/walletService');
         const limits = await fetchLightningLimits();
 
         const response = {
@@ -210,59 +195,61 @@ export const messages = (data) => ({
           maxSendable: limits.receive.maxSat * 1000, // Convert to msat
           minSendable: limits.receive.minSat * 1000,
           metadata: JSON.stringify([["text/plain", "Pay to DGEN user"]]),
-          tag: "payRequest",
+          tag: "payRequest"
         };
 
-        await fetch("/api/webhook/respond", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ requestId, response }),
+        await fetch('/api/webhook/respond', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ requestId, response })
         });
-      } else if (template === "lnurlpay_invoice") {
+
+      } else if (template === 'lnurlpay_invoice') {
         // LNURL-Pay invoice request - generate invoice
-        console.log("[Webhook] Handling lnurlpay_invoice request");
+        console.log('[Webhook] Handling lnurlpay_invoice request');
 
         const amount = Math.floor(webhookData.amount / 1000); // Convert msat to sat
 
         const prepareResponse = await prepareReceivePayment({
-          paymentMethod: "lightning",
-          payerAmountSat: amount,
+          paymentMethod: 'lightning',
+          payerAmountSat: amount
         });
 
         const receiveResponse = await receivePayment({
           prepareResponse,
-          description: webhookData.comment || "Lightning Address payment",
+          description: webhookData.comment || 'Lightning Address payment'
         });
 
         const verifyUrl = webhookData.verify_url?.replace(
-          "{payment_hash}",
-          receiveResponse.paymentHash || "",
+          '{payment_hash}',
+          receiveResponse.paymentHash || ''
         );
 
         const response = {
           pr: receiveResponse.destination,
           routes: [],
-          ...(verifyUrl && { verify: verifyUrl }),
+          ...(verifyUrl && { verify: verifyUrl })
         };
 
-        await fetch("/api/webhook/respond", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ requestId, response }),
+        await fetch('/api/webhook/respond', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ requestId, response })
         });
+
       } else {
-        console.warn("[Webhook] Unknown template:", template);
+        console.warn('[Webhook] Unknown template:', template);
       }
     } catch (error) {
-      console.error("[Webhook] Error handling webhook request:", error);
+      console.error('[Webhook] Error handling webhook request:', error);
       // Send error response
-      await fetch("/api/webhook/respond", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      await fetch('/api/webhook/respond', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           requestId,
-          response: { status: "ERROR", reason: error.message },
-        }),
+          response: { status: 'ERROR', reason: error.message }
+        })
       });
     }
   },
@@ -292,82 +279,74 @@ export async function connect(t) {
 
   // Logging utility for debugging (only in development)
   const log = (message: string, data?: any) => {
-    if (import.meta.env.DEV || window.location.hostname === "localhost") {
-      console.log(`[WebSocket] ${message}`, data || "");
+    if (import.meta.env.DEV || window.location.hostname === 'localhost') {
+      console.log(`[WebSocket] ${message}`, data || '');
     }
   };
 
   // Handle Netlify's environment variable masking (occurs in netlify serve and production)
-  if (!wsUrl || wsUrl.includes("*")) {
-    log(
-      "Environment variable is masked or empty, fetching runtime config",
-      wsUrl,
-    );
+  if (!wsUrl || wsUrl.includes('*')) {
+    log('Environment variable is masked or empty, fetching runtime config', wsUrl);
 
     // Fetch runtime config from server (this bypasses Netlify's masking)
     try {
       await loadRuntimeConfig();
       const config = get(runtimeConfig);
 
-      if (config.PUBLIC_SOCKET && !config.PUBLIC_SOCKET.includes("*")) {
+      if (config.PUBLIC_SOCKET && !config.PUBLIC_SOCKET.includes('*')) {
         wsUrl = config.PUBLIC_SOCKET;
-        log("Using runtime config from server", wsUrl);
+        log('Using runtime config from server', wsUrl);
       }
     } catch (error) {
-      console.error("Failed to load runtime config:", error);
+      console.error('Failed to load runtime config:', error);
     }
 
     // Fallback chain if runtime config fails
-    if (!wsUrl || wsUrl.includes("*")) {
-      if (typeof window !== "undefined" && window.location) {
+    if (!wsUrl || wsUrl.includes('*')) {
+      if (typeof window !== 'undefined' && window.location) {
         // Try window-based configs (for backwards compatibility)
-        const fallbackUrl =
-          (window as any).__PUBLIC_SOCKET__ ||
+        const fallbackUrl = (window as any).__PUBLIC_SOCKET__ ||
           (window as any).__ENV__?.PUBLIC_SOCKET ||
           (window as any).__RUNTIME_CONFIG__?.PUBLIC_SOCKET;
 
-        if (fallbackUrl && !fallbackUrl.includes("*")) {
+        if (fallbackUrl && !fallbackUrl.includes('*')) {
           wsUrl = fallbackUrl;
-          log("Using window fallback URL", wsUrl);
+          log('Using window fallback URL', wsUrl);
         } else {
           // Use localhost fallback for development
-          wsUrl = "ws://localhost:3119/ws";
+          wsUrl = 'ws://localhost:3119/ws';
 
           // Only warn in development
           if (import.meta.env.DEV) {
-            console.warn(
-              "WebSocket using localhost fallback. Set PUBLIC_SOCKET in .env for production.",
-            );
+            console.warn('WebSocket using localhost fallback. Set PUBLIC_SOCKET in .env for production.');
           }
-          log("Using localhost fallback", wsUrl);
+          log('Using localhost fallback', wsUrl);
         }
       }
     }
   }
 
   // Handle relative WebSocket URLs (e.g., /ws)
-  if (wsUrl.startsWith("/")) {
+  if (wsUrl.startsWith('/')) {
     // Construct full URL based on current page protocol
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.host;
     wsUrl = `${protocol}//${host}${wsUrl}`;
-    log("Constructed WebSocket URL from relative path", wsUrl);
+    log('Constructed WebSocket URL from relative path', wsUrl);
   }
 
   // Validate WebSocket URL format
-  if (!wsUrl.startsWith("ws://") && !wsUrl.startsWith("wss://")) {
+  if (!wsUrl.startsWith('ws://') && !wsUrl.startsWith('wss://')) {
     console.error(`Invalid WebSocket URL format: ${wsUrl}`);
-    throw new Error(
-      `Invalid WebSocket URL format. Expected ws:// or wss:// but got: ${wsUrl}`,
-    );
+    throw new Error(`Invalid WebSocket URL format. Expected ws:// or wss:// but got: ${wsUrl}`);
   }
 
-  log("Connecting to WebSocket", wsUrl);
+  log('Connecting to WebSocket', wsUrl);
 
   try {
     socket = new WebSocket(wsUrl);
   } catch (error) {
-    console.error("Failed to create WebSocket connection:", error);
+    console.error('Failed to create WebSocket connection:', error);
     throw error;
   }
   socket.addEventListener("open", onWebsocketOpen);

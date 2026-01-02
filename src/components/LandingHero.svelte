@@ -9,23 +9,23 @@
   });
 </script>
 
-<div class="relative sm:min-h-screen">
+<div class="relative -mt-20 min-h-screen">
   <!-- Animated background mesh with aurora effect -->
   <div class="absolute inset-0">
     <div class="absolute inset-0 aurora-bg opacity-5"></div>
     <div
-      class="absolute top-0 left-4 w-72 sm:w-96 h-96 bg-dgen-aqua rounded-full mix-blend-screen filter blur-3xl opacity-20 blob"
+      class="absolute top-0 -left-4 w-96 h-96 bg-dgen-aqua rounded-full mix-blend-screen filter blur-3xl opacity-20 blob"
     ></div>
     <div
-      class="absolute top-0 right-4 w-72 sm:w-96 h-96 bg-dgen-cyan rounded-full mix-blend-screen filter blur-3xl opacity-20 blob"
+      class="absolute top-0 -right-4 w-96 h-96 bg-dgen-cyan rounded-full mix-blend-screen filter blur-3xl opacity-20 blob"
       style="animation-delay: 2s;"
     ></div>
     <div
-      class="absolute -bottom-8 left-20 w-52 sm:w-96 h-96 bg-dgen-teal rounded-full mix-blend-screen filter blur-3xl opacity-20 blob"
+      class="absolute -bottom-8 left-20 w-96 h-96 bg-dgen-teal rounded-full mix-blend-screen filter blur-3xl opacity-20 blob"
       style="animation-delay: 4s;"
     ></div>
     <div
-      class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-[800px] bg-gradient-to-r from-dgen-aqua/10 via-dgen-cyan/10 to-dgen-purple/10 rounded-full filter blur-3xl animate-pulse pointer-events-none"
+      class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-r from-dgen-aqua/10 via-dgen-cyan/10 to-dgen-purple/10 rounded-full filter blur-3xl animate-pulse"
     ></div>
   </div>
 
@@ -33,7 +33,7 @@
   <div class="absolute inset-0 cyber-grid opacity-30"></div>
 
   <!-- Particle System -->
-  <div class="particles hidden">
+  <div class="particles">
     {#each Array(20) as _, i}
       <div
         class="particle"
@@ -44,24 +44,15 @@
   </div>
 
   <!-- Content -->
-  <div class="relative z-10 flex flex-col items-center justify-start px-4">
-    <!-- Disclaimer -->
-    <div
-      class="text-center px-4 mt-14 sm:mt-28"
-      in:fly={{ y: 20, duration: 800, delay: 900 }}
-    >
-      <div
-        class="glass px-4 py-3 sm:px-6 rounded-full border border-white/60 bg-white/10 inline-block"
-      >
-        <p class="font-semibold text-sm sm:text-base text-yellow-400/90">
-          ⚠️ This website/app is in Beta and not finalized. Use at your own
-          risk.
-        </p>
-      </div>
-    </div>
+  <div
+    class="relative z-10 flex flex-col items-center justify-start px-4 pt-28 sm:pt-36 md:pt-40 pb-16"
+  >
     {#if mounted}
       <!-- Logo with epic glow effect -->
-      <div class="relative" in:fade={{ duration: 800, delay: 200 }}>
+      <div
+        class="mb-4 sm:mb-6 relative"
+        in:fade={{ duration: 800, delay: 200 }}
+      >
         <div class="relative pointer-events-none">
           <div
             class="absolute inset-0 bg-gradient-to-r from-dgen-aqua/30 to-dgen-cyan/30 blur-3xl opacity-40"
@@ -102,6 +93,9 @@
           <span class="gradient-text font-roboto-condensed">
             THE FUTURE OF MONEY
           </span>
+          <p class="text-lg sm:text-xl md:text-2xl opacity-80 px-2">
+            How This Works, Built Different, Learn About Crypto.
+          </p>
         </div>
       </div>
 
@@ -155,16 +149,37 @@
         class="flex flex-wrap justify-center items-center gap-4 mb-8 sm:mb-12 max-w-4xl px-2"
         in:fly={{ y: 20, duration: 800, delay: 800 }}
       >
-        <div
-          class="px-5 sm:px-7 py-4 sm:py-5 flex items-center min-h-[3.5rem] flex flex-col"
-        >
-          <span
-            class="text-dgen-cyan font-bold text-base sm:text-xl whitespace-nowrap"
-            >💎 Create Account In Seconds</span
+        <div class="px-5 sm:px-7 py-4 sm:py-5 flex items-center min-h-[3.5rem]">
+          <span class="text-dgen-aqua font-bold text-base sm:text-xl"
+            >⚡ Instant Transactions</span
           >
+        </div>
+        <div class="px-5 sm:px-7 py-4 sm:py-5 flex items-center min-h-[3.5rem]">
           <span class="text-dgen-cyan font-bold text-base sm:text-xl"
-            >(Literally)</span
+            >💎 Create Account In Seconds (Literally)</span
           >
+        </div>
+        <div
+          class="px-5 sm:px-7 py-4 sm:py-5 text-center min-h-[3.5rem] flex items-center"
+        >
+          <div class="text-dgen-aqua font-bold text-base sm:text-xl">
+            🔒 Non-Custodial
+          </div>
+        </div>
+      </div>
+
+      <!-- Disclaimer -->
+      <div
+        class="text-center px-4 mb-16 sm:mb-20"
+        in:fly={{ y: 20, duration: 800, delay: 900 }}
+      >
+        <div
+          class="glass px-4 py-3 sm:px-6 rounded-full border border-white/60 bg-white/10 inline-block"
+        >
+          <p class="font-semibold text-sm sm:text-base text-white/90">
+            ⚠️ This website/app is in Beta and not finalized. Use at your own
+            risk.
+          </p>
         </div>
       </div>
     {/if}

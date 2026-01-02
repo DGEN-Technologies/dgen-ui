@@ -15,6 +15,6 @@ export async function load({ params, parent, url, fetch }) {
     user,
     address,
     asset,
-    rate: rates[user.currency] || 0,
+    rate: rates[user.currency] || 0
   };
 }

@@ -134,15 +134,16 @@
 
 <div class="container mx-auto w-full px-4 flex flex-wrap lg:flex-nowrap">
   <div
-    class="w-full lg:w-[280px] xl:w-[360px] lg:absolute space-y-2 lg:left-20 mx-auto sm:pb-8 lg:pb-0"
+    class="w-full lg:w-[280px] xl:w-[360px] lg:absolute space-y-2 lg:left-20 mx-auto pb-8 lg:pb-0"
   >
     <div class="space-y-1">
       <div
-        class="flex text-lg sm:text-3xl font-bold text-center mx-auto justify-center gap-1 items-center"
+        class="flex text-3xl font-bold text-center mx-auto justify-center gap-1 items-center"
       >
         <button class="flex gap-1 items-center" onclick={toggleDetails}>
           <div class="break-words">{display || username}</div>
-          <iconify-icon noobserver icon="ph:list-bold"></iconify-icon>
+          <iconify-icon noobserver icon="ph:list-bold" width="32"
+          ></iconify-icon>
         </button>
         <!-- <a href={`/${subject.pubkey}/notes`}> -->
         <!--   <iconify-icon noobserver icon="ph:note-bold" width="32"></iconify-icon> -->
@@ -168,6 +169,22 @@
               <span>Setting up your Lightning Address...</span>
             </div>
           {/if}
+        </div>
+
+        <!-- Visa Card Coming Soon -->
+        <div class="mt-3 flex justify-center">
+          <div
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-2 border-blue-500/30"
+          >
+            <iconify-icon
+              icon="ph:credit-card-bold"
+              class="text-blue-400"
+              width="20"
+            ></iconify-icon>
+            <button class="text-sm font-semibold text-blue-300"
+              >DGEN Mastercard is live</button
+            >
+          </div>
         </div>
       {/if}
     </div>

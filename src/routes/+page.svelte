@@ -3,10 +3,12 @@
   import LandingHero from "$comp/LandingHero.svelte";
   import FeatureShowcase from "$comp/FeatureShowcase.svelte";
   import HowDgenWorks from "$comp/HowDgenWorks.svelte";
+  import DegenTestimonials from "$comp/DegenTestimonials.svelte";
   import BitcoinEducation from "$comp/BitcoinEducation.svelte";
   import Partners from "$comp/Partners.svelte";
   // import BugBounty from "$comp/BugBounty.svelte";
   import Roadmap from "$comp/Roadmap.svelte";
+  import FAQ from "$comp/FAQ.svelte";
   import Footer from "$comp/Footer.svelte";
 
   import { locale, t } from "$lib/translations";
@@ -18,6 +20,8 @@
 
   let howItWorks = $state();
   let roadmap = $state();
+  let partners = $state();
+  let faq = $state();
   let about = $state();
 
   onMount(() => {
@@ -25,12 +29,14 @@
     setTimeout(() => {
       howItWorks = document.getElementById("howItWorks");
       roadmap = document.getElementById("roadmap");
+      partners = document.getElementById("partners");
+      faq = document.getElementById("faq");
       about = document.getElementById("about");
     }, 100);
   });
 </script>
 
-<LandingHeader {howItWorks} {roadmap} {about} {user} />
+<LandingHeader {howItWorks} {roadmap} {partners} {faq} {about} {user} />
 
 <div class="relative landing-page-content">
   <!-- Lightning Bolts (Pro Mode Only) - Landing Page -->
@@ -61,6 +67,12 @@
 
     <!-- Interactive Feature Showcase (Built Different) -->
     <FeatureShowcase />
+
+    <!-- Degen Testimonials -->
+    <DegenTestimonials />
+
+    <!-- Bitcoin Education Section -->
+    <BitcoinEducation />
   </div>
 
   <!-- Bug Bounty Program -->
@@ -76,13 +88,9 @@
     <Roadmap />
   </div>
 
-  <div class="turquoise-cloud-section">
-    <!-- Bitcoin Education Section -->
-    <BitcoinEducation />
-  </div>
-
   <!-- FAQ with smooth blend to solid black -->
   <div class="faq-dark-section">
+    <FAQ />
     <Footer />
   </div>
 </div>
