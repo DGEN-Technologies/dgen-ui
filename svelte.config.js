@@ -46,6 +46,11 @@ const config = {
           "https://api.simplesvg.com",
           "https://api.unisvg.com",
           "data:",
+          // NOTE: PUBLIC_WIDGET_API_BASE in .env must match this URL.
+          // If the chatbot backend URL changes, update BOTH:
+          // 1) .env(PUBLIC_WIDGET_API_BASE)
+          // 2) This connect-src entry
+          "https://widget2agent-657488364208.asia-southeast1.run.app",
         ],
         "frame-ancestors": ["none"],
         "base-uri": ["self"],
