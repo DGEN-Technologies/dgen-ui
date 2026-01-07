@@ -101,17 +101,11 @@ export const messages = (data) => ({
     const username = cookies.get("username");
 
     // Show green checkmark if on receive-related pages
-<<<<<<< HEAD
-    if (currentPath.includes('/receive') ||
-      currentPath.includes(`/${username}`) ||
-      currentPath.includes('/invoice')) {
-=======
     if (
       currentPath.includes("/receive") ||
       currentPath.includes(`/${username}`) ||
       currentPath.includes("/invoice")
     ) {
->>>>>>> 96e1f4a3ebcc888009a9f967449866410c7c6406
       await wait(() => !get(navigating));
       setTimeout(() => {
         goto("/payment-received");
@@ -153,17 +147,11 @@ export const messages = (data) => ({
     const username = cookies.get("username");
 
     // Show green checkmark if on receive-related pages
-<<<<<<< HEAD
-    if (currentPath.includes('/receive') ||
-      currentPath.includes(`/${username}`) ||
-      currentPath.includes('/invoice')) {
-=======
     if (
       currentPath.includes("/receive") ||
       currentPath.includes(`/${username}`) ||
       currentPath.includes("/invoice")
     ) {
->>>>>>> 96e1f4a3ebcc888009a9f967449866410c7c6406
       await wait(() => !get(navigating));
       setTimeout(() => {
         goto("/payment-received");
@@ -310,27 +298,18 @@ export async function connect(t) {
   };
 
   // Handle Netlify's environment variable masking (occurs in netlify serve and production)
-<<<<<<< HEAD
-  if (!wsUrl || wsUrl.includes('*')) {
-    log('Environment variable is masked or empty, fetching runtime config', wsUrl);
-=======
   if (!wsUrl || wsUrl.includes("*")) {
     log(
       "Environment variable is masked or empty, fetching runtime config",
       wsUrl,
     );
->>>>>>> 96e1f4a3ebcc888009a9f967449866410c7c6406
 
     // Fetch runtime config from server (this bypasses Netlify's masking)
     try {
       await loadRuntimeConfig();
       const config = get(runtimeConfig);
 
-<<<<<<< HEAD
-      if (config.PUBLIC_SOCKET && !config.PUBLIC_SOCKET.includes('*')) {
-=======
       if (config.PUBLIC_SOCKET && !config.PUBLIC_SOCKET.includes("*")) {
->>>>>>> 96e1f4a3ebcc888009a9f967449866410c7c6406
         wsUrl = config.PUBLIC_SOCKET;
         log("Using runtime config from server", wsUrl);
       }
@@ -342,29 +321,17 @@ export async function connect(t) {
     if (!wsUrl || wsUrl.includes("*")) {
       if (typeof window !== "undefined" && window.location) {
         // Try window-based configs (for backwards compatibility)
-<<<<<<< HEAD
-        const fallbackUrl = (window as any).__PUBLIC_SOCKET__ ||
-          (window as any).__ENV__?.PUBLIC_SOCKET ||
-          (window as any).__RUNTIME_CONFIG__?.PUBLIC_SOCKET;
-
-        if (fallbackUrl && !fallbackUrl.includes('*')) {
-=======
         const fallbackUrl =
           (window as any).__PUBLIC_SOCKET__ ||
           (window as any).__ENV__?.PUBLIC_SOCKET ||
           (window as any).__RUNTIME_CONFIG__?.PUBLIC_SOCKET;
 
         if (fallbackUrl && !fallbackUrl.includes("*")) {
->>>>>>> 96e1f4a3ebcc888009a9f967449866410c7c6406
           wsUrl = fallbackUrl;
           log("Using window fallback URL", wsUrl);
         } else {
           // Use localhost fallback for development
-<<<<<<< HEAD
-          wsUrl = 'ws://localhost:3119/ws';
-=======
           wsUrl = "ws://localhost:3119/ws";
->>>>>>> 96e1f4a3ebcc888009a9f967449866410c7c6406
 
           // Only warn in development
           if (import.meta.env.DEV) {
@@ -395,11 +362,7 @@ export async function connect(t) {
     );
   }
 
-<<<<<<< HEAD
-  log('Connecting to WebSocket', wsUrl);
-=======
   log("Connecting to WebSocket", wsUrl);
->>>>>>> 96e1f4a3ebcc888009a9f967449866410c7c6406
 
   try {
     socket = new WebSocket(wsUrl);

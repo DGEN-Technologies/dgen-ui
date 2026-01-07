@@ -69,11 +69,7 @@ const createWalletState = (mnemonicStore?: any, passwordStore?: any) => {
 
     // Initialize wallet store (SDK should already be connected by layout)
     async init(userPassword?: string, userId?: string): Promise<void> {
-<<<<<<< HEAD
-      update(state => ({ ...state, isConnecting: true, error: null }));
-=======
       update((state) => ({ ...state, isConnecting: true, error: null }));
->>>>>>> 96e1f4a3ebcc888009a9f967449866410c7c6406
 
       try {
         // SDK should already be initialized by layout, just get info
@@ -109,10 +105,6 @@ const createWalletState = (mnemonicStore?: any, passwordStore?: any) => {
 
         // Start event listening
         await startEventListening();
-<<<<<<< HEAD
-
-=======
->>>>>>> 96e1f4a3ebcc888009a9f967449866410c7c6406
       } catch (error) {
         const errorMessage =
           error instanceof Error
@@ -133,11 +125,7 @@ const createWalletState = (mnemonicStore?: any, passwordStore?: any) => {
       try {
         await walletService.lockWallet();
 
-<<<<<<< HEAD
-        update(state => ({
-=======
         update((state) => ({
->>>>>>> 96e1f4a3ebcc888009a9f967449866410c7c6406
           ...state,
           isUnlocked: false,
           info: null,
@@ -148,10 +136,6 @@ const createWalletState = (mnemonicStore?: any, passwordStore?: any) => {
         if (passwordStore) {
           passwordStore.set(undefined);
         }
-<<<<<<< HEAD
-
-=======
->>>>>>> 96e1f4a3ebcc888009a9f967449866410c7c6406
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : "Failed to lock wallet";
@@ -162,21 +146,13 @@ const createWalletState = (mnemonicStore?: any, passwordStore?: any) => {
 
     // Unlock wallet with password
     async unlock(userPassword: string): Promise<void> {
-<<<<<<< HEAD
-      update(state => ({ ...state, isConnecting: true, error: null }));
-=======
       update((state) => ({ ...state, isConnecting: true, error: null }));
->>>>>>> 96e1f4a3ebcc888009a9f967449866410c7c6406
 
       try {
         await walletService.unlockWallet(userPassword);
         const info = await walletService.getWalletInfo();
 
-<<<<<<< HEAD
-        update(state => ({
-=======
         update((state) => ({
->>>>>>> 96e1f4a3ebcc888009a9f967449866410c7c6406
           ...state,
           isUnlocked: true,
           isConnecting: false,
@@ -191,10 +167,6 @@ const createWalletState = (mnemonicStore?: any, passwordStore?: any) => {
 
         // Start event listening
         await startEventListening();
-<<<<<<< HEAD
-
-=======
->>>>>>> 96e1f4a3ebcc888009a9f967449866410c7c6406
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : "Failed to unlock wallet";
@@ -222,10 +194,6 @@ const createWalletState = (mnemonicStore?: any, passwordStore?: any) => {
 
         // Save to secure storage with password
         await walletService.saveMnemonic(mnemonicPhrase, userPassword, userId);
-<<<<<<< HEAD
-
-=======
->>>>>>> 96e1f4a3ebcc888009a9f967449866410c7c6406
       } catch (error) {
         // If storage fails, clear the mnemonic from main store
         if (mnemonicStore) {
