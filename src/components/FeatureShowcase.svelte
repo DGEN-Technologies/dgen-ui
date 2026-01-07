@@ -78,7 +78,7 @@
 </script>
 
 {#if mounted}
-  <section class="relative py-32">
+  <section class="relative py-8 sm:py-32">
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
       <div class="text-center mb-12 sm:mb-16" in:fly={{ y: 30, duration: 800 }}>
         <h2

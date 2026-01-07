@@ -17,7 +17,7 @@
 </script>
 
 {#if mounted}
-  <section class="relative pb-32 pt-0">
+  <section class="relative pb-20 sm:pb-32 pt-0">
     <div class="container mx-auto px-4 relative z-10">
       <!-- Tech Specs -->
       <div
@@ -43,9 +43,7 @@
         class="text-center mt-16"
         in:fly={{ y: 30, duration: 800, delay: 600 }}
       >
-        <p class="text-xl opacity-80 mb-6">
-          Ready to experience the future of finance?
-        </p>
+        <p class="text-xl opacity-80 mb-6">Ready to experience DGEN app?</p>
         <a href="/register" class="inline-block">
           <button
             class="btn btn-liquid text-white font-bold text-xl px-12 py-4"

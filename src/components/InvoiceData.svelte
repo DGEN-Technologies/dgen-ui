@@ -33,15 +33,64 @@
   }
 </script>
 
+{#if invoice.type === types.bitcoin && txt && onchainLimits}
+  <!-- Bitcoin On-Chain Limits Warning -->
+  <div class="mx-auto max-w-md mt-4 mb-4">
+    <div class="rounded-2xl p-4 bg-yellow-500/10 border-2 border-yellow-500/30">
+      <div class="text-center">
+        <iconify-icon
+          noobserver
+          icon="ph:warning-bold"
+          width="24"
+          class="text-yellow-400 mb-2"
+        ></iconify-icon>
+        <p class="text-yellow-200 font-semibold leading-relaxed text-xl">
+          {#if onchainLimits.receive?.minSat && onchainLimits.receive?.maxSat}
+            Min: <span class="font-bold text-yellow-100 text-lg sm:text-4xl"
+              >{sat(Math.max(28000, onchainLimits.receive.minSat))} sats</span
+            >
+            <br />
+            Max:
+            <span class="font-bold text-yellow-100 text-lg sm:text-4xl"
+              >{sat(onchainLimits.receive.maxSat)} sats</span
+            >
+          {:else if onchainLimits.receive?.minSat}
+            Minimum: <span class="font-bold text-yellow-100 text-lg sm:text-4xl"
+              >{sat(Math.max(28000, onchainLimits.receive.minSat))} sats</span
+            >
+          {:else if onchainLimits.receive?.maxSat}
+            Maximum: <span class="font-bold text-yellow-100 text-lg sm:text-4xl"
+              >{sat(onchainLimits.receive.maxSat)} sats</span
+            >
+          {:else}
+            Bitcoin on-chain payments require network fees
+          {/if}
+        </p>
+        <p class="text-yellow-300/70 text-sm mt-2">
+          Amounts outside this range will not work
+        </p>
+      </div>
+    </div>
+  </div>
+{/if}
+
 <div
-  class="max-w-[360px] mx-auto min-h-[360px] flex items-center justify-center"
+  class="max-w-[360px] mx-auto sm:min-h-[360px] flex items-center justify-center"
 >
   {#if lastError && !updating}
     <!-- Show error with retry button -->
     <div class="text-center space-y-4 p-4">
-      <div class="glass p-4 rounded-2xl border-2 border-red-500/50 bg-red-500/10">
-        <iconify-icon icon="ph:warning-circle" class="text-red-400 mb-2" width="48"></iconify-icon>
-        <p class="text-red-400 font-semibold mb-2">Failed to Generate Address</p>
+      <div
+        class="glass p-4 rounded-2xl border-2 border-red-500/50 bg-red-500/10"
+      >
+        <iconify-icon
+          icon="ph:warning-circle"
+          class="text-red-400 mb-2"
+          width="48"
+        ></iconify-icon>
+        <p class="text-red-400 font-semibold mb-2">
+          Failed to Generate Address
+        </p>
         <p class="text-white/70 text-sm">{lastError}</p>
       </div>
       {#if update}
@@ -50,9 +99,15 @@
           class="px-6 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center gap-2"
           style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white;"
         >
-          <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-               style="background: linear-gradient(135deg, #059669 0%, #10B981 100%);"></div>
-          <iconify-icon icon="ph:arrow-clockwise-bold" width="20" class="relative z-10"></iconify-icon>
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+            style="background: linear-gradient(135deg, #059669 0%, #10B981 100%);"
+          ></div>
+          <iconify-icon
+            icon="ph:arrow-clockwise-bold"
+            width="20"
+            class="relative z-10"
+          ></iconify-icon>
           <span class="relative z-10">Try Again</span>
         </button>
       {/if}
@@ -135,40 +190,8 @@
   {/if}
 </div>
 
-{#if invoice.type === types.bitcoin && txt && onchainLimits}
-  <!-- Bitcoin On-Chain Limits Warning -->
-  <div class="mx-auto max-w-md mt-4 mb-4">
-    <div class="rounded-2xl p-4 bg-yellow-500/10 border-2 border-yellow-500/30">
-      <div class="text-center">
-        <iconify-icon
-          noobserver
-          icon="ph:warning-bold"
-          width="24"
-          class="text-yellow-400 mb-2"
-        ></iconify-icon>
-        <p class="text-yellow-200 font-semibold leading-relaxed text-xl">
-          {#if onchainLimits.receive?.minSat && onchainLimits.receive?.maxSat}
-            Min: <span class="font-bold text-yellow-100 text-4xl">{sat(Math.max(28000, onchainLimits.receive.minSat))} sats</span>
-            <br />
-            Max: <span class="font-bold text-yellow-100 text-4xl">{sat(onchainLimits.receive.maxSat)} sats</span>
-          {:else if onchainLimits.receive?.minSat}
-            Minimum: <span class="font-bold text-yellow-100 text-4xl">{sat(Math.max(28000, onchainLimits.receive.minSat))} sats</span>
-          {:else if onchainLimits.receive?.maxSat}
-            Maximum: <span class="font-bold text-yellow-100 text-4xl">{sat(onchainLimits.receive.maxSat)} sats</span>
-          {:else}
-            Bitcoin on-chain payments require network fees
-          {/if}
-        </p>
-        <p class="text-yellow-300/70 text-sm mt-2">
-          Amounts outside this range will not work
-        </p>
-      </div>
-    </div>
-  </div>
-{/if}
-
 {#if invoice.type === types.liquid}
-  {#if invoice.selectedAsset === 'usdt'}
+  {#if invoice.selectedAsset === "usdt"}
     <div class="p-4 shadow text-center">
       <iconify-icon
         noobserver
@@ -177,9 +200,13 @@
         class="text-warning mb-2"
       ></iconify-icon>
       <div class="text-xl text-secondary">
-        Only send <span class="text-green-500 font-bold">Tether (USDT)</span> to this address
+        Only send <span class="text-green-500 font-bold">Tether (USDT)</span> to
+        this address
         <br />
-        <span class="text-sm">If you want to receive L-BTC, select the L-BTC option on the previous screen</span>
+        <span class="text-sm"
+          >If you want to receive L-BTC, select the L-BTC option on the previous
+          screen</span
+        >
       </div>
     </div>
   {:else}
@@ -191,9 +218,13 @@
         class="text-warning mb-2"
       ></iconify-icon>
       <div class="text-xl text-secondary">
-        Only send <span class="text-teal-500 font-bold">L-BTC</span>, NOT Tether (USDT) to this address
+        Only send <span class="text-teal-500 font-bold">L-BTC</span>, NOT Tether
+        (USDT) to this address
         <br />
-        <span class="text-sm">If you want to send Tether (USDT) to this wallet, select the Tether option on the previous screen</span>
+        <span class="text-sm"
+          >If you want to send Tether (USDT) to this wallet, select the Tether
+          option on the previous screen</span
+        >
       </div>
     </div>
   {/if}
@@ -222,7 +253,7 @@
       {f(i.price * i.quantity, currency)}
     </div>
     <div class="col-span-2 text-secondary text-right text-lg my-auto">
-      {#if $unitPreference === 'btc'}
+      {#if $unitPreference === "btc"}
         {btc(i.price * i.quantity)} BTC
       {:else}
         {sat(i.price * i.quantity)} sats
@@ -232,7 +263,15 @@
 {/each}
 
 {#if amount > 0}
-  <Amount {amount} {currency} {rate} {locale} {tip} selectedAsset={invoice.selectedAsset} invoiceType={invoice.type} />
+  <Amount
+    {amount}
+    {currency}
+    {rate}
+    {locale}
+    {tip}
+    selectedAsset={invoice.selectedAsset}
+    invoiceType={invoice.type}
+  />
 {/if}
 
 {#if memo}

@@ -15,8 +15,7 @@
         </span>
       </h2>
       <p class="text-lg sm:text-xl md:text-2xl opacity-80 max-w-2xl mx-auto">
-        Building DGEN together with leading infrastructure and security
-        partners.
+        WHO WE WORK WITH
       </p>
     </div>
 
@@ -26,26 +25,31 @@
     >
       <!-- Breez -->
       <div
-        class="premium-card border-2 border-white/10 hover:border-dgen-cyan/50 transition-all duration-300 flex items-center gap-4 sm:gap-6"
+        class="premium-card group flex items-center gap-5 sm:gap-6
+         border-2 border-white/10 bg-white/5
+         rounded-2xl p-6
+         transition-all duration-300
+         hover:border-dgen-cyan/50 hover:bg-white/10"
       >
+        <!-- Logo -->
         <div
-          class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center"
+          class="w-16 h-16 sm:w-20 sm:h-20
+           rounded-2xl
+           bg-black/30
+           border border-white/20
+           flex items-center justify-center"
         >
-          <!-- Breez logo is loaded from their site; replace with local asset if provided -->
           <img
-            src="/Breez_logo.jpg"
+            src="/Breez_logo.jpeg"
             alt="Breez"
-            class="max-w-[70%] max-h-[70%] object-contain"
+            class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl"
           />
         </div>
+
+        <!-- Content -->
         <div class="flex-1">
-          <div
-            class="text-sm uppercase tracking-[0.2em] text-white/60 mb-1 heading-condensed"
-          >
-            Partner
-          </div>
-          <h3 class="text-2xl font-bold text-white mb-1">Breez</h3>
-          <p class="text-sm text-white/70">
+          <h3 class="text-xl sm:text-2xl font-bold text-white mb-1">Breez</h3>
+          <p class="text-sm sm:text-base text-white/70 leading-relaxed">
             Non-custodial Lightning infrastructure powering instant crypto
             payments.
           </p>
@@ -54,32 +58,36 @@
 
       <!-- PrivKey -->
       <div
-        class="premium-card border-2 border-white/10 hover:border-dgen-aqua/60 transition-all duration-300 flex items-center gap-4 sm:gap-6 bg-white/5"
+        class="premium-card group flex items-center gap-5 sm:gap-6
+         border-2 border-white/10 bg-white/5
+         rounded-2xl p-6
+         transition-all duration-300
+         hover:border-dgen-aqua/60 hover:bg-white/10"
       >
+        <!-- Logo -->
         <div
-          class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl border border-white/40 flex items-center justify-center"
+          class="w-16 h-16 sm:w-20 sm:h-20
+           rounded-2xl
+           bg-black/30
+           border border-white/20
+           flex items-center justify-center"
         >
-          <div
-            class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center"
-          >
-            <img
-              src="/PrivKey_logo.png"
-              alt="PrivKey_logo.png"
-              class="max-w-[70%] max-h-[70%] object-contain"
-            />
-          </div>
+          <img
+            src="/PrivKey_logo.png"
+            alt="PrivKey"
+            class="max-w-[70%] max-h-[70%] object-contain"
+          />
         </div>
+
+        <!-- Content -->
         <div class="flex-1">
-          <div
-            class="text-sm uppercase tracking-[0.2em] text-white/70 mb-1 heading-condensed"
+          <h3
+            class="text-xl sm:text-2xl font-bold text-white mb-1 heading-condensed"
           >
-            Security Partner
-          </div>
-          <h3 class="text-2xl font-bold text-white mb-1 heading-condensed">
             PrivKey
           </h3>
-          <p class="text-sm text-white/80">
-            White-label key security & recovery partner.
+          <p class="text-sm sm:text-base text-white/80 leading-relaxed">
+            Expert Full-Stack Developers
           </p>
         </div>
       </div>
