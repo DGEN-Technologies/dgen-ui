@@ -18,7 +18,9 @@ export async function load({ cookies, params, parent, url, fetch }) {
   if (amount) {
     if (currency) amount = (amount * sats) / rate;
 
-    const { id } = await p("/invoice", {
+    const { id } = await p(
+      "/invoice",
+      {
         invoice: {
           amount,
           currency: currency === subject.currency ? currency : undefined,
@@ -45,7 +47,9 @@ export const actions = {
     const { amount, rate, prompt, type, username } = body;
 
     try {
-      ({ id } = await p("/invoice", {
+      ({ id } = await p(
+        "/invoice",
+        {
           invoice: {
             amount,
             rate,

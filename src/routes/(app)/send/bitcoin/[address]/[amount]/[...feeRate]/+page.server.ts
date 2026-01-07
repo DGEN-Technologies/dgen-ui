@@ -4,6 +4,6 @@ export async function load({ params }) {
   return {
     address: params.address,
     amount: parseInt(params.amount),
-    feeRate: params.feeRate ? parseInt(params.feeRate) : undefined
+    feeRate: params.feeRate ? parseInt(params.feeRate) : undefined,
   };
 }

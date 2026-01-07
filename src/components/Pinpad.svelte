@@ -78,15 +78,23 @@
   >
 </label>
 
-<div class="grid grid-cols-3 gap-2 sm:gap-3 w-full max-w-[280px] sm:max-w-[300px] mx-auto grayscale">
+<div
+  class="grid grid-cols-3 gap-2 sm:gap-3 w-full max-w-[280px] sm:max-w-[300px] mx-auto grayscale"
+>
   {#each numPad as value}
     {#if value === arrow}
-      <button type="button" class="btn min-h-[3rem] sm:min-h-[3.5rem]" onclick={(e) => handleInput(e, value)}>
+      <button
+        type="button"
+        class="btn min-h-[3rem] sm:min-h-[3.5rem]"
+        onclick={(e) => handleInput(e, value)}
+      >
         <Left />
       </button>
     {:else}
-      <button type="button" class="btn min-h-[3rem] sm:min-h-[3.5rem]" onclick={(e) => handleInput(e, value)}
-        >{value}</button
+      <button
+        type="button"
+        class="btn min-h-[3rem] sm:min-h-[3.5rem]"
+        onclick={(e) => handleInput(e, value)}>{value}</button
       >
     {/if}
   {/each}

@@ -23,7 +23,8 @@
     const subscription = relay.subscribe([{ kinds: [1], limit: 20 }], {
       async onevent(event) {
         if (paused) return;
-        const parts = []; const names = [];
+        const parts = [];
+        const names = [];
         event.author = await get(`/users/${event.pubkey}`);
         event.parts = parts;
         event.names = names;

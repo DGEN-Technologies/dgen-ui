@@ -46,7 +46,9 @@ export async function load({ params, parent, fetch }) {
     let path = `/send/lightning/${pr}`;
     if (comment) path += `/${encodeURIComponent(comment)}`;
     redirect(307, path);
-  } else if (callback.includes(env.PUBLIC_DOMAIN || process.env.PUBLIC_DOMAIN)) {
+  } else if (
+    callback.includes(env.PUBLIC_DOMAIN || process.env.PUBLIC_DOMAIN)
+  ) {
     const domain = env.PUBLIC_DOMAIN || process.env.PUBLIC_DOMAIN;
     const username = url.split(`https://${domain}/p/`)[1];
     redirect(307, `/pay/${username}`);
@@ -109,7 +111,11 @@ export const actions = {
     const invoice = { amount, type: "lightning" };
     const user = { username, currency };
 
-    const { text: pr } = await p("/invoice", { invoice, user }, fetch, auth(cookies),
+    const { text: pr } = await p(
+      "/invoice",
+      { invoice, user },
+      fetch,
+      auth(cookies),
     );
 
     const url = new URL(callback);

@@ -1,8 +1,8 @@
-import { openDB, type IDBPDatabase } from 'idb';
+import { openDB, type IDBPDatabase } from "idb";
 
-const DB_NAME = 'dgen-logs';
+const DB_NAME = "dgen-logs";
 const DB_VERSION = 1;
-const STORE_NAME = 'logs';
+const STORE_NAME = "logs";
 
 const MAX_LOGS = 5000;
 const CLEANUP_INTERVAL = 100;
@@ -30,9 +30,9 @@ async function getDB(): Promise<IDBPDatabase> {
         }
         // Future migrations: if (oldVersion < 2) { ... }
       },
-    }).catch(err => {
+    }).catch((err) => {
       dbPromise = null;
-      console.error('[logStorage] Failed to open database:', err);
+      console.error("[logStorage] Failed to open database:", err);
       throw err;
     });
   }
@@ -40,7 +40,7 @@ async function getDB(): Promise<IDBPDatabase> {
 }
 
 function isBrowser(): boolean {
-  return typeof window !== 'undefined' && typeof indexedDB !== 'undefined';
+  return typeof window !== "undefined" && typeof indexedDB !== "undefined";
 }
 
 async function flushPendingLines(): Promise<void> {
@@ -55,7 +55,7 @@ async function flushPendingLines(): Promise<void> {
 
   try {
     const db = await getDB();
-    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const tx = db.transaction(STORE_NAME, "readwrite");
     const store = tx.store;
 
     for (const line of batch) {
@@ -68,11 +68,11 @@ async function flushPendingLines(): Promise<void> {
     if (writesSinceCleanup >= CLEANUP_INTERVAL) {
       writesSinceCleanup = 0;
       void enforceRetention().catch((err) => {
-        console.warn('[logStorage] Failed to enforce retention:', err);
+        console.warn("[logStorage] Failed to enforce retention:", err);
       });
     }
   } catch (err) {
-    console.error('[logStorage] Failed to flush logs batch:', err);
+    console.error("[logStorage] Failed to flush logs batch:", err);
     pendingLines = [...batch, ...pendingLines];
   } finally {
     isFlushing = false;
@@ -90,11 +90,10 @@ async function flushPendingLines(): Promise<void> {
 // This flush is therefore opportunistic only — the batching logic (size + timer)
 // is what provides durability during normal operation.
 if (isBrowser()) {
-  window.addEventListener('beforeunload', () => {
+  window.addEventListener("beforeunload", () => {
     void flushPendingLines();
   });
 }
-
 
 export async function appendLog(line: string): Promise<void> {
   if (!isBrowser()) return;
@@ -118,7 +117,6 @@ export async function appendLog(line: string): Promise<void> {
   }
 }
 
-
 async function enforceRetention(): Promise<void> {
   if (!isBrowser()) return;
 
@@ -129,7 +127,7 @@ async function enforceRetention(): Promise<void> {
     if (count <= MAX_LOGS + CLEANUP_BUFFER) return;
 
     const toDelete = count - MAX_LOGS;
-    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const tx = db.transaction(STORE_NAME, "readwrite");
 
     let deleted = 0;
     let cursor = await tx.store.openCursor();
@@ -141,9 +139,8 @@ async function enforceRetention(): Promise<void> {
     }
 
     await tx.done;
-
   } catch (err) {
-    console.warn('[logStorage] Retention cleanup failed:', err);
+    console.warn("[logStorage] Retention cleanup failed:", err);
   }
 }
 
@@ -154,7 +151,7 @@ export async function getLogs(): Promise<string[]> {
     const db = await getDB();
     return db.getAll(STORE_NAME);
   } catch (err) {
-    console.error('[logStorage] Failed to get logs:', err);
+    console.error("[logStorage] Failed to get logs:", err);
     return [];
   }
 }
@@ -164,11 +161,11 @@ export async function clearLogs(): Promise<void> {
 
   try {
     const db = await getDB();
-    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const tx = db.transaction(STORE_NAME, "readwrite");
     await tx.store.clear();
     await tx.done;
   } catch (err) {
-    console.error('[logStorage] Failed to clear logs:', err);
+    console.error("[logStorage] Failed to clear logs:", err);
     throw err;
   }
 }
@@ -178,7 +175,7 @@ export async function buildLogsBlob(): Promise<Blob | null> {
 
   try {
     const db = await getDB();
-    const tx = db.transaction(STORE_NAME, 'readonly');
+    const tx = db.transaction(STORE_NAME, "readonly");
     const store = tx.store;
 
     const parts: string[] = [];
@@ -187,7 +184,7 @@ export async function buildLogsBlob(): Promise<Blob | null> {
 
     while (cursor) {
       hasLogs = true;
-      parts.push(cursor.value as string, '\n');
+      parts.push(cursor.value as string, "\n");
       cursor = await cursor.continue();
     }
 
@@ -197,9 +194,9 @@ export async function buildLogsBlob(): Promise<Blob | null> {
       return null;
     }
 
-    return new Blob(parts, { type: 'text/plain' });
+    return new Blob(parts, { type: "text/plain" });
   } catch (err) {
-    console.error('[logStorage] Failed to build logs blob:', err);
+    console.error("[logStorage] Failed to build logs blob:", err);
     throw err;
   }
 }

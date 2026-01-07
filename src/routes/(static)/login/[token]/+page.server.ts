@@ -4,12 +4,12 @@ export const load = async ({ cookies, params }) => {
   const { token } = params;
 
   // Validate token format before setting cookie
-  if (!token || typeof token !== 'string') {
-    throw error(400, 'Invalid token');
+  if (!token || typeof token !== "string") {
+    throw error(400, "Invalid token");
   }
 
   if (!/^[a-zA-Z0-9\-_]{20,500}$/.test(token)) {
-    throw error(400, 'Invalid token format');
+    throw error(400, "Invalid token format");
   }
 
   const maxAge = 380 * 24 * 60 * 60;

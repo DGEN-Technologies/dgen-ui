@@ -29,7 +29,11 @@
   >
     <div class="flex gap-2 mx-auto justify-center">
       <!-- <img src="/images/bitcoin.png" class="w-16 h-16 my-auto" /> -->
-      <img src="/images/bitcoin-logo.png" alt="Bitcoin Logo" class="my-auto w-[400px]" />
+      <img
+        src="/images/bitcoin-logo.png"
+        alt="Bitcoin Logo"
+        class="my-auto w-[400px]"
+      />
       <!-- <h3 class="text-5xl font-bold text-center my-auto"> -->
       <!--   bitcoin -->
       <!-- </h3> -->

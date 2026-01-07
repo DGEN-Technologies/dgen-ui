@@ -90,6 +90,9 @@
           <span class="gradient-text font-roboto-condensed">
             THE FUTURE OF MONEY
           </span>
+          <p class="text-lg sm:text-xl md:text-2xl opacity-80 px-2">
+            How This Works, Built Different, Learn About Crypto.
+          </p>
         </div>
       </div>
 

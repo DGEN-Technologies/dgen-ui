@@ -13,6 +13,6 @@ export async function load({ params, parent, fetch }) {
     payreq: params.payreq,
     memo: params.memo,
     rate,
-    currency: user?.currency || "USD"
+    currency: user?.currency || "USD",
   };
 }

@@ -114,5 +114,4 @@
   strong {
     color: #fef08a;
   }
-
 </style>

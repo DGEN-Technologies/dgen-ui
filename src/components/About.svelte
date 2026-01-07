@@ -5,7 +5,9 @@
   let locations = $state();
   onMount(async () => {
     try {
-      ({ locations } = await fetch("/api/backend/locations").then((r) => r.json()));
+      ({ locations } = await fetch("/api/backend/locations").then((r) =>
+        r.json(),
+      ));
     } catch (e) {
       console.log(e);
     }

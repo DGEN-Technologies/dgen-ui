@@ -12,23 +12,25 @@
 
   onMount(() => {
     const handleClick = () => {
-      goto(`/${user?.username || ''}`);
+      goto(`/${user?.username || ""}`);
     };
 
     const timer = setTimeout(() => {
-      goto(`/${user?.username || ''}`);
+      goto(`/${user?.username || ""}`);
     }, 5000);
 
-    document.addEventListener('click', handleClick);
+    document.addEventListener("click", handleClick);
 
     return () => {
       clearTimeout(timer);
-      document.removeEventListener('click', handleClick);
+      document.removeEventListener("click", handleClick);
     };
   });
 </script>
 
-<div class="container px-4 text-center mx-auto min-h-screen flex flex-col items-center justify-center">
+<div
+  class="container px-4 text-center mx-auto min-h-screen flex flex-col items-center justify-center"
+>
   <Success
     amount={amount - (tip || 0)}
     {rate}

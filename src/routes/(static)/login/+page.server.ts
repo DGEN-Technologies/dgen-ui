@@ -4,7 +4,7 @@ import { fail, redirect } from "@sveltejs/kit";
 export const load = async ({ parent, fetch, url }) => {
   const { user } = await parent();
   if (user?.pubkey) redirect(307, `/${user.username}`);
-  
+
   let challenge;
   try {
     // Use full URL for server-side fetch
@@ -15,7 +15,7 @@ export const load = async ({ parent, fetch, url }) => {
     console.error("Challenge fetch error:", e);
     challenge = Math.random().toString(36).substring(2, 15);
   }
-  
+
   return { challenge };
 };
 
@@ -28,16 +28,22 @@ export const actions = {
     if (loginRedirect === "undefined") loginRedirect = undefined;
 
     try {
-      await login(user, cookies, request.headers.get("cf-connecting-ip"), fetch);
+      await login(
+        user,
+        cookies,
+        request.headers.get("cf-connecting-ip"),
+        fetch,
+      );
     } catch (e) {
       const { message } = e as Error;
       return fail(400, { error: "Login failed", message, ...form });
     }
 
     // Validate redirect to prevent open redirect attacks
-    const isValidRedirect = loginRedirect &&
-                           /^\/[^/\\].*$/.test(loginRedirect) && // Starts with / but not // or /\
-                           !loginRedirect.match(/^[a-z][a-z0-9+.-]*:/i); // No URL scheme
+    const isValidRedirect =
+      loginRedirect &&
+      /^\/[^/\\].*$/.test(loginRedirect) && // Starts with / but not // or /\
+      !loginRedirect.match(/^[a-z][a-z0-9+.-]*:/i); // No URL scheme
     redirect(307, isValidRedirect ? loginRedirect : `/${user.username}`);
   },
 
@@ -85,9 +91,10 @@ export const actions = {
     cookies.set("token", token, opts);
 
     // Validate redirect to prevent open redirect attacks
-    const isValidNostrRedirect = loginRedirect &&
-                                /^\/[^/\\].*$/.test(loginRedirect) && // Starts with / but not // or /\
-                                !loginRedirect.match(/^[a-z][a-z0-9+.-]*:/i); // No URL scheme
+    const isValidNostrRedirect =
+      loginRedirect &&
+      /^\/[^/\\].*$/.test(loginRedirect) && // Starts with / but not // or /\
+      !loginRedirect.match(/^[a-z][a-z0-9+.-]*:/i); // No URL scheme
     redirect(307, isValidNostrRedirect ? loginRedirect : `/${username}`);
   },
 };

@@ -11,14 +11,30 @@
     rate,
     currency,
     locked = false,
-    selectedAsset = 'lbtc',
+    selectedAsset = "lbtc",
     invoiceType,
     showAllUnits = false, // When true, show BTC + sats + fiat all at once (for success screens)
   } = $props();
 
-  const isUSDT = $derived(invoiceType === types.liquid && selectedAsset === 'usdt');
-  const icon = $derived(locked ? "ph:lock-fill" : isUSDT ? "cryptocurrency:usdt" : $unitPreference === 'btc' ? "cryptocurrency:btc" : "ph:lightning-fill");
-  const iconColor = $derived(isUSDT ? "text-green-400" : $unitPreference === 'btc' ? "text-orange-400" : "text-yellow-300");
+  const isUSDT = $derived(
+    invoiceType === types.liquid && selectedAsset === "usdt",
+  );
+  const icon = $derived(
+    locked
+      ? "ph:lock-fill"
+      : isUSDT
+        ? "cryptocurrency:usdt"
+        : $unitPreference === "btc"
+          ? "cryptocurrency:btc"
+          : "ph:lightning-fill",
+  );
+  const iconColor = $derived(
+    isUSDT
+      ? "text-green-400"
+      : $unitPreference === "btc"
+        ? "text-orange-400"
+        : "text-yellow-300",
+  );
 
   // Convert satoshis/smallest units to fiat value
   const toFiat = (sats, exchangeRate) => {
@@ -34,11 +50,11 @@
   const displayAmount = $derived(() => {
     if (isUSDT) {
       // For USDT, show USDT amount (not satoshis)
-      return (amount / 100000000).toFixed(2) + ' USDT';
+      return (amount / 100000000).toFixed(2) + " USDT";
     }
     // Show BTC or sats based on user preference
-    if ($unitPreference === 'btc') {
-      return btc(amount) + ' BTC';
+    if ($unitPreference === "btc") {
+      return btc(amount) + " BTC";
     }
     return s(amount, locale); // Show satoshis
   });
@@ -59,7 +75,11 @@
           tabindex="0"
           aria-label="Copy BTC amount"
         >
-          <iconify-icon noobserver icon="cryptocurrency:btc" class="text-orange-400"></iconify-icon>
+          <iconify-icon
+            noobserver
+            icon="cryptocurrency:btc"
+            class="text-orange-400"
+          ></iconify-icon>
           <span>{btc(amount)} BTC</span>
           {#if tip}
             <span class="text-lg ml-2">+{btc(tip)} BTC</span>
@@ -76,7 +96,11 @@
           tabindex="0"
           aria-label="Copy sats amount"
         >
-          <iconify-icon noobserver icon="ph:lightning-fill" class="text-yellow-300"></iconify-icon>
+          <iconify-icon
+            noobserver
+            icon="ph:lightning-fill"
+            class="text-yellow-300"
+          ></iconify-icon>
           <span>{s(amount, locale)}</span>
           {#if tip}
             <span class="text-base ml-2">+{s(tip, locale)}</span>
@@ -88,14 +112,17 @@
           class="text-lg md:text-xl flex items-center gap-1 cursor-copy text-secondary"
           class:justify-center={align !== "left"}
           onclick={() => copy(toFiat(amount, rate).toFixed(2))}
-          onkeydown={(e) => e.key === "Enter" && copy(toFiat(amount, rate).toFixed(2))}
+          onkeydown={(e) =>
+            e.key === "Enter" && copy(toFiat(amount, rate).toFixed(2))}
           role="button"
           tabindex="0"
           aria-label="Copy fiat amount"
         >
           <span>{f(toFiat(amount, rate), currency, locale)}</span>
           {#if tip}
-            <span class="text-base ml-2">+{f(toFiat(tip, rate), currency, locale)}</span>
+            <span class="text-base ml-2"
+              >+{f(toFiat(tip, rate), currency, locale)}</span
+            >
           {/if}
         </div>
       </div>
@@ -107,8 +134,11 @@
       >
         <div
           class="flex items-center gap-1"
-          onclick={() => copy(isUSDT ? (amount / 100000000).toFixed(2) : amount)}
-          onkeydown={(e) => e.key === "Enter" && copy(isUSDT ? (amount / 100000000).toFixed(2) : amount)}
+          onclick={() =>
+            copy(isUSDT ? (amount / 100000000).toFixed(2) : amount)}
+          onkeydown={(e) =>
+            e.key === "Enter" &&
+            copy(isUSDT ? (amount / 100000000).toFixed(2) : amount)}
           role="button"
           tabindex="0"
           aria-label="Copy amount"
@@ -120,9 +150,14 @@
         {#if tip}
           <div class="flex items-center text-lg ml-2">
             <div>+</div>
-            <iconify-icon noobserver {icon} class={iconColor}
-            ></iconify-icon>
-            <div>{isUSDT ? (tip / 100000000).toFixed(2) + ' USDT' : ($unitPreference === 'btc' ? btc(tip) + ' BTC' : s(tip, locale))}</div>
+            <iconify-icon noobserver {icon} class={iconColor}></iconify-icon>
+            <div>
+              {isUSDT
+                ? (tip / 100000000).toFixed(2) + " USDT"
+                : $unitPreference === "btc"
+                  ? btc(tip) + " BTC"
+                  : s(tip, locale)}
+            </div>
           </div>
         {/if}
       </h2>
