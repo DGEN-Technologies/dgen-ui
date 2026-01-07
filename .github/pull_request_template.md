@@ -8,6 +8,7 @@
 
 ### Changes to Sensitive Code
 
+- [ ] This PR modifies `svelte.config.js` (CSP/security headers)
 - [ ] This PR modifies `src/lib/secureStorage.ts`
 - [ ] This PR modifies `src/lib/walletService.ts`
 - [ ] This PR modifies seed phrase display components
