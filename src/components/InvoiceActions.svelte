@@ -58,11 +58,6 @@
         {t("payments.copy")}
       </div>
     </button>
-
-    <!-- <button class="btn grow !w-auto" onclick={() => goto("/scan")}>
-      <iconify-icon noobserver icon="ph:camera-bold" width="32"></iconify-icon>
-      <div class="my-auto text-lg">{t("user.send.scan")}</div>
-    </button> -->
   </div>
 
   {#if txt.length > 120}
