@@ -183,7 +183,7 @@
             ></iconify-icon>
             <a
               class="text-sm font-semibold text-blue-300"
-              href="http://card.dgentech.io"
+              href="https://card.dgentech.io"
               target="_blank">DGEN Mastercard is live</a
             >
           </div>
