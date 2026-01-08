@@ -503,7 +503,17 @@
         </div>
       </button>
     </div>
-
+    <div
+      class="flex flex-row justify-center gap-2 w-full text-2xl text-secondary break-all text-yellow-500"
+    >
+      <iconify-icon
+        noobserver
+        icon="ph:lightning-fill"
+        class="text-yellow-300 my-auto"
+        width="16"
+      ></iconify-icon>
+      <span>28,000 sats minimum</span>
+    </div>
     <!-- Clear button (full width) -->
     <button
       type="button"
