@@ -23,7 +23,7 @@
   } = $props();
 
   let loaded = $state(false);
-  let minAmmount = $state(28000);
+  let minAmount = $state(28000);
   let { memo } = $derived(invoice);
   let load = () => (loaded = true);
 
@@ -48,7 +48,7 @@
         <p class="text-yellow-200 font-semibold leading-relaxed text-xl">
           {#if onchainLimits.receive?.minSat && onchainLimits.receive?.maxSat}
             Min: <span class="font-bold text-yellow-100 text-lg sm:text-4xl"
-              >{sat(Math.max(minAmmount, onchainLimits.receive.minSat))} sats</span
+              >{sat(Math.max(minAmount, onchainLimits.receive.minSat))} sats</span
             >
             <br />
             Max:
@@ -57,7 +57,7 @@
             >
           {:else if onchainLimits.receive?.minSat}
             Minimum: <span class="font-bold text-yellow-100 text-lg sm:text-4xl"
-              >{sat(Math.max(minAmmount, onchainLimits.receive.minSat))} sats</span
+              >{sat(Math.max(minAmount, onchainLimits.receive.minSat))} sats</span
             >
           {:else if onchainLimits.receive?.maxSat}
             Maximum: <span class="font-bold text-yellow-100 text-lg sm:text-4xl"

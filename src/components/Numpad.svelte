@@ -25,7 +25,7 @@
   let symbol = $state("");
   let position = $state("before");
   let isUserInput = $state(false); // Flag to prevent effect from overwriting user input
-  let minAmmount = $state(28000);
+  let minAmount = $state(28000);
 
   // Get currency formatting info
   function getCurrencyInfo(locale = "en-US", currency) {
@@ -513,7 +513,7 @@
         class="text-yellow-300 my-auto"
         width="16"
       ></iconify-icon>
-      <span>{minAmmount} sats minimum</span>
+      <span>{minAmount} sats minimum</span>
     </div>
     <!-- Clear button (full width) -->
     <button
