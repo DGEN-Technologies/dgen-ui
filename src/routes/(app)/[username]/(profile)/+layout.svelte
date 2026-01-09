@@ -134,7 +134,7 @@
 
 <div class="container mx-auto w-full px-4 flex flex-wrap lg:flex-nowrap">
   <div
-    class="w-full lg:w-[280px] xl:w-[360px] lg:absolute space-y-2 lg:left-20 mx-auto pb-8 lg:pb-0"
+    class="w-full lg:w-[280px] xl:w-[360px] lg:absolute space-y-2 lg:left-20 mx-auto sm:pb-8 lg:pb-0"
   >
     <div class="space-y-1">
       <div
@@ -181,8 +181,10 @@
               class="text-blue-400"
               width="20"
             ></iconify-icon>
-            <button class="text-sm font-semibold text-blue-300"
-              >DGEN Mastercard is live</button
+            <a
+              class="text-sm font-semibold text-blue-300"
+              href="https://card.dgentech.io"
+              target="_blank">DGEN Mastercard is live</a
             >
           </div>
         </div>

@@ -138,7 +138,7 @@
 </script>
 
 {#if mounted}
-  <section id="education" class="relative py-32">
+  <section id="education" class="relative sm:py-32">
     <div class="container mx-auto px-4 relative z-10">
       <!-- Header -->
       <div class="text-center mb-16" in:fly={{ y: 30, duration: 800 }}>

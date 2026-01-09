@@ -135,8 +135,10 @@
           <span class="gradient-text">Send</span>
         </h1>
       </div>
-      <p class="text-2xl text-white/70 mx-auto leading-relaxed px-2">
-        Enter a Bitcoin, Lightning, or Liquid address (L-BTC, L-USDT)
+      <p
+        class=" text-base sm:text-2xl text-white/70 mx-auto leading-relaxed px-2"
+      >
+        Enter a Bitcoin, Lightning, or Liquid address
       </p>
     </div>
 
@@ -164,11 +166,13 @@
       {/if}
 
       <!-- Scan/Paste action buttons - More prominent -->
-      <div class="grid grid-cols-2 gap-3 mb-4">
+      <div
+        class="flex flex-row justify-around sm:grid sm:grid-cols-2 gap-3 mb-4"
+      >
         <a href="/scan" class="contents">
           <button
             type="button"
-            class="px-6 py-4 rounded-2xl font-bold text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group flex flex-col items-center justify-center gap-2"
+            class="px-6 py-4 rounded-2xl font-bold text-sm sm:text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group flex flex-col items-center justify-center gap-2"
             style="background: linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%); color: white; min-height: 100px;"
           >
             <div
@@ -178,7 +182,7 @@
             <iconify-icon
               noobserver
               icon="ph:camera-bold"
-              width="40"
+              width={w < 426 ? 15 : 40}
               class="relative z-10 group-hover:scale-110 transition-transform duration-300"
             ></iconify-icon>
             <span class="relative z-10">{$t("user.send.scan")}</span>
@@ -187,7 +191,7 @@
 
         <button
           type="button"
-          class="px-6 py-4 rounded-2xl font-bold text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group flex flex-col items-center justify-center gap-2"
+          class="px-6 py-4 rounded-2xl font-bold text-sm sm:text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group flex flex-col items-center justify-center gap-2"
           style="background: linear-gradient(135deg, #74EBD5 0%, #9688DD 100%); color: white; min-height: 100px;"
           onclick={paste}
         >
@@ -198,7 +202,7 @@
           <iconify-icon
             noobserver
             icon="ph:clipboard-text-bold"
-            width="40"
+            width={w < 426 ? 15 : 40}
             class="relative z-10 group-hover:scale-110 transition-transform duration-300"
           ></iconify-icon>
           <span class="relative z-10">{$t("user.send.paste")}</span>

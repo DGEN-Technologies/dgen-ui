@@ -601,6 +601,13 @@
     return `${seconds / 3600} hour${seconds / 3600 > 1 ? "s" : ""}`;
   }
 
+  async function scrollToSection(id) {
+    await tick(); // ⬅️ wait for DOM render
+    document
+      .getElementById(id)
+      ?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
   $effect(() => verify && checkPin());
   $effect(() => setting2fa && enable2fa(twoFaToken));
   $effect(() => disabling2fa && disable2fa(twoFaToken));
@@ -1101,7 +1108,10 @@
     class="premium-card backdrop-blur-xl bg-white/5 border-2 border-white/10 hover:border-amber-500/40 transition-all duration-500 animate-scaleIn"
     style="animation-delay: 0.1s;"
   >
-    <div class="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
+    <div
+      class="flex flex-col sm:flex-row items-start gap-3 sm:gap-4"
+      id="import-seed-restore-wallet"
+    >
       <div
         class="p-2.5 sm:p-3 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg shadow-amber-500/30 flex-shrink-0"
       >
@@ -1125,7 +1135,10 @@
 
         {#if !showRestore}
           <button
-            onclick={toggleRestore}
+            onclick={async () => {
+              showRestore = true;
+              await scrollToSection("import-seed-restore-wallet");
+            }}
             class="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 rounded-2xl font-semibold text-sm sm:text-base transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center justify-center gap-2"
             style="background: linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%); color: white;"
           >
@@ -1243,7 +1256,10 @@
               <div class="flex flex-col sm:flex-row gap-3">
                 <button
                   type="button"
-                  onclick={() => (confirmRestoreWallet = true)}
+                  onclick={async () => {
+                    confirmRestoreWallet = true;
+                    await scrollToSection("import-seed-restore-wallet");
+                  }}
                   disabled={restoring || !restoreMnemonic.trim()}
                   class="flex-1 px-6 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                   style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white;"

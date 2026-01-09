@@ -131,7 +131,7 @@
 <div class="relative min-h-screen">
   <!-- Content Container -->
   <div
-    class="w-full px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-40 sm:pb-44 relative z-10"
+    class="w-full px-3 sm:px-6 lg:px-8 sm:pt-4 pb-4 sm:py-6 pb-40 sm:pb-44 relative z-10"
   >
     <div class="max-w-4xl mx-auto space-y-6">
       {#if user?.id && user.id === subject.id}

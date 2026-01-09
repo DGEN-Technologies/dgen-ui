@@ -45,14 +45,11 @@
 
   <!-- Content -->
   <div
-    class="relative z-10 flex flex-col items-center justify-start px-4 pt-28 sm:pt-36 md:pt-40 pb-16"
+    class="relative z-10 flex flex-col items-center justify-start px-4 pt-28 sm:pt-36 md:pt-40"
   >
     {#if mounted}
       <!-- Logo with epic glow effect -->
-      <div
-        class="mb-4 sm:mb-6 relative"
-        in:fade={{ duration: 800, delay: 200 }}
-      >
+      <div class="relative" in:fade={{ duration: 800, delay: 200 }}>
         <div class="relative pointer-events-none">
           <div
             class="absolute inset-0 bg-gradient-to-r from-dgen-aqua/30 to-dgen-cyan/30 blur-3xl opacity-40"
@@ -149,22 +146,15 @@
         class="flex flex-wrap justify-center items-center gap-4 mb-8 sm:mb-12 max-w-4xl px-2"
         in:fly={{ y: 20, duration: 800, delay: 800 }}
       >
-        <div class="px-5 sm:px-7 py-4 sm:py-5 flex items-center min-h-[3.5rem]">
-          <span class="text-dgen-aqua font-bold text-base sm:text-xl"
-            >⚡ Instant Transactions</span
-          >
-        </div>
-        <div class="px-5 sm:px-7 py-4 sm:py-5 flex items-center min-h-[3.5rem]">
-          <span class="text-dgen-cyan font-bold text-base sm:text-xl"
-            >💎 Create Account In Seconds (Literally)</span
-          >
-        </div>
         <div
-          class="px-5 sm:px-7 py-4 sm:py-5 text-center min-h-[3.5rem] flex items-center"
+          class="px-5 sm:px-7 py-4 sm:py-5 flex items-center min-h-[3.5rem] flex flex-col"
         >
-          <div class="text-dgen-aqua font-bold text-base sm:text-xl">
-            🔒 Non-Custodial
-          </div>
+          <span class="text-dgen-cyan font-bold text-base sm:text-xl"
+            >💎 Create Account In Seconds</span
+          >
+          <span class="text-dgen-cyan font-bold text-base sm:text-xl"
+            >(Literally)</span
+          >
         </div>
       </div>
 
