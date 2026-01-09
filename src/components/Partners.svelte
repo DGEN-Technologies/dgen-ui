@@ -13,7 +13,7 @@
         >
           WHO WE WORK WITH
         </span>
-      </h2>      
+      </h2>
     </div>
 
     <div
