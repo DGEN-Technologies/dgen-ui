@@ -12,6 +12,19 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Flag sensitive file changes
+        if: github.event_name == 'pull_request'
+        run: |
+          SENSITIVE_FILES="svelte.config.js src/lib/secureStorage.ts src/lib/walletService.ts"
+          CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          for file in $SENSITIVE_FILES; do
+            if echo "$CHANGED" | grep -q "^$file$"; then
+              echo "::warning file=$file::⚠️ SENSITIVE FILE MODIFIED - requires careful review (CSP, security headers)"
+            fi
+          done
 
       - uses: oven-sh/setup-bun@v2
         with:
