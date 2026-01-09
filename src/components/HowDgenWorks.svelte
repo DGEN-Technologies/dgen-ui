@@ -119,7 +119,7 @@
 {#if mounted}
   <section
     id="howItWorks"
-    class="relative py-8 sm:py-24"
+    class="relative py-4 sm:py-24"
     bind:this={sectionElement}
   >
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">

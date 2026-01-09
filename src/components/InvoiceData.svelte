@@ -23,6 +23,7 @@
   } = $props();
 
   let loaded = $state(false);
+  let minAmount = $state(28000);
   let { memo } = $derived(invoice);
   let load = () => (loaded = true);
 
@@ -33,8 +34,49 @@
   }
 </script>
 
+{#if invoice.type === types.bitcoin && txt && onchainLimits}
+  <!-- Bitcoin On-Chain Limits Warning -->
+  <div class="mx-auto max-w-md mt-4 mb-4">
+    <div class="rounded-2xl p-4 bg-yellow-500/10 border-2 border-yellow-500/30">
+      <div class="text-center">
+        <iconify-icon
+          noobserver
+          icon="ph:warning-bold"
+          width="24"
+          class="text-yellow-400 mb-2"
+        ></iconify-icon>
+        <p class="text-yellow-200 font-semibold leading-relaxed text-xl">
+          {#if onchainLimits.receive?.minSat && onchainLimits.receive?.maxSat}
+            Min: <span class="font-bold text-yellow-100 text-lg sm:text-4xl"
+              >{sat(Math.max(minAmount, onchainLimits.receive.minSat))} sats</span
+            >
+            <br />
+            Max:
+            <span class="font-bold text-yellow-100 text-lg sm:text-4xl"
+              >{sat(onchainLimits.receive.maxSat)} sats</span
+            >
+          {:else if onchainLimits.receive?.minSat}
+            Minimum: <span class="font-bold text-yellow-100 text-lg sm:text-4xl"
+              >{sat(Math.max(minAmount, onchainLimits.receive.minSat))} sats</span
+            >
+          {:else if onchainLimits.receive?.maxSat}
+            Maximum: <span class="font-bold text-yellow-100 text-lg sm:text-4xl"
+              >{sat(onchainLimits.receive.maxSat)} sats</span
+            >
+          {:else}
+            Bitcoin on-chain payments require network fees
+          {/if}
+        </p>
+        <p class="text-yellow-300/70 text-sm mt-2">
+          Amounts outside this range will not work
+        </p>
+      </div>
+    </div>
+  </div>
+{/if}
+
 <div
-  class="max-w-[360px] mx-auto min-h-[360px] flex items-center justify-center"
+  class="max-w-[360px] mx-auto sm:min-h-[360px] flex items-center justify-center"
 >
   {#if lastError && !updating}
     <!-- Show error with retry button -->
@@ -148,47 +190,6 @@
     </div>
   {/if}
 </div>
-
-{#if invoice.type === types.bitcoin && txt && onchainLimits}
-  <!-- Bitcoin On-Chain Limits Warning -->
-  <div class="mx-auto max-w-md mt-4 mb-4">
-    <div class="rounded-2xl p-4 bg-yellow-500/10 border-2 border-yellow-500/30">
-      <div class="text-center">
-        <iconify-icon
-          noobserver
-          icon="ph:warning-bold"
-          width="24"
-          class="text-yellow-400 mb-2"
-        ></iconify-icon>
-        <p class="text-yellow-200 font-semibold leading-relaxed text-xl">
-          {#if onchainLimits.receive?.minSat && onchainLimits.receive?.maxSat}
-            Min: <span class="font-bold text-yellow-100 text-4xl"
-              >{sat(Math.max(28000, onchainLimits.receive.minSat))} sats</span
-            >
-            <br />
-            Max:
-            <span class="font-bold text-yellow-100 text-4xl"
-              >{sat(onchainLimits.receive.maxSat)} sats</span
-            >
-          {:else if onchainLimits.receive?.minSat}
-            Minimum: <span class="font-bold text-yellow-100 text-4xl"
-              >{sat(Math.max(28000, onchainLimits.receive.minSat))} sats</span
-            >
-          {:else if onchainLimits.receive?.maxSat}
-            Maximum: <span class="font-bold text-yellow-100 text-4xl"
-              >{sat(onchainLimits.receive.maxSat)} sats</span
-            >
-          {:else}
-            Bitcoin on-chain payments require network fees
-          {/if}
-        </p>
-        <p class="text-yellow-300/70 text-sm mt-2">
-          Amounts outside this range will not work
-        </p>
-      </div>
-    </div>
-  </div>
-{/if}
 
 {#if invoice.type === types.liquid}
   {#if invoice.selectedAsset === "usdt"}
