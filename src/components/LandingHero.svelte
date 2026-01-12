@@ -14,18 +14,18 @@
   <div class="absolute inset-0">
     <div class="absolute inset-0 aurora-bg opacity-5"></div>
     <div
-      class="absolute top-0 -left-4 w-96 h-96 bg-dgen-aqua rounded-full mix-blend-screen filter blur-3xl opacity-20 blob"
+      class="absolute top-0 left-4 w-72 sm:w-96 h-96 bg-dgen-aqua rounded-full mix-blend-screen filter blur-3xl opacity-20 blob"
     ></div>
     <div
-      class="absolute top-0 -right-4 w-96 h-96 bg-dgen-cyan rounded-full mix-blend-screen filter blur-3xl opacity-20 blob"
+      class="absolute top-0 right-4 w-72 sm:w-96 h-96 bg-dgen-cyan rounded-full mix-blend-screen filter blur-3xl opacity-20 blob"
       style="animation-delay: 2s;"
     ></div>
     <div
-      class="absolute -bottom-8 left-20 w-96 h-96 bg-dgen-teal rounded-full mix-blend-screen filter blur-3xl opacity-20 blob"
+      class="absolute -bottom-8 left-20 w-52 sm:w-96 h-96 bg-dgen-teal rounded-full mix-blend-screen filter blur-3xl opacity-20 blob"
       style="animation-delay: 4s;"
     ></div>
     <div
-      class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-r from-dgen-aqua/10 via-dgen-cyan/10 to-dgen-purple/10 rounded-full filter blur-3xl animate-pulse"
+      class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-[800px] bg-gradient-to-r from-dgen-aqua/10 via-dgen-cyan/10 to-dgen-purple/10 rounded-full filter blur-3xl animate-pulse"
     ></div>
   </div>
 
