@@ -11,12 +11,9 @@
         <span
           class="bg-gradient-to-r from-dgen-aqua to-dgen-cyan bg-clip-text text-transparent"
         >
-          Partners
+          WHO WE WORK WITH
         </span>
       </h2>
-      <p class="text-lg sm:text-xl md:text-2xl opacity-80 max-w-2xl mx-auto">
-        WHO WE WORK WITH
-      </p>
     </div>
 
     <div
