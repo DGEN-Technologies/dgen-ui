@@ -21,16 +21,6 @@
 >
   <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
     <div class="space-y-4">
-      <a href="/" aria-label="Home" class="block">
-        <div
-          class="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"
-        >
-          DGEN Technologies
-        </div>
-      </a>
-      <p class="text-sm text-gray-400 max-w-xs">
-        Lightning-fast Bitcoin payments for everyone
-      </p>
       <div class="pt-2">
         <LocaleSelector />
       </div>
