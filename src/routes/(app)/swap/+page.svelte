@@ -1,9 +1,11 @@
 <script>
   import { back } from "$lib/utils";
   import { env } from "$env/dynamic/public";
+  import { fade, scale } from "svelte/transition";
 
   let isLoading = $state(true);
   let hasError = $state(false);
+  let showSwapInfo = $state(true);
 </script>
 
 <div class="flex flex-col h-full w-full max-w-3xl mx-auto p-4">
@@ -18,6 +20,76 @@
     </button>
     <h1 class="text-2xl font-bold">Swap Crypto</h1>
   </div>
+
+  <button
+    onclick={() => {
+      showSwapInfo = true;
+    }}
+    class="mx-auto mb-4 px-3 py-2 w-fit items-center rounded-md text-xs sm:text-sm font-bold text-center bg-gradient-to-r bg-yellow-400/70 border border-yellow-400/50 shadow-lg shadow-yellow-400/50"
+  >
+    READ THIS Before Using This Swap / Buy Feature
+  </button>
+
+  {#if showSwapInfo}
+    <div
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+      transition:fade
+    >
+      <div
+        class="max-w-md w-full mx-4 rounded-2xl bg-neutral-900
+             border border-white/20 p-5 text-sm text-white"
+        transition:scale
+      >
+        <h3 class="font-bold text-dgen-aqua mb-3">Before Using Swap / Buy</h3>
+        <div class="overflow-y-auto h-60 sm:h-96">
+          <p class="mb-3">
+            This is a crypto exchange aggregator allowing you to trade over
+            3,500 cryptocurrencies across 500+ networks.
+          </p>
+
+          <p class="mb-3 font-semibold">To swap:</p>
+          <ul class="mb-3 list-disc list-inside space-y-1 opacity-90">
+            <li>
+              Choose the 2 cryptocurrencies you want to swap & the amounts.
+            </li>
+            <li>
+              On the next screen, you will have to enter your sending address
+              (where funds come from) and a refund address (in case of the swap
+              failing).
+            </li>
+          </ul>
+
+          <p class="mb-3">
+            Tip: Prepare in advance—select the assets you want to swap, then
+            have your wallet addresses ready to copy/paste.
+          </p>
+          <p class="mb-3">
+            Example: If you want to swap BTC for USDT (on Ethereum):
+          </p>
+          <p class="mb-3">
+            Get your BTC sending/refund addresses and USDT (ERC-20) receiving
+            address before starting.
+          </p>
+          <p class="mb-3">
+            SAVE YOUR EXCHANGE ID when it pops up, in the case of any issues
+            happening with your swap.
+          </p>
+          <p class="mb-3">DO NOT USE MIXERS/COINJOINERS with anything</p>
+          <p class="mb-3">
+            Note: Off-Ramp feature is not available but it will be soon. The
+            On-Ramp feature here is available.
+          </p>
+        </div>
+        <button
+          class="mt-4 w-full py-2 rounded-xl
+               bg-dgen-aqua text-black font-bold"
+          onclick={() => (showSwapInfo = false)}
+        >
+          I Understand
+        </button>
+      </div>
+    </div>
+  {/if}
 
   <!-- Widget Container -->
   {#if env.PUBLIC_SWAPSPACE_WIDGET_URL}
