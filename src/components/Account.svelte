@@ -274,7 +274,8 @@
               width="22"
               class="flex-shrink-0"
             ></iconify-icon>
-            <span class="text-xs sm:text-xs truncate w-full hidden sm:block"
+            <span
+              class="text-[11px] sm:text-xs sm:truncate sm:w-full hidden sm:block"
               >Receive</span
             >
           </span>
@@ -294,7 +295,8 @@
               width="22"
               class="flex-shrink-0"
             ></iconify-icon>
-            <span class="text-xs sm:text-xs truncate w-full hidden sm:block"
+            <span
+              class="text-[11px] sm:text-xs sm:truncate sm:w-full hidden sm:block"
               >Send</span
             >
           </span>
@@ -315,9 +317,17 @@
                 width="22"
                 class="flex-shrink-0"
               ></iconify-icon>
-              <span class="text-xs sm:text-xs truncate w-full hidden sm:block"
-                >Swap</span
-              >
+              <div class="flex flex-col gap-[1px] hidden sm:block">
+                <span class="text-[11px] sm:text-xs sm:truncate sm:w-full"
+                  >Swap</span
+                >
+                <span class="text-[11px] sm:text-xs sm:truncate sm:w-full"
+                  >or</span
+                >
+                <span class="text-[11px] sm:text-xs sm:truncate sm:w-full"
+                  >Buy</span
+                >
+              </div>
             </span>
           </button>
         {/if}
@@ -346,7 +356,8 @@
           >
             <iconify-icon icon="ph:scan-bold" width="22" class="flex-shrink-0"
             ></iconify-icon>
-            <span class="text-xs sm:text-xs truncate w-full hidden sm:block"
+            <span
+              class="text-[11px] sm:text-xs sm:truncate sm:w-full hidden sm:block"
               >Scan</span
             >
           </span>

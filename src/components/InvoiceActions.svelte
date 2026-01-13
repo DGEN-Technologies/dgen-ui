@@ -16,6 +16,7 @@
     toggleAmount,
     setType,
     toggleMemo,
+    showSetAmount = true,
   } = $props();
 
   let { aid, address_type, type } = $derived(invoice);
@@ -24,13 +25,15 @@
 <div class="text-secondary space-y-2 text-xl pt-2">
   <div class="flex flex-wrap gap-2 justify-around text-secondary w-full">
     {#if user?.id === invoice?.user?.id}
-      <button class="btn grow !w-auto" onclick={toggleAmount}>
-        <iconify-icon noobserver icon="ph:pencil-simple-bold" width="32"
-        ></iconify-icon>
-        <div class="my-auto">
-          <div>{t("payments.setAmount")}</div>
-        </div>
-      </button>
+      {#if showSetAmount}
+        <button class="btn grow !w-auto" onclick={toggleAmount}>
+          <iconify-icon noobserver icon="ph:pencil-simple-bold" width="32"
+          ></iconify-icon>
+          <div class="my-auto">
+            <div>{t("payments.setAmount")}</div>
+          </div>
+        </button>
+      {/if}
     {:else}
       <a href={link} class="block">
         <button class="btn grow !w-auto">
