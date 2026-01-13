@@ -26,7 +26,6 @@
   let symbol = $state("");
   let position = $state("before");
   let isUserInput = $state(false); // Flag to prevent effect from overwriting user input
-  // let minAmount = $state(28000);
 
   // Get currency formatting info
   function getCurrencyInfo(locale = "en-US", currency) {
