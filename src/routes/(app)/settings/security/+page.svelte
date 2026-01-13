@@ -603,10 +603,26 @@
 
   async function scrollToSection(id) {
     await tick(); // ⬅️ wait for DOM render
-    document
-      .getElementById(id)
-      ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    setTimeout(() => {
+      document
+        .getElementById(id)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 200);
   }
+
+  const scrollToSectionByInches = (inches = 4) => {
+    // 1️⃣ do your existing restore logic
+    restoreWallet();
+
+    // 2️⃣ force-scroll screen downward
+    const dpi = window.devicePixelRatio * 96;
+    const pixels = inches * dpi;
+
+    window.scrollBy({
+      top: pixels,
+      behavior: "smooth",
+    });
+  };
 
   $effect(() => verify && checkPin());
   $effect(() => setting2fa && enable2fa(twoFaToken));
@@ -1258,7 +1274,7 @@
                   type="button"
                   onclick={async () => {
                     confirmRestoreWallet = true;
-                    await scrollToSection("import-seed-restore-wallet");
+                    scrollToSectionByInches(4);
                   }}
                   disabled={restoring || !restoreMnemonic.trim()}
                   class="flex-1 px-6 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
