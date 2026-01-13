@@ -9,7 +9,7 @@
     {
       id: "lightning",
       title: "Swift Global Transfers",
-      subtitle: "Instant global transfers",
+      subtitle: "Efficient global transfers",
       description:
         "Send Bitcoin anywhere on Earth with efficient transaction times. Payment settlement typically occurs quickly.",
       icon: "tabler:bolt",

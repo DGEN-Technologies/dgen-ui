@@ -21,7 +21,6 @@
   let howItWorks = $state();
   let roadmap = $state();
   let partners = $state();
-  let faq = $state();
   let about = $state();
 
   onMount(() => {
@@ -30,13 +29,12 @@
       howItWorks = document.getElementById("howItWorks");
       roadmap = document.getElementById("roadmap");
       partners = document.getElementById("partners");
-      faq = document.getElementById("faq");
       about = document.getElementById("about");
     }, 100);
   });
 </script>
 
-<LandingHeader {howItWorks} {roadmap} {partners} {faq} {about} {user} />
+<LandingHeader {howItWorks} {roadmap} {partners} {about} {user} />
 
 <div class="relative landing-page-content">
   <!-- Lightning Bolts (Pro Mode Only) - Landing Page -->
@@ -90,7 +88,6 @@
 
   <!-- FAQ with smooth blend to solid black -->
   <div class="faq-dark-section">
-    <FAQ />
     <Footer />
   </div>
 </div>
