@@ -60,6 +60,7 @@
     bind:rate={$rate}
     {locale}
     skipBalanceCheck={true}
+    minAmount={28000}
   />
 
   <div class="flex justify-center gap-2">
