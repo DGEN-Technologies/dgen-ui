@@ -7,6 +7,24 @@ import { nodePolyfills } from "vite-plugin-node-polyfills";
 import path from "path";
 
 /** @type {import('vite').UserConfig} */
+const devTunnelHosts = (
+  process.env.VITE_DEV_TUNNEL_HOSTS ||
+  process.env.VITE_DEV_TUNNEL_HOST ||
+  ""
+)
+  .split(",")
+  .map((host) => host.trim())
+  .filter(Boolean);
+
+const allowedHosts = Array.from(
+  new Set([
+    ...devTunnelHosts,
+    "survivors-clean-until-antibodies.trycloudflare.com",
+    "elimination-seed-forever-citations.trycloudflare.com",
+    "forwarding-employ-atlantic-guaranteed.trycloudflare.com"
+  ]),
+);
+
 const config = {
   plugins: [
     sveltekit(),
@@ -28,6 +46,7 @@ const config = {
     host: process.env.HOST || "0.0.0.0",
     port: parseInt(process.env.PORT) || 5173,
     https: process.env.HTTPS === "true" ? true : false,
+    allowedHosts,
     headers: {
       "Cross-Origin-Embedder-Policy": "require-corp",
       "Cross-Origin-Opener-Policy": "same-origin",

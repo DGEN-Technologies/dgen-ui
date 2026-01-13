@@ -13,6 +13,7 @@
     s,
     sats,
   } from "$lib/utils";
+  import { getEffectiveOnchainReceiveMinSat } from "$lib/bitcoinLimits";
   import { tick, onMount, onDestroy } from "svelte";
   import { browser } from "$app/environment";
   import { last, showQr, amountPrompt } from "$lib/store";
@@ -99,6 +100,7 @@
   // Payment received animation state
   let showingSuccess = $state(false);
   let receivedPayment = $state(null);
+  let onchainMinSat = $derived(getEffectiveOnchainReceiveMinSat(onchainLimits));
 
   // Derived state for Lightning Address
   let lightningAddress = $derived($lnAddressStore.lnAddress);
@@ -675,8 +677,9 @@
     }
 
     // Check minimum for Bitcoin on-chain (28k sats minimum)
-    if (invoiceType === types.bitcoin && newAmount < 28000) {
-      fail("Minimum: 0.00028 BTC (28,000 sats)");
+    if (invoiceType === types.bitcoin && newAmount < onchainMinSat) {
+      const minBtc = (onchainMinSat / sats).toFixed(8);
+      fail(`Minimum: ${minBtc} BTC (${sat(onchainMinSat)} sats)`);
       // Don't close dialog - keep user on numberpad until valid amount
       return;
     }

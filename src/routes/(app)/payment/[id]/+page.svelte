@@ -47,6 +47,7 @@
     status,
     swapId,
   } = $derived(p || {});
+  let swapAddress = $derived(p?.details?.bitcoinAddress || p?.swapAddress || swapId || "");
   let [txid, vout] = $derived(amount > 0 && ref ? ref.split(":") : [hash]);
   let a = $derived(Math.abs(amount));
 
@@ -183,6 +184,38 @@
         <span>Back to Payments</span>
       </button>
     </div>
+
+    {#if type === "bitcoin" && (status === "failed" || status === "refundable") && swapAddress}
+      <div class="mt-6">
+        <div class="card bg-warning/10 border-2 border-warning">
+          <div class="card-body p-4 space-y-3">
+            <div class="flex items-start gap-3">
+              <div class="text-warning mt-1">
+                <iconify-icon icon="ph:warning-circle" width="28"></iconify-icon>
+              </div>
+              <div class="space-y-1">
+                <h2 class="text-lg font-semibold">Refund required</h2>
+                <p class="text-sm text-secondary">
+                  This on-chain deposit fell below the minimum. Use the refund
+                  flow to recover your funds.
+                </p>
+              </div>
+            </div>
+            {#if p?.details?.refundTxId}
+              <div class="text-xs text-secondary break-all">
+                Last refund txid: {p.details.refundTxId}
+              </div>
+            {/if}
+            <button
+              class="btn btn-primary btn-sm w-full sm:w-auto"
+              onclick={() => goto(`/payment/${id}/refund`)}
+            >
+              {p?.details?.refundTxId ? "Retry Refund" : "Refund"}
+            </button>
+          </div>
+        </div>
+      </div>
+    {/if}
 
     <!-- Use payment details component if we have SDK payment data -->
     {#if p.details || p.paymentType}

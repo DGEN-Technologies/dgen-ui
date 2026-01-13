@@ -501,6 +501,9 @@ const startEventListening = async (): Promise<void> => {
               );
               walletStore.refresh();
               transactions.refresh();
+              import("$lib/stores/refundables").then(({ refundablesStore }) => {
+                refundablesStore.refresh();
+              });
               break;
 
             // Refund Events
@@ -508,12 +511,18 @@ const startEventListening = async (): Promise<void> => {
               console.log("[WalletStore] Payment refund pending");
               walletStore.refresh();
               transactions.refresh();
+              import("$lib/stores/refundables").then(({ refundablesStore }) => {
+                refundablesStore.refresh();
+              });
               break;
 
             case "paymentRefunded":
               console.log("[WalletStore] Payment refunded");
               walletStore.refresh();
               transactions.refresh();
+              import("$lib/stores/refundables").then(({ refundablesStore }) => {
+                refundablesStore.refresh();
+              });
               break;
 
             // Sync Events
@@ -524,6 +533,9 @@ const startEventListening = async (): Promise<void> => {
               }));
               walletStore.refresh();
               transactions.refresh();
+              import("$lib/stores/refundables").then(({ refundablesStore }) => {
+                refundablesStore.refresh();
+              });
               break;
 
             default:

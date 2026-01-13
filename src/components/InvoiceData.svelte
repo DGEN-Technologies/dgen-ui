@@ -2,6 +2,11 @@
   import Amount from "$comp/Amount.svelte";
 
   import { btc, copy, f, sat, s, sats, types } from "$lib/utils";
+  import {
+    getEffectiveOnchainReceiveMinSat,
+    getOnchainReceiveMaxSat,
+    MIN_BTC_ONCHAIN_RECEIVE_SATS,
+  } from "$lib/bitcoinLimits";
   import { unitPreference } from "$lib/store";
   let {
     showQr,
@@ -23,9 +28,18 @@
   } = $props();
 
   let loaded = $state(false);
-  let minAmount = $state(28000);
   let { memo } = $derived(invoice);
   let load = () => (loaded = true);
+  let onchainMinSat = $derived.by(() => {
+    const minSat = getEffectiveOnchainReceiveMinSat(onchainLimits);
+    return Number.isFinite(minSat) ? minSat : MIN_BTC_ONCHAIN_RECEIVE_SATS;
+  });
+  let onchainMaxSat = $derived.by(() => {
+    const maxSat = getOnchainReceiveMaxSat(onchainLimits);
+    return Number.isFinite(maxSat) ? maxSat : null;
+  });
+  let hasOnchainMin = $derived(Number.isFinite(onchainMinSat));
+  let hasOnchainMax = $derived(Number.isFinite(onchainMaxSat));
 
   // Truncate address for display (first 6...last 4 chars)
   function truncateAddress(address) {
@@ -46,22 +60,22 @@
           class="text-yellow-400 mb-2"
         ></iconify-icon>
         <p class="text-yellow-200 font-semibold leading-relaxed text-xl">
-          {#if onchainLimits.receive?.minSat && onchainLimits.receive?.maxSat}
+          {#if hasOnchainMin && hasOnchainMax}
             Min: <span class="font-bold text-yellow-100 text-lg sm:text-4xl"
-              >{sat(Math.max(minAmount, onchainLimits.receive.minSat))} sats</span
+              >{sat(onchainMinSat)} sats</span
             >
             <br />
             Max:
             <span class="font-bold text-yellow-100 text-lg sm:text-4xl"
-              >{sat(onchainLimits.receive.maxSat)} sats</span
+              >{sat(onchainMaxSat)} sats</span
             >
-          {:else if onchainLimits.receive?.minSat}
+          {:else if hasOnchainMin}
             Minimum: <span class="font-bold text-yellow-100 text-lg sm:text-4xl"
-              >{sat(Math.max(minAmount, onchainLimits.receive.minSat))} sats</span
+              >{sat(onchainMinSat)} sats</span
             >
-          {:else if onchainLimits.receive?.maxSat}
+          {:else if hasOnchainMax}
             Maximum: <span class="font-bold text-yellow-100 text-lg sm:text-4xl"
-              >{sat(onchainLimits.receive.maxSat)} sats</span
+              >{sat(onchainMaxSat)} sats</span
             >
           {:else}
             Bitcoin on-chain payments require network fees
