@@ -20,15 +20,25 @@ const initialState: RefundablesState = {
 
 const { subscribe, set } = writable<RefundablesState>(initialState);
 
-const refresh = async (options: { rescan?: boolean } = {}): Promise<void> => {
-  if (!isConnected()) {
-    set({ ...initialState, error: "Wallet SDK not connected" });
-    return;
+const waitForSdk = async (): Promise<boolean> => {
+  let attempts = 0;
+  while (!isConnected() && attempts < 20) {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    attempts += 1;
   }
+  return isConnected();
+};
 
+const refresh = async (options: { rescan?: boolean } = {}): Promise<void> => {
   set({ ...initialState, loading: true });
 
   try {
+    const ready = await waitForSdk();
+    if (!ready) {
+      set({ ...initialState, error: "Wallet SDK not connected" });
+      return;
+    }
+
     if (options.rescan) {
       await rescanOnchainSwaps();
     }

@@ -3,7 +3,7 @@
   import { goto } from "$app/navigation";
   import { page } from "$app/stores";
   import { t } from "$lib/translations";
-  import { listRefundables } from "$lib/walletService";
+  import { isConnected, listRefundables } from "$lib/walletService";
   import RefundForm from "$comp/RefundForm.svelte";
 
   let swapAddress = $derived(
@@ -13,8 +13,23 @@
   let loading = $state(true);
   let error = $state(null);
 
+  const waitForSdk = async () => {
+    let attempts = 0;
+    while (!isConnected() && attempts < 20) {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      attempts += 1;
+    }
+    return isConnected();
+  };
+
   onMount(async () => {
     try {
+      const ready = await waitForSdk();
+      if (!ready) {
+        error = "Wallet SDK not connected.";
+        return;
+      }
+
       const refundables = await listRefundables();
       refundable =
         refundables.find((item) => item.swapAddress === swapAddress) || null;

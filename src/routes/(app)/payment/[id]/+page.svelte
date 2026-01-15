@@ -48,7 +48,10 @@
     swapId,
   } = $derived(p || {});
   let swapAddress = $derived(
-    p?.details?.bitcoinAddress || p?.swapAddress || swapId || "",
+    p?.details?.bitcoinAddress ||
+      p?.swapAddress ||
+      p?.details?.swapInfo?.bitcoinAddress ||
+      "",
   );
   let [txid, vout] = $derived(amount > 0 && ref ? ref.split(":") : [hash]);
   let a = $derived(Math.abs(amount));

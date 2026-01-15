@@ -9,8 +9,7 @@
   let swapAddress = $derived(
     payment?.details?.bitcoinAddress ||
       payment?.swapAddress ||
-      payment?.swapId ||
-      payment?.details?.swapId ||
+      payment?.details?.swapInfo?.bitcoinAddress ||
       "",
   );
   let amountSat = $derived(
