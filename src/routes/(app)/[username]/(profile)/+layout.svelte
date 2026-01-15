@@ -170,24 +170,6 @@
             </div>
           {/if}
         </div>
-
-        <!-- Visa Card Coming Soon -->
-        <div class="mt-3 flex justify-center">
-          <div
-            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-2 border-blue-500/30"
-          >
-            <iconify-icon
-              icon="ph:credit-card-bold"
-              class="text-blue-400"
-              width="20"
-            ></iconify-icon>
-            <a
-              class="text-sm font-semibold text-blue-300"
-              href="https://card.dgentech.io"
-              target="_blank">DGEN Mastercard is live</a
-            >
-          </div>
-        </div>
       {/if}
     </div>
 
