@@ -779,15 +779,7 @@
                 ></iconify-icon>
               </div>
               <div class="min-w-0">
-                <div class="flex items-center justify-between gap-2">
-                  <div class="text-xs sm:text-sm text-white/60">Total Sent</div>
-                  <button
-                    class="btn btn-xs btn-outline border-white/20 text-white/70 hover:text-white hover:border-white/40"
-                    onclick={() => goto("/refunds")}
-                  >
-                    Refunds
-                  </button>
-                </div>
+                <div class="text-xs sm:text-sm text-white/60">Total Sent</div>
                 <div
                   class="text-base sm:text-xl font-bold text-red-400 truncate"
                 >
@@ -825,6 +817,29 @@
             </div>
           </div>
         </div>
+
+        <button
+          class="card bg-purple-500/10 border border-purple-500/30 text-left hover:bg-purple-500/15 transition-colors"
+          onclick={() => goto("/refunds")}
+        >
+          <div class="card-body p-3 sm:p-4">
+            <div class="flex items-center gap-2 sm:gap-3">
+              <div class="text-purple-400 flex-shrink-0">
+                <iconify-icon
+                  icon="ph:arrow-u-up-left"
+                  width="24"
+                  class="sm:w-8"
+                ></iconify-icon>
+              </div>
+              <div class="min-w-0">
+                <div class="text-xs sm:text-sm text-white/60">Refunds</div>
+                <div class="text-base sm:text-xl font-bold text-purple-300">
+                  View
+                </div>
+              </div>
+            </div>
+          </div>
+        </button>
       </div>
     {/if}
 
