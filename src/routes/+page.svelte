@@ -3,7 +3,6 @@
   import LandingHero from "$comp/LandingHero.svelte";
   import FeatureShowcase from "$comp/FeatureShowcase.svelte";
   import HowDgenWorks from "$comp/HowDgenWorks.svelte";
-  import DegenTestimonials from "$comp/DegenTestimonials.svelte";
   import BitcoinEducation from "$comp/BitcoinEducation.svelte";
   import Partners from "$comp/Partners.svelte";
   // import BugBounty from "$comp/BugBounty.svelte";
@@ -62,9 +61,6 @@
 
     <!-- Interactive Feature Showcase (Built Different) -->
     <FeatureShowcase />
-
-    <!-- Degen Testimonials -->
-    <DegenTestimonials />
 
     <!-- Bitcoin Education Section -->
     <BitcoinEducation />
