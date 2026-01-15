@@ -1049,7 +1049,7 @@
                         </span>
                       {:else if payment.status === "refunded"}
                         <span
-                          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-blue-500/20 to-indigo-500/20 border border-blue-400/30 text-xs font-medium text-blue-300"
+                          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-500/20 to-violet-500/20 border border-purple-400/30 text-xs font-medium text-purple-300"
                         >
                           <iconify-icon icon="ph:arrow-u-up-left" width="12"
                           ></iconify-icon>

@@ -52,6 +52,12 @@
   );
   let [txid, vout] = $derived(amount > 0 && ref ? ref.split(":") : [hash]);
   let a = $derived(Math.abs(amount));
+  let hasRefundTx = $derived(
+    Boolean(p?.details?.refundTxId) || Boolean(p?.details?.refundTxAmountSat),
+  );
+  let displayStatus = $derived(
+    status === "failed" && hasRefundTx ? "refunded" : status,
+  );
 
   let expl = $derived(
     {
@@ -125,12 +131,19 @@
             }
 
             // Set payment data
+            const resolvedStatus =
+              payment.status === "failed" &&
+              (payment.details?.refundTxId ||
+                payment.details?.refundTxAmountSat)
+                ? "refunded"
+                : payment.status;
             p = {
               ...payment,
               id:
                 payment.txId || payment.id || payment.paymentHash || paymentId,
               rate,
               currency: user?.currency || "USD",
+              status: resolvedStatus,
               created: payment.timestamp
                 ? payment.timestamp * 1000
                 : payment.paymentTime * 1000,
@@ -187,7 +200,7 @@
       </button>
     </div>
 
-    {#if type === "bitcoin" && (status === "failed" || status === "refundable") && swapAddress}
+    {#if type === "bitcoin" && (displayStatus === "failed" || displayStatus === "refundable") && swapAddress}
       <div class="mt-6">
         <div class="card bg-warning/10 border-2 border-warning">
           <div class="card-body p-4 space-y-3">
@@ -237,32 +250,39 @@
           <div class="text-center mb-8">
             <span
               class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium
-        {status === 'complete' || status === 'confirmed'
+        {displayStatus === 'complete' || displayStatus === 'confirmed'
                 ? 'bg-green-500/20 text-green-400 border border-green-500/30'
                 : ''}
-        {status === 'pending'
+        {displayStatus === 'pending'
                 ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
                 : ''}
-        {status === 'failed'
+        {displayStatus === 'refunded'
+                ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                : ''}
+        {displayStatus === 'failed'
                 ? 'bg-red-500/20 text-red-400 border border-red-500/30'
                 : ''}
       "
             >
-              {#if status === "complete" || status === "confirmed"}
+              {#if displayStatus === "complete" || displayStatus === "confirmed"}
                 <iconify-icon icon="ph:check-circle" width="20"></iconify-icon>
                 <span>Completed</span>
-              {:else if status === "pending"}
+              {:else if displayStatus === "pending"}
                 <iconify-icon icon="ph:clock" width="20" class="animate-pulse"
                 ></iconify-icon>
                 <span>Pending </span>
-              {:else if status === "failed"}
+              {:else if displayStatus === "refunded"}
+                <iconify-icon icon="ph:arrow-u-up-left" width="20"
+                ></iconify-icon>
+                <span>Refunded</span>
+              {:else if displayStatus === "failed"}
                 <iconify-icon icon="ph:x-circle" width="20"></iconify-icon>
                 <span>Failed</span>
               {:else}
-                <span>{status}</span>
+                <span>{displayStatus}</span>
               {/if}
             </span>
-            {#if status === "pending"}
+            {#if displayStatus === "pending"}
               <button
                 onclick={() => window.location.reload()}
                 class="inline-flex items-center px-2 py-1 hover:bg-white/10 rounded transition-colors"
@@ -444,7 +464,7 @@
           </div>
         {/if}
 
-        {#if type === "bitcoin" && (status === "failed" || status === "refundable") && swapId}
+        {#if type === "bitcoin" && (displayStatus === "failed" || displayStatus === "refundable") && swapId}
           <div class="mt-8 space-y-4">
             <div class="card bg-warning/10 border-2 border-warning">
               <div class="card-body p-4">

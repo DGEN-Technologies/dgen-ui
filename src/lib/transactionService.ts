@@ -463,6 +463,12 @@ function enhancePayment(
     id = `payment_${paymentTime}_${payment.amountSat}_${payment.paymentType}`;
   }
 
+  const status =
+    payment.status === "failed" &&
+    (payment.details?.refundTxId || payment.details?.refundTxAmountSat)
+      ? "refunded"
+      : payment.status;
+
   const enhanced: EnhancedPayment = {
     ...payment,
     paymentTime,
@@ -473,10 +479,10 @@ function enhancePayment(
         : -payment.amountSat,
     fiatAmount: undefined,
     fiatCurrency: "USD",
-    statusColor: getStatusColor(payment.status),
-    statusIcon: getStatusIcon(payment.status),
-    isRefundable:
-      payment.status === "failed" && payment.details?.swapInfo !== undefined,
+    status,
+    statusColor: getStatusColor(status),
+    statusIcon: getStatusIcon(status),
+    isRefundable: status === "failed" && payment.details?.swapInfo !== undefined,
     refundDetails: payment.details?.refundDetails,
     lnurlInfo: payment.details?.lnurlInfo,
     bip353Address: payment.details?.bip353Address,
@@ -594,7 +600,7 @@ function getStatusColor(status: string): string {
     case "refundPending":
       return "text-orange-500";
     case "refunded":
-      return "text-blue-500";
+      return "text-purple-500";
     default:
       return "text-gray-500";
   }

@@ -37,6 +37,11 @@ export async function load({ params, parent }) {
         );
 
         if (payment) {
+          const resolvedStatus =
+            payment.status === "failed" &&
+            (payment.details?.refundTxId || payment.details?.refundTxAmountSat)
+              ? "refunded"
+              : payment.status;
           // Return payment with all SDK fields intact
           return {
             payment: {
@@ -45,6 +50,7 @@ export async function load({ params, parent }) {
                 payment.txId || payment.id || payment.paymentHash || params.id,
               rate,
               currency: parentData.user?.currency || "USD",
+              status: resolvedStatus,
               // Ensure these fields exist for compatibility
               created: payment.timestamp
                 ? payment.timestamp * 1000
