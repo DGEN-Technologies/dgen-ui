@@ -69,20 +69,6 @@
     {#if mounted}
       <!-- Section Header -->
       <div class="text-center mb-16" in:fade={{ duration: 800, delay: 200 }}>
-        <div
-          class="inline-flex items-center gap-3 mb-4 px-6 py-3 rounded-full glass border border-dgen-cyan/30"
-        >
-          <iconify-icon
-            icon="ph:map-trifold-bold"
-            class="text-dgen-cyan"
-            width="24"
-          ></iconify-icon>
-          <span
-            class="text-dgen-cyan font-bold uppercase tracking-wider text-sm"
-            >Roadmap</span
-          >
-        </div>
-
         <h2
           class="text-4xl sm:text-5xl md:text-6xl font-bold mb-4 heading-condensed"
         >
