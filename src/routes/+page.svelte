@@ -19,7 +19,6 @@
 
   let howItWorks = $state();
   let roadmap = $state();
-  let partners = $state();
   let about = $state();
 
   onMount(() => {
@@ -27,13 +26,12 @@
     setTimeout(() => {
       howItWorks = document.getElementById("howItWorks");
       roadmap = document.getElementById("roadmap");
-      partners = document.getElementById("partners");
       about = document.getElementById("about");
     }, 100);
   });
 </script>
 
-<LandingHeader {howItWorks} {roadmap} {partners} {about} {user} />
+<LandingHeader {howItWorks} {roadmap} {about} {user} />
 
 <div class="relative landing-page-content">
   <!-- Lightning Bolts (Pro Mode Only) - Landing Page -->
