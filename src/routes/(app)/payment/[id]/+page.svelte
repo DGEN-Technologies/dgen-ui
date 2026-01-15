@@ -58,6 +58,14 @@
   let displayStatus = $derived(
     status === "failed" && hasRefundTx ? "refunded" : status,
   );
+  let isBitcoinOnchain = $derived(
+    type === "bitcoin" || p?.details?.type === "bitcoin",
+  );
+  let canRefund = $derived(
+    isBitcoinOnchain &&
+      (displayStatus === "failed" || displayStatus === "refundable") &&
+      swapAddress,
+  );
 
   let expl = $derived(
     {
@@ -200,7 +208,7 @@
       </button>
     </div>
 
-    {#if type === "bitcoin" && (displayStatus === "failed" || displayStatus === "refundable") && swapAddress}
+    {#if canRefund}
       <div class="mt-6">
         <div class="card bg-warning/10 border-2 border-warning">
           <div class="card-body p-4 space-y-3">
@@ -464,7 +472,7 @@
           </div>
         {/if}
 
-        {#if type === "bitcoin" && (displayStatus === "failed" || displayStatus === "refundable") && swapId}
+        {#if canRefund}
           <div class="mt-8 space-y-4">
             <div class="card bg-warning/10 border-2 border-warning">
               <div class="card-body p-4">

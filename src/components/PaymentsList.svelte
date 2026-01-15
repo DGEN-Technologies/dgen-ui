@@ -779,7 +779,15 @@
                 ></iconify-icon>
               </div>
               <div class="min-w-0">
-                <div class="text-xs sm:text-sm text-white/60">Total Sent</div>
+                <div class="flex items-center justify-between gap-2">
+                  <div class="text-xs sm:text-sm text-white/60">Total Sent</div>
+                  <button
+                    class="btn btn-xs btn-outline border-white/20 text-white/70 hover:text-white hover:border-white/40"
+                    onclick={() => goto("/refunds")}
+                  >
+                    Refunds
+                  </button>
+                </div>
                 <div
                   class="text-base sm:text-xl font-bold text-red-400 truncate"
                 >
