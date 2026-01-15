@@ -17,15 +17,16 @@
   >
     <div class="flex items-start gap-4">
       <div class="p-3 rounded-2xl bg-orange-500/20">
-        <iconify-icon icon="ph:warning-bold" class="text-orange-400" width="28"></iconify-icon>
+        <iconify-icon icon="ph:warning-bold" class="text-orange-400" width="28"
+        ></iconify-icon>
       </div>
       <div class="flex-1">
         <div class="text-sm font-semibold text-orange-300 mb-1">
           {$t("payments.refundAvailable") || "Refundable Deposit Detected"}
         </div>
         <div class="text-xs text-white/70 mb-3">
-          {count} on-chain deposit{count === 1 ? "" : "s"} need a refund. You can send them back to a
-          Bitcoin address.
+          {count} on-chain deposit{count === 1 ? "" : "s"} need a refund. You can
+          send them back to a Bitcoin address.
         </div>
         <button
           class="btn btn-sm btn-outline border-orange-400 text-orange-300 hover:bg-orange-400/20"

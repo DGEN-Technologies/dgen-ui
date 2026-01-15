@@ -47,7 +47,9 @@
     status,
     swapId,
   } = $derived(p || {});
-  let swapAddress = $derived(p?.details?.bitcoinAddress || p?.swapAddress || swapId || "");
+  let swapAddress = $derived(
+    p?.details?.bitcoinAddress || p?.swapAddress || swapId || "",
+  );
   let [txid, vout] = $derived(amount > 0 && ref ? ref.split(":") : [hash]);
   let a = $derived(Math.abs(amount));
 
@@ -191,7 +193,8 @@
           <div class="card-body p-4 space-y-3">
             <div class="flex items-start gap-3">
               <div class="text-warning mt-1">
-                <iconify-icon icon="ph:warning-circle" width="28"></iconify-icon>
+                <iconify-icon icon="ph:warning-circle" width="28"
+                ></iconify-icon>
               </div>
               <div class="space-y-1">
                 <h2 class="text-lg font-semibold">Refund required</h2>

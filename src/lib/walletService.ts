@@ -502,26 +502,26 @@ export const recommendedFees = async (): Promise<breezSdk.RecommendedFees> => {
 
 // Refund operations (Bitcoin on-chain swaps)
 export const listRefundables = async (): Promise<breezSdk.RefundableSwap[]> => {
-  if (!sdk) throw new Error('SDK not initialized');
+  if (!sdk) throw new Error("SDK not initialized");
   return await sdk.listRefundables();
 };
 
 export const prepareRefund = async (
-  params: breezSdk.PrepareRefundRequest
+  params: breezSdk.PrepareRefundRequest,
 ): Promise<breezSdk.PrepareRefundResponse> => {
-  if (!sdk) throw new Error('SDK not initialized');
+  if (!sdk) throw new Error("SDK not initialized");
   return await sdk.prepareRefund(params);
 };
 
 export const refundSwap = async (
-  params: breezSdk.RefundRequest
+  params: breezSdk.RefundRequest,
 ): Promise<breezSdk.RefundResponse> => {
-  if (!sdk) throw new Error('SDK not initialized');
+  if (!sdk) throw new Error("SDK not initialized");
   return await sdk.refund(params);
 };
 
 export const rescanOnchainSwaps = async (): Promise<void> => {
-  if (!sdk) throw new Error('SDK not initialized');
+  if (!sdk) throw new Error("SDK not initialized");
   await sdk.rescanOnchainSwaps();
 };
 

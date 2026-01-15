@@ -2,7 +2,11 @@
   import { onMount } from "svelte";
   import { t } from "$lib/translations";
   import { fail, success } from "$lib/utils";
-  import { prepareRefund, recommendedFees, refundSwap } from "$lib/walletService";
+  import {
+    prepareRefund,
+    recommendedFees,
+    refundSwap,
+  } from "$lib/walletService";
   import { refundablesStore } from "$lib/stores/refundables";
 
   let {
@@ -56,7 +60,10 @@
     }
 
     if (!refundAddress) {
-      fail($t("payments.refundAddressRequired") || "Please enter a Bitcoin address");
+      fail(
+        $t("payments.refundAddressRequired") ||
+          "Please enter a Bitcoin address",
+      );
       return;
     }
 
@@ -84,7 +91,10 @@
         feeRateSatPerVbyte: feeRate,
       });
 
-      success($t("payments.refundSuccess") || "Refund transaction broadcast successfully!");
+      success(
+        $t("payments.refundSuccess") ||
+          "Refund transaction broadcast successfully!",
+      );
       refundablesStore.refresh();
       refundTxId = result?.refundTxId || "";
     } catch (error) {
@@ -114,12 +124,15 @@
   {#if !showConfirm}
     <div class="card bg-base-200">
       <div class="card-body">
-        <h2 class="card-title">{$t("payments.refundDetails") || "Refund Details"}</h2>
+        <h2 class="card-title">
+          {$t("payments.refundDetails") || "Refund Details"}
+        </h2>
 
         <div class="space-y-4">
           <div>
             <label class="label">
-              <span class="label-text">{$t("payments.amount") || "Amount"}</span>
+              <span class="label-text">{$t("payments.amount") || "Amount"}</span
+              >
             </label>
             <div class="text-2xl font-bold">
               {absoluteAmount.toLocaleString()} sats
@@ -134,7 +147,9 @@
 
           <div>
             <label class="label">
-              <span class="label-text">{$t("payments.refundTo") || "Refund to Bitcoin address"}</span>
+              <span class="label-text"
+                >{$t("payments.refundTo") || "Refund to Bitcoin address"}</span
+              >
             </label>
             <input
               type="text"
@@ -147,27 +162,35 @@
 
           <div>
             <label class="label">
-              <span class="label-text">{$t("payments.feeRate") || "Network Fee Rate"} (sat/vbyte)</span>
+              <span class="label-text"
+                >{$t("payments.feeRate") || "Network Fee Rate"} (sat/vbyte)</span
+              >
             </label>
 
             {#if fees}
               <div class="grid grid-cols-3 gap-2 mb-2">
                 <button
-                  class="btn btn-sm {feeRate === fees.economyFee ? 'btn-primary' : 'btn-outline'}"
+                  class="btn btn-sm {feeRate === fees.economyFee
+                    ? 'btn-primary'
+                    : 'btn-outline'}"
                   onclick={() => setFeeRate(fees.economyFee)}
                 >
                   {$t("payments.feeSlow") || "Slow"}<br />
                   {fees.economyFee} sat/vb
                 </button>
                 <button
-                  class="btn btn-sm {feeRate === fees.hourFee ? 'btn-primary' : 'btn-outline'}"
+                  class="btn btn-sm {feeRate === fees.hourFee
+                    ? 'btn-primary'
+                    : 'btn-outline'}"
                   onclick={() => setFeeRate(fees.hourFee)}
                 >
                   {$t("payments.feeNormal") || "Normal"}<br />
                   {fees.hourFee} sat/vb
                 </button>
                 <button
-                  class="btn btn-sm {feeRate === fees.fastestFee ? 'btn-primary' : 'btn-outline'}"
+                  class="btn btn-sm {feeRate === fees.fastestFee
+                    ? 'btn-primary'
+                    : 'btn-outline'}"
                   onclick={() => setFeeRate(fees.fastestFee)}
                 >
                   {$t("payments.feeFast") || "Fast"}<br />
@@ -196,7 +219,11 @@
               {$t("common.cancel") || "Cancel"}
             </button>
           {/if}
-          <button class="btn btn-primary" onclick={prepare} disabled={loading || !refundAddress}>
+          <button
+            class="btn btn-primary"
+            onclick={prepare}
+            disabled={loading || !refundAddress}
+          >
             {#if loading}
               <span class="loading loading-spinner"></span>
             {/if}
@@ -208,33 +235,46 @@
   {:else}
     <div class="card bg-base-200">
       <div class="card-body">
-        <h2 class="card-title">{$t("payments.confirmRefund") || "Confirm Refund"}</h2>
+        <h2 class="card-title">
+          {$t("payments.confirmRefund") || "Confirm Refund"}
+        </h2>
 
         <div class="space-y-4">
           <div class="alert alert-info">
             <iconify-icon icon="ph:info" width="24"></iconify-icon>
             <span>
-              {$t("payments.refundWarning") || "Please verify the refund address is correct. This transaction cannot be reversed."}
+              {$t("payments.refundWarning") ||
+                "Please verify the refund address is correct. This transaction cannot be reversed."}
             </span>
           </div>
 
           <div>
-            <div class="text-sm text-secondary">{$t("payments.refundTo") || "Refund to"}</div>
+            <div class="text-sm text-secondary">
+              {$t("payments.refundTo") || "Refund to"}
+            </div>
             <div class="font-mono text-sm break-all">{refundAddress}</div>
           </div>
 
           <div>
-            <div class="text-sm text-secondary">{$t("payments.amount") || "Amount"}</div>
-            <div class="text-xl font-bold">{absoluteAmount.toLocaleString()} sats</div>
+            <div class="text-sm text-secondary">
+              {$t("payments.amount") || "Amount"}
+            </div>
+            <div class="text-xl font-bold">
+              {absoluteAmount.toLocaleString()} sats
+            </div>
           </div>
 
           <div>
-            <div class="text-sm text-secondary">{$t("payments.networkFee") || "Network Fee"}</div>
+            <div class="text-sm text-secondary">
+              {$t("payments.networkFee") || "Network Fee"}
+            </div>
             <div>~{estimatedFee()} sats ({feeRate} sat/vbyte)</div>
           </div>
 
           <div>
-            <div class="text-sm text-secondary">{$t("payments.youWillReceive") || "You will receive"}</div>
+            <div class="text-sm text-secondary">
+              {$t("payments.youWillReceive") || "You will receive"}
+            </div>
             <div class="text-xl font-bold">
               ~{Math.max(absoluteAmount - estimatedFee(), 0).toLocaleString()} sats
             </div>
@@ -244,7 +284,9 @@
             <div class="alert alert-success">
               <iconify-icon icon="ph:check-circle" width="24"></iconify-icon>
               <div class="text-sm">
-                <div>{$t("payments.refundBroadcast") || "Refund broadcast"}</div>
+                <div>
+                  {$t("payments.refundBroadcast") || "Refund broadcast"}
+                </div>
                 <div class="font-mono break-all">{refundTxId}</div>
               </div>
             </div>
@@ -253,14 +295,26 @@
 
         <div class="card-actions justify-end mt-6">
           {#if refundTxId}
-            <button class="btn btn-primary" onclick={handleDone} disabled={loading}>
+            <button
+              class="btn btn-primary"
+              onclick={handleDone}
+              disabled={loading}
+            >
               Done
             </button>
           {:else}
-            <button class="btn btn-ghost" onclick={() => (showConfirm = false)} disabled={loading}>
+            <button
+              class="btn btn-ghost"
+              onclick={() => (showConfirm = false)}
+              disabled={loading}
+            >
               {$t("common.back") || "Back"}
             </button>
-            <button class="btn btn-primary" onclick={confirmRefund} disabled={loading}>
+            <button
+              class="btn btn-primary"
+              onclick={confirmRefund}
+              disabled={loading}
+            >
               {#if loading}
                 <span class="loading loading-spinner"></span>
               {/if}

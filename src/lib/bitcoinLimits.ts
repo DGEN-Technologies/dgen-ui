@@ -24,11 +24,11 @@ const getBaseMinSat = (): number =>
     : 25000;
 
 export const getEffectiveOnchainReceiveMinSat = (
-  onchainLimits?: OnchainLimitsLike
+  onchainLimits?: OnchainLimitsLike,
 ): number => {
   const baseMin = getBaseMinSat();
   const sdkMin = toFiniteNumber(
-    onchainLimits?.receive?.minSat ?? onchainLimits?.minSat
+    onchainLimits?.receive?.minSat ?? onchainLimits?.minSat,
   );
 
   // Always prefer local minimum over SDK minimum
@@ -37,6 +37,6 @@ export const getEffectiveOnchainReceiveMinSat = (
 };
 
 export const getOnchainReceiveMaxSat = (
-  onchainLimits?: OnchainLimitsLike
+  onchainLimits?: OnchainLimitsLike,
 ): number | null =>
   toFiniteNumber(onchainLimits?.receive?.maxSat ?? onchainLimits?.maxSat);

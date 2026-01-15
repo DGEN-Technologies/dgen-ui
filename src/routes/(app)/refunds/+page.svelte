@@ -8,7 +8,10 @@
 
   const formatTimestamp = (timestamp) => {
     if (!timestamp) return "--";
-    const date = timestamp > 10000000000 ? new Date(timestamp) : new Date(timestamp * 1000);
+    const date =
+      timestamp > 10000000000
+        ? new Date(timestamp)
+        : new Date(timestamp * 1000);
     return format(date, "h:mmaaa MMM d, yyyy");
   };
 
@@ -22,7 +25,9 @@
 </script>
 
 <div class="container mx-auto max-w-2xl px-4 space-y-6">
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+  <div
+    class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+  >
     <div>
       <h1 class="text-3xl font-semibold">Refundable Deposits</h1>
       <p class="text-sm text-secondary">
@@ -67,7 +72,9 @@
         <div class="card bg-base-200">
           <div class="card-body space-y-3">
             <div class="flex items-center justify-between gap-4">
-              <div class="text-xl font-semibold">{sat(swap.amountSat)} sats</div>
+              <div class="text-xl font-semibold">
+                {sat(swap.amountSat)} sats
+              </div>
               <div class="text-xs text-secondary">
                 {formatTimestamp(swap.timestamp)}
               </div>
@@ -82,7 +89,8 @@
             {/if}
             <button
               class="btn btn-primary w-full"
-              onclick={() => goto(`/refunds/${encodeURIComponent(swap.swapAddress)}`)}
+              onclick={() =>
+                goto(`/refunds/${encodeURIComponent(swap.swapAddress)}`)}
             >
               {swap.lastRefundTxId ? "Retry Refund" : "Refund"}
             </button>

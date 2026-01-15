@@ -13,7 +13,9 @@
       payment?.details?.swapId ||
       "",
   );
-  let amountSat = $derived(payment?.amountSat ?? Math.abs(payment?.amount ?? 0));
+  let amountSat = $derived(
+    payment?.amountSat ?? Math.abs(payment?.amount ?? 0),
+  );
 </script>
 
 {#if !payment}
@@ -32,7 +34,10 @@
           {$t("payments.refundUnavailable") ||
             "Refund details not available for this payment."}
         </p>
-        <button class="btn btn-ghost mt-4" onclick={() => goto(`/payment/${payment.id}`)}>
+        <button
+          class="btn btn-ghost mt-4"
+          onclick={() => goto(`/payment/${payment.id}`)}
+        >
           {$t("common.back") || "Back"}
         </button>
       </div>

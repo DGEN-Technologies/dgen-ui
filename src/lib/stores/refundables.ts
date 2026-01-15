@@ -1,6 +1,10 @@
 import { writable } from "svelte/store";
 import type { RefundableSwap } from "@breeztech/breez-sdk-liquid/web";
-import { isConnected, listRefundables, rescanOnchainSwaps } from "$lib/walletService";
+import {
+  isConnected,
+  listRefundables,
+  rescanOnchainSwaps,
+} from "$lib/walletService";
 
 type RefundablesState = {
   items: RefundableSwap[];

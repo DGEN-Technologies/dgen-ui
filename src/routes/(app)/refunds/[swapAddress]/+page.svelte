@@ -6,7 +6,9 @@
   import { listRefundables } from "$lib/walletService";
   import RefundForm from "$comp/RefundForm.svelte";
 
-  let swapAddress = $derived(decodeURIComponent($page.params.swapAddress || ""));
+  let swapAddress = $derived(
+    decodeURIComponent($page.params.swapAddress || ""),
+  );
   let refundable = $state(null);
   let loading = $state(true);
   let error = $state(null);
@@ -14,7 +16,8 @@
   onMount(async () => {
     try {
       const refundables = await listRefundables();
-      refundable = refundables.find((item) => item.swapAddress === swapAddress) || null;
+      refundable =
+        refundables.find((item) => item.swapAddress === swapAddress) || null;
 
       if (!refundable) {
         error = "Refundable swap not found.";
