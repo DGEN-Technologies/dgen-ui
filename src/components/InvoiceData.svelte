@@ -53,7 +53,9 @@
   <div class="mx-auto max-w-md mt-4 mb-4">
     <div class="rounded-2xl p-4 bg-yellow-500/10 border-2 border-yellow-500/30">
       <div class="text-center">
-        <p class="text-yellow-200 font-semibold leading-relaxed text-base sm:text-lg">
+        <p
+          class="text-yellow-200 font-semibold leading-relaxed text-base sm:text-lg"
+        >
           {#if hasOnchainMin && hasOnchainMax}
             Min:
             <span class="font-bold text-yellow-100"
@@ -78,7 +80,9 @@
             Bitcoin on-chain payments require network fees
           {/if}
         </p>
-        <div class="mt-3 flex items-center justify-center gap-2 text-yellow-300/80 text-base sm:text-lg">
+        <div
+          class="mt-3 flex items-center justify-center gap-2 text-yellow-300/80 text-base sm:text-lg"
+        >
           <iconify-icon
             noobserver
             icon="ph:warning-bold"

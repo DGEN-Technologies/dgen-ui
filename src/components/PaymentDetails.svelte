@@ -205,9 +205,7 @@
               {:else if displayStatus === "waitingConfirmation"}
                 <iconify-icon icon="ph:clock" width="16"></iconify-icon>
               {:else if displayStatus === "refundable" || displayStatus === "refundPending"}
-                <iconify-icon
-                  icon="ph:arrow-counter-clockwise"
-                  width="16"
+                <iconify-icon icon="ph:arrow-counter-clockwise" width="16"
                 ></iconify-icon>
               {:else if displayStatus === "refunded"}
                 <iconify-icon icon="ph:arrow-u-up-left" width="16"

@@ -482,7 +482,8 @@ function enhancePayment(
     status,
     statusColor: getStatusColor(status),
     statusIcon: getStatusIcon(status),
-    isRefundable: status === "failed" && payment.details?.swapInfo !== undefined,
+    isRefundable:
+      status === "failed" && payment.details?.swapInfo !== undefined,
     refundDetails: payment.details?.refundDetails,
     lnurlInfo: payment.details?.lnurlInfo,
     bip353Address: payment.details?.bip353Address,
