@@ -22,14 +22,17 @@
 </script>
 
 <div class="container mx-auto max-w-2xl px-4 space-y-6">
-  <div class="flex items-center justify-between gap-4">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <div>
       <h1 class="text-3xl font-semibold">Refundable Deposits</h1>
       <p class="text-sm text-secondary">
         Refund on-chain deposits that fell below the network minimum.
       </p>
     </div>
-    <button class="btn btn-ghost btn-sm" onclick={() => refresh({ rescan: true })}>
+    <button
+      class="btn btn-primary btn-sm w-full sm:w-auto"
+      onclick={() => refresh({ rescan: true })}
+    >
       Rescan
     </button>
   </div>
@@ -65,24 +68,24 @@
           <div class="card-body space-y-3">
             <div class="flex items-center justify-between gap-4">
               <div class="text-xl font-semibold">{sat(swap.amountSat)} sats</div>
-              <button
-                class="btn btn-primary btn-sm"
-                onclick={() => goto(`/refunds/${encodeURIComponent(swap.swapAddress)}`)}
-              >
-                {swap.lastRefundTxId ? "Retry Refund" : "Refund"}
-              </button>
+              <div class="text-xs text-secondary">
+                {formatTimestamp(swap.timestamp)}
+              </div>
             </div>
             <div class="text-xs text-secondary break-all">
               Swap address: {swap.swapAddress}
-            </div>
-            <div class="text-xs text-secondary">
-              Created: {formatTimestamp(swap.timestamp)}
             </div>
             {#if swap.lastRefundTxId}
               <div class="text-xs text-secondary break-all">
                 Last refund txid: {swap.lastRefundTxId}
               </div>
             {/if}
+            <button
+              class="btn btn-primary w-full"
+              onclick={() => goto(`/refunds/${encodeURIComponent(swap.swapAddress)}`)}
+            >
+              {swap.lastRefundTxId ? "Retry Refund" : "Refund"}
+            </button>
           </div>
         </div>
       {/each}

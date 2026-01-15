@@ -5,11 +5,13 @@
   import { prepareRefund, recommendedFees, refundSwap } from "$lib/walletService";
   import { refundablesStore } from "$lib/stores/refundables";
 
-  export let swapAddress;
-  export let amountSat;
-  export let lastRefundTxId = "";
-  export let onSuccess = null;
-  export let onCancel = null;
+  let {
+    swapAddress,
+    amountSat,
+    lastRefundTxId = "",
+    onSuccess = null,
+    onCancel = null,
+  } = $props();
 
   let loading = $state(false);
   let refundAddress = $state("");
@@ -252,7 +254,7 @@
         <div class="card-actions justify-end mt-6">
           {#if refundTxId}
             <button class="btn btn-primary" onclick={handleDone} disabled={loading}>
-              {$t("common.done") || "Done"}
+              Done
             </button>
           {:else}
             <button class="btn btn-ghost" onclick={() => (showConfirm = false)} disabled={loading}>
