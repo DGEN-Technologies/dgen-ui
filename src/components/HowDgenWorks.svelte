@@ -123,15 +123,12 @@
     bind:this={sectionElement}
   >
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-      <div class="text-center mb-6 sm:mb-12" in:fly={{ y: 30, duration: 800 }}>
+      <div class="text-center mb-6 sm:mb-10" in:fly={{ y: 30, duration: 800 }}>
         <h2
           class="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 heading-condensed"
         >
           <span class="holographic">HOW THIS WORKS</span>
         </h2>
-        <p class="text-lg sm:text-xl md:text-2xl opacity-80 px-2">
-          Make transfers Efficiently & Internationally
-        </p>
         <p class="text-sm sm:text-base md:text-lg opacity-60 mt-2">
           (click on steps 1, 2, 3, or 4 to navigate)
         </p>
@@ -139,7 +136,7 @@
 
       <div class="max-w-6xl mx-auto">
         <!-- Progress Timeline -->
-        <div class="relative mb-12">
+        <div class="relative mb-8 mx-auto w-[60%] lg:w-[70%]">
           <div
             class="absolute left-0 right-0 top-1/2 h-1 bg-white/10 rounded-full"
           ></div>
@@ -176,7 +173,7 @@
         </div>
 
         <!-- Active Step Display -->
-        <div class="mt-8 sm:mt-20">
+        <div class="mt-8 sm:mt-16">
           {#each steps as step, i}
             {#if i === activeStep}
               <div
@@ -186,73 +183,79 @@
                 <!-- Visual Side -->
                 <div class="relative order-2 lg:order-1">
                   <div
-                    class="premium-card border-2 border-purple-500/20 hover:border-purple-500/60 transition-all duration-500 min-h-[320px] sm:min-h-[300px] lg:min-h-[400px] flex flex-col justify-center"
+                    class="premium-card border-2 border-purple-500/20 hover:border-purple-500/60 transition-all duration-500 min-h-[200px] sm:min-h-[240px] lg:min-h-[280px] flex flex-col justify-center"
                   >
                     <!-- Floating visual -->
                     <div
-                      class="absolute top-8 right-8 text-6xl sm:text-8xl opacity-20 animate-float"
+                      class="absolute top-8 right-8 text-4xl sm:text-6xl opacity-20 animate-float"
                     >
                       {step.visual}
                     </div>
 
                     <!-- Phone Mockup Display -->
-                    <div class="relative mx-auto max-w-sm">
+                    <div
+                      class="relative mx-auto w-full max-w-[230px] lg:max-w-[270px]"
+                    >
                       <!-- Phone frame -->
                       <div
                         class="glass rounded-3xl p-2 border-2 border-white/20"
                       >
                         <div
-                          class="bg-gradient-dark rounded-2xl p-3 sm:p-4 min-h-[200px] sm:min-h-[280px] flex flex-col justify-center"
+                          class="bg-gradient-dark rounded-2xl p-2 sm:p-3 min-h-[140px] sm:min-h-[200px] flex flex-col justify-center"
                         >
                           <!-- Phone status bar -->
                           <div
-                            class="flex justify-between items-center mb-4 text-xs opacity-60"
+                            class="flex justify-between items-center mb-2 text-[10px] opacity-60"
                           >
                             <span>9:41</span>
                             <div class="flex gap-1">
-                              <div class="w-4 h-2 bg-white/60 rounded-sm"></div>
                               <div
-                                class="w-6 h-2 bg-green-400 rounded-sm"
+                                class="w-3 h-1.5 bg-white/60 rounded-sm"
+                              ></div>
+                              <div
+                                class="w-5 h-1.5 bg-green-400 rounded-sm"
                               ></div>
                             </div>
                           </div>
 
                           <!-- Step content -->
-                          <div class="text-center space-y-2 sm:space-y-3">
-                            <div class="text-3xl sm:text-4xl mb-1 sm:mb-2">
+                          <div class="text-center space-y-1 sm:space-y-2">
+                            <div class="text-2xl sm:text-3xl mb-1">
                               {step.visual}
                             </div>
-                            <h4 class="text-lg sm:text-xl font-bold text-white">
+                            <h4
+                              class="text-base sm:text-lg font-bold text-white"
+                            >
                               {step.title}
                             </h4>
-                            <p class="text-sm sm:text-base text-white/70">
+                            <p class="text-xs sm:text-sm text-white/70">
                               {step.action}
                             </p>
 
                             <!-- Simple action visualization -->
                             {#if i === 0}
                               <div
-                                class="glass rounded-lg p-2 sm:p-3 mt-2 sm:mt-4"
+                                class="glass rounded-lg p-1.5 sm:p-2 mt-2 sm:mt-3"
                               >
                                 <div
                                   class="flex items-center justify-center gap-2"
                                 >
                                   <iconify-icon
                                     icon="ph:user-bold"
-                                    width="16"
+                                    width="14"
                                     class="text-purple-400"
                                   ></iconify-icon>
-                                  <span class="text-sm sm:text-base"
+                                  <span class="text-xs sm:text-sm"
                                     >Choose username</span
                                   >
                                 </div>
                               </div>
                             {:else if i === 1}
                               <div
-                                class="glass rounded-lg p-2 sm:p-3 mt-2 sm:mt-4"
+                                class="glass rounded-lg p-1.5 sm:p-2 mt-2 sm:mt-3"
                               >
                                 <div
-                                  class="w-14 h-14 sm:w-20 sm:h-20 mx-auto bg-white rounded-lg p-2 flex items-center justify-center"
+                                  class="w-12 h-12 sm:w-16 sm:h-16 mx-auto bg-white rounded-lg p-1.5 flex items-center justify-center"
                                 >
                                   <div class="w-full h-full relative">
                                     <!-- QR code pattern -->
@@ -345,7 +348,7 @@
                               </div>
                             {:else if i === 2}
                               <div
-                                class="glass rounded-lg p-2 sm:p-3 mt-2 sm:mt-4"
+                                class="glass rounded-lg p-1.5 sm:p-2 mt-2 sm:mt-3"
                               >
                                 <div
                                   class="flex flex-col items-center justify-center gap-1"
@@ -356,21 +359,21 @@
                                     <div class="flex flex-col items-center">
                                       <iconify-icon
                                         icon="ph:camera-bold"
-                                        width="16"
+                                        width="14"
                                         class="text-yellow-400"
                                       ></iconify-icon>
-                                      <span class="text-xs opacity-60 mt-1"
+                                      <span class="text-[10px] opacity-60 mt-1"
                                         >(scan)</span
                                       >
                                     </div>
                                     <iconify-icon
                                       icon="ph:arrow-right-bold"
-                                      width="12"
+                                      width="10"
                                       class="text-white/60"
                                     ></iconify-icon>
                                     <iconify-icon
                                       icon="ph:paper-plane-bold"
-                                      width="16"
+                                      width="14"
                                       class="text-green-400"
                                     ></iconify-icon>
                                   </div>
@@ -378,7 +381,7 @@
                               </div>
                             {:else}
                               <div
-                                class="glass rounded-lg p-2 sm:p-3 mt-2 sm:mt-4"
+                                class="glass rounded-lg p-1.5 sm:p-2 mt-2 sm:mt-3"
                               >
                                 <div
                                   class="flex flex-col items-center justify-center"
@@ -387,14 +390,14 @@
                                   <img
                                     src="/images/bitcoin.png"
                                     alt="Bitcoin"
-                                    class="w-16 h-16 object-contain"
+                                    class="w-12 h-12 object-contain"
                                   />
                                   <div
                                     class="flex items-center justify-center gap-2 mt-1"
                                   >
                                     <iconify-icon
                                       icon="ph:trend-up-bold"
-                                      width="16"
+                                      width="14"
                                       class="text-green-400"
                                     ></iconify-icon>
                                   </div>
@@ -408,10 +411,10 @@
 
                     <!-- Stats -->
                     {#if step.time}
-                      <div class="mt-6 flex justify-center gap-6">
+                      <div class="mt-4 flex justify-center gap-6">
                         <div class="text-center px-4">
                           <p
-                            class="text-lg sm:text-xl lg:text-2xl font-bold gradient-text leading-relaxed"
+                            class="text-base sm:text-lg lg:text-xl font-bold gradient-text leading-relaxed"
                           >
                             {step.time}
                           </p>
@@ -425,24 +428,24 @@
                 <div class="space-y-3 sm:space-y-6 order-1 lg:order-2">
                   <div class="flex items-center gap-3 sm:gap-4">
                     <div
-                      class="text-4xl sm:text-6xl font-bold gradient-text opacity-50"
+                      class="text-3xl sm:text-5xl font-bold gradient-text opacity-50"
                     >
                       {step.number}
                     </div>
                     <div
-                      class="w-12 h-12 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center"
+                      class="w-10 h-10 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center"
                     >
                       <iconify-icon
                         icon={step.icon}
-                        class="text-white text-2xl sm:text-4xl"
+                        class="text-white text-xl sm:text-3xl"
                       ></iconify-icon>
                     </div>
                   </div>
 
-                  <h3 class="text-xl sm:text-2xl md:text-4xl font-bold">
+                  <h3 class="text-lg sm:text-xl md:text-3xl font-bold">
                     {step.title}
                   </h3>
-                  <p class="text-sm sm:text-lg md:text-xl opacity-80">
+                  <p class="text-xs sm:text-base md:text-lg opacity-80">
                     <span class="sm:hidden">{step.mobileDescription}</span>
                     <span class="hidden sm:inline">{step.description}</span>
                   </p>
@@ -463,14 +466,14 @@
 
                   <!-- Action button -->
                   <button
-                    class="btn btn-liquid text-white font-bold text-sm sm:text-base py-2 sm:py-3"
+                    class="btn btn-liquid text-white font-bold text-xs sm:text-sm py-2 sm:py-3"
                     onclick={() =>
                       (activeStep = (activeStep + 1) % steps.length)}
                   >
                     {i < steps.length - 1 ? "Next Step" : "Start Over"}
                     <iconify-icon
                       icon="ph:arrow-right-bold"
-                      width="20"
+                      width="16"
                       class="ml-2"
                     ></iconify-icon>
                   </button>

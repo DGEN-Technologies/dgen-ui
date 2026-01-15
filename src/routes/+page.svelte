@@ -8,7 +8,6 @@
   import Partners from "$comp/Partners.svelte";
   // import BugBounty from "$comp/BugBounty.svelte";
   import Roadmap from "$comp/Roadmap.svelte";
-  import FAQ from "$comp/FAQ.svelte";
   import Footer from "$comp/Footer.svelte";
 
   import { locale, t } from "$lib/translations";

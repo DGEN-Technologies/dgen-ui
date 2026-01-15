@@ -9,7 +9,7 @@
   });
 </script>
 
-<div class="relative -mt-20 min-h-screen">
+<div class="relative -mt-20 sm:min-h-screen">
   <!-- Animated background mesh with aurora effect -->
   <div class="absolute inset-0">
     <div class="absolute inset-0 aurora-bg opacity-5"></div>
@@ -146,7 +146,8 @@
         <div
           class="px-5 sm:px-7 py-4 sm:py-5 flex items-center min-h-[3.5rem] flex flex-col"
         >
-          <span class="text-dgen-cyan font-bold text-base sm:text-xl"
+          <span
+            class="text-dgen-cyan font-bold text-base sm:text-xl whitespace-nowrap"
             >💎 Create Account In Seconds</span
           >
           <span class="text-dgen-cyan font-bold text-base sm:text-xl"
@@ -163,7 +164,7 @@
         <div
           class="glass px-4 py-3 sm:px-6 rounded-full border border-white/60 bg-white/10 inline-block"
         >
-          <p class="font-semibold text-sm sm:text-base text-white/90">
+          <p class="font-semibold text-sm sm:text-base text-yellow-400/90">
             ⚠️ This website/app is in Beta and not finalized. Use at your own
             risk.
           </p>
