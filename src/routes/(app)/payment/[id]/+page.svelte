@@ -235,7 +235,7 @@
             {/if}
             <button
               class="btn btn-primary btn-sm w-full sm:w-auto"
-              onclick={() => goto(`/payment/${id}/refund`)}
+              onclick={() => goto("/refunds")}
             >
               {p?.details?.refundTxId ? "Retry Refund" : "Refund"}
             </button>
@@ -499,7 +499,7 @@
 
             <button
               class="btn btn-warning btn-lg w-full gap-2"
-              onclick={() => goto(`/payment/${id}/refund`)}
+              onclick={() => goto("/refunds")}
             >
               <iconify-icon icon="ph:arrow-u-up-left" width="24"></iconify-icon>
               <span>{$t("payments.refund") || "Refund Payment"}</span>
