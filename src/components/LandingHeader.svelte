@@ -41,6 +41,11 @@
           onclick={() => scroll(roadmap)}>Roadmap</button
         >
         <ProModeToggle />
+        <a
+          href="http://app.dgentech.io"
+          class="hover:text-primary transition-colors duration-200"
+          >Mastercard</a
+        >
       {/if}
       {#if user}
         <button
@@ -48,6 +53,9 @@
           onclick={() => goto(`/${user.username}`)}
           >{$t("nav.home")}
         </button>
+        <div>
+          <LocaleSelector />
+        </div>
         <button
           class="btn !w-auto !rounded-full"
           onclick={() => goto("/logout")}
