@@ -215,7 +215,7 @@
               {:else if displayStatus === "failed"}
                 <iconify-icon icon="ph:x-circle" width="16"></iconify-icon>
               {/if}
-              {statusLabel}
+              {statusLabel()}
             </span>
           </div>
           {#if displayStatus === "waitingFeeAcceptance"}
