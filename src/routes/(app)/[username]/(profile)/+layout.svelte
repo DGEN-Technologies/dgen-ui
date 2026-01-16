@@ -138,12 +138,11 @@
   >
     <div class="space-y-1">
       <div
-        class="flex text-3xl font-bold text-center mx-auto justify-center gap-1 items-center"
+        class="flex text-lg sm:text-3xl font-bold text-center mx-auto justify-center gap-1 items-center"
       >
         <button class="flex gap-1 items-center" onclick={toggleDetails}>
           <div class="break-words">{display || username}</div>
-          <iconify-icon noobserver icon="ph:list-bold" width="32"
-          ></iconify-icon>
+          <iconify-icon noobserver icon="ph:list-bold"></iconify-icon>
         </button>
         <!-- <a href={`/${subject.pubkey}/notes`}> -->
         <!--   <iconify-icon noobserver icon="ph:note-bold" width="32"></iconify-icon> -->

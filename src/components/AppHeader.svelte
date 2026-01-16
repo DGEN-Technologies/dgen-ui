@@ -60,6 +60,11 @@
       ? "opacity-100"
       : "opacity-90 hover:opacity-none",
   );
+
+  let avatarSize = $derived(() => {
+    if (w < 426) return 24; // mobile
+    return 32; // desktop
+  });
 </script>
 
 <svelte:window bind:innerWidth={w} />
@@ -128,7 +133,7 @@
       <div
         class="absolute md:w-[64px] md:mx-auto lg:left-[154px] xl:left-[194px] left-[calc(50vw-64px)] -bottom-[64px] z-30"
       >
-        <Avatar user={subject} />
+        <Avatar user={subject} size={avatarSize()} />
       </div>
     {/if}
   </header>
