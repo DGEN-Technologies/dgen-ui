@@ -22,6 +22,12 @@
 
   let formElement = $state();
 
+  var newPassword = $state("");
+  let confirmPassword = $state("");
+  let showConfirmPassword = $state(false);
+  let showFinalConfirm = $state(false);
+  var pendingBody = $state(null);
+
   let { token, cookies, subscriptions } = $derived(data);
   let { tab } = $derived(data);
   let user = $derived({ ...data?.user, ...form?.user });
@@ -53,6 +59,17 @@
     try {
       submitting = true;
       let body = new FormData(formElement);
+
+      newPassword = body.get("password");
+
+      /* STEP 1: user entered password → stop submit */
+      if (newPassword && !showConfirmPassword && !showFinalConfirm) {
+        pendingBody = body;
+        showConfirmPassword = true;
+        submitting = false;
+        return;
+      }
+
       form = {
         user: await fd({
           formData() {
@@ -210,6 +227,95 @@
   <Pin bind:value={$pin} {cancel} />
 {/if}
 
+{#if showConfirmPassword}
+  <div
+    class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 sm:p-0"
+  >
+    <div class="glass w-full max-w-sm rounded-2xl p-4 sm:p-6">
+      <h2 class="text-lg sm:text-xl font-bold mb-4">Confirm Password</h2>
+
+      <input
+        type="password"
+        class="input w-full mb-4"
+        placeholder="Confirm password"
+        bind:value={confirmPassword}
+      />
+      <div class="flex gap-3 sm:gap-4">
+        <button
+          class="text-white border border-white/10 rounded-xl w-full py-2"
+          onclick={() => {
+            showConfirmPassword = false;
+            showFinalConfirm = false;
+          }}
+        >
+          Cancel
+        </button>
+
+        <button
+          class="text-white border border-white/10 rounded-xl w-full py-2"
+          onclick={() => {
+            console.log("newPassword: ", newPassword);
+            console.log("confirmPassword: ", confirmPassword);
+            if (confirmPassword !== newPassword) {
+              fail("Passwords do not match");
+              return;
+            }
+            showConfirmPassword = false;
+            showFinalConfirm = true;
+          }}
+        >
+          Confirm
+        </button>
+      </div>
+    </div>
+  </div>
+{/if}
+{#if showFinalConfirm}
+  <div class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center">
+    <div class="glass w-full max-w-sm rounded-2xl p-4 sm:p-6">
+      <h2 class="text-lg sm:text-xl font-bold mb-4">Are you sure?</h2>
+
+      <p class="text-white/70 mb-4">
+        You are changing your password to:
+        <br />
+        <span class="text-white text-lg sm:text-xl break-all"
+          >{newPassword}</span
+        >
+      </p>
+
+      <div class="flex gap-3 sm:gap-4">
+        <button
+          class="text-white border border-white/40 rounded-lg w-full"
+          onclick={() => {
+            showFinalConfirm = false;
+            pendingBody = null;
+          }}
+        >
+          No
+        </button>
+
+        <button
+          class="text-red-400 border border-red-200/40 rounded-lg w-full"
+          onclick={async () => {
+            showFinalConfirm = false;
+
+            const response = await fetch(formElement.action, {
+              method: "POST",
+              body: pendingBody,
+            });
+
+            const result = deserialize(await response.text());
+            applyAction(result);
+
+            pendingBody = null;
+          }}
+        >
+          Yes, Change Password
+        </button>
+      </div>
+    </div>
+  </div>
+{/if}
 <div class="min-h-screen relative">
   <form
     method="POST"
@@ -220,7 +326,7 @@
     <input type="hidden" name="pin" value={$pin} />
     <input type="hidden" name="tab" value={tab} />
 
-    <div class="container mx-auto max-w-2xl px-4 py-20">
+    <div class="container mx-auto max-w-2xl px-4 py-2 sm:py-20">
       <div class="header animate-fadeInUp">
         <!-- Title with epic glow effect -->
         <h1 class="text-center text-4xl md:text-5xl font-bold mb-2">
