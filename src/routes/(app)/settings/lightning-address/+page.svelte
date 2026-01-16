@@ -1080,7 +1080,9 @@
 
   .address-display {
     flex: 1;
+    flex-direction: column;
     display: flex;
+    justify-content: center;
     align-items: center;
     gap: 0.75rem;
     min-width: 0;
@@ -1099,6 +1101,14 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+  }
+
+  @media (max-width: 425px) {
+    .address-icon {
+      font-size: 1rem;
+      width: 2rem;
+      height: 2rem;
+    }
   }
 
   .address-text {
