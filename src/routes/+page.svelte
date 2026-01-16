@@ -61,9 +61,6 @@
 
     <!-- Interactive Feature Showcase (Built Different) -->
     <FeatureShowcase />
-
-    <!-- Bitcoin Education Section -->
-    <BitcoinEducation />
   </div>
 
   <!-- Bug Bounty Program -->
@@ -77,6 +74,11 @@
   <!-- Roadmap with gradient fade from turquoise to purple -->
   <div class="purple-fade-section">
     <Roadmap />
+  </div>
+
+  <div class="turquoise-cloud-section">
+    <!-- Bitcoin Education Section -->
+    <BitcoinEducation />
   </div>
 
   <!-- FAQ with smooth blend to solid black -->

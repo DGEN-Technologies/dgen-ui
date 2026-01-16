@@ -372,8 +372,8 @@
 
 <div class="container mx-auto max-w-2xl px-4 py-8">
   <div class="mb-6">
-    <h1 class="text-3xl font-bold mb-2">Lightning Address</h1>
-    <p class="text-white/60">
+    <h1 class="text-3xl text-yellow-400 font-bold mb-2">Lightning Address</h1>
+    <p class="text-yellow-400/90">
       Here you can modify your Lightning Address. With DGEN, users can send you
       lightning with just your Lightning Address (easier than a long string of
       letters/numbers)
