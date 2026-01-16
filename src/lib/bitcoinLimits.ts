@@ -3,7 +3,7 @@ const isDev =
   import.meta.env?.MODE === "development" ||
   import.meta.env?.DEV === true;
 
-export const MIN_BTC_ONCHAIN_RECEIVE_SATS = isDev ? 25000 : 25000;
+export const MIN_BTC_ONCHAIN_RECEIVE_SATS = isDev ? 250 : 25000;
 
 type NumericLike = number | string | bigint | null | undefined;
 type OnchainLimitsLike = {

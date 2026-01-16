@@ -19,30 +19,30 @@
 
   let loading = $state(false);
   let refundAddress = $state("");
-  let feeRate = $state(1);
+  let feeRate = $state(0);
   let fees = $state(null);
   let showConfirm = $state(false);
   let preparedRefund = $state(null);
   let refundTxId = $state("");
 
   const absoluteAmount = $derived(Math.abs(amountSat || 0));
+  const normalFee = $derived(fees?.halfHourFee ?? fees?.hourFee ?? null);
 
   onMount(async () => {
     try {
       fees = await recommendedFees();
-      if (fees?.economyFee) {
-        feeRate = fees.economyFee;
-      } else if (fees?.hourFee) {
-        feeRate = fees.hourFee;
+      const defaultFee =
+        fees?.halfHourFee ??
+        fees?.hourFee ??
+        fees?.economyFee ??
+        fees?.fastestFee;
+      if (typeof defaultFee === "number") {
+        feeRate = defaultFee;
       }
     } catch (error) {
       console.error("Failed to get recommended fees:", error);
-      fees = {
-        economyFee: 1,
-        hourFee: 3,
-        fastestFee: 5,
-      };
-      feeRate = 1;
+      fees = null;
+      feeRate = 0;
     }
   });
 
@@ -51,6 +51,10 @@
       return preparedRefund.txFeeSat;
     }
     return Math.round(feeRate * 200);
+  };
+
+  const isRefundAmountValid = () => {
+    return feeRate > 0 && absoluteAmount >= estimatedFee();
   };
 
   async function prepare() {
@@ -105,6 +109,7 @@
   }
 
   function setFeeRate(rate) {
+    if (rate === null || rate === undefined) return;
     feeRate = rate;
     preparedRefund = null;
   }
@@ -174,27 +179,30 @@
                     ? 'btn-primary'
                     : 'btn-outline'}"
                   onclick={() => setFeeRate(fees.economyFee)}
+                  disabled={!fees?.economyFee}
                 >
                   {$t("payments.feeSlow") || "Slow"}<br />
-                  {fees.economyFee} sat/vb
+                  {fees.economyFee ?? "--"} sat/vb
                 </button>
                 <button
-                  class="btn btn-sm {feeRate === fees.hourFee
+                  class="btn btn-sm {feeRate === normalFee
                     ? 'btn-primary'
                     : 'btn-outline'}"
-                  onclick={() => setFeeRate(fees.hourFee)}
+                  onclick={() => setFeeRate(normalFee)}
+                  disabled={!normalFee}
                 >
                   {$t("payments.feeNormal") || "Normal"}<br />
-                  {fees.hourFee} sat/vb
+                  {normalFee ?? "--"} sat/vb
                 </button>
                 <button
                   class="btn btn-sm {feeRate === fees.fastestFee
                     ? 'btn-primary'
                     : 'btn-outline'}"
                   onclick={() => setFeeRate(fees.fastestFee)}
+                  disabled={!fees?.fastestFee}
                 >
                   {$t("payments.feeFast") || "Fast"}<br />
-                  {fees.fastestFee} sat/vb
+                  {fees.fastestFee ?? "--"} sat/vb
                 </button>
               </div>
             {/if}
@@ -202,7 +210,7 @@
             <input
               type="number"
               bind:value={feeRate}
-              min="1"
+              min={fees?.minimumFee}
               max="500"
               class="input input-bordered w-full"
               disabled={loading}
@@ -280,6 +288,16 @@
             </div>
           </div>
 
+          {#if !isRefundAmountValid()}
+            <div class="alert alert-warning">
+              <iconify-icon icon="ph:warning" width="24"></iconify-icon>
+              <span>
+                Refund amount must cover the network fee. Lower the fee rate or
+                go back to adjust.
+              </span>
+            </div>
+          {/if}
+
           {#if refundTxId}
             <div class="alert alert-success">
               <iconify-icon icon="ph:check-circle" width="24"></iconify-icon>
@@ -313,7 +331,7 @@
             <button
               class="btn btn-primary"
               onclick={confirmRefund}
-              disabled={loading}
+              disabled={loading || !isRefundAmountValid()}
             >
               {#if loading}
                 <span class="loading loading-spinner"></span>

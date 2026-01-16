@@ -71,7 +71,7 @@
   let displayStatus = $derived(
     payment?.status === "failed" && hasRefundTx ? "refunded" : payment?.status,
   );
-  let statusLabel = $derived(() => {
+  let statusLabel = $derived.by(() => {
     if (!displayStatus) return "--";
     switch (displayStatus) {
       case "waitingFeeAcceptance":
@@ -213,7 +213,7 @@
               {:else if displayStatus === "failed"}
                 <iconify-icon icon="ph:x-circle" width="16"></iconify-icon>
               {/if}
-              {statusLabel()}
+              {statusLabel}
             </span>
           </div>
           {#if displayStatus === "waitingFeeAcceptance"}
