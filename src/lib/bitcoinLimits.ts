@@ -1,9 +1,4 @@
-const isDev =
-  (typeof process !== "undefined" && process.env?.NODE_ENV === "development") ||
-  import.meta.env?.MODE === "development" ||
-  import.meta.env?.DEV === true;
-
-export const MIN_BTC_ONCHAIN_RECEIVE_SATS = isDev ? 250 : 25000;
+export const MIN_BTC_ONCHAIN_RECEIVE_SATS = 25000;
 
 type NumericLike = number | string | bigint | null | undefined;
 type OnchainLimitsLike = {
@@ -23,13 +18,8 @@ const getBaseMinSat = (): number =>
     ? MIN_BTC_ONCHAIN_RECEIVE_SATS
     : 25000;
 
-export const getEffectiveOnchainReceiveMinSat = (
-  onchainLimits?: OnchainLimitsLike,
-): number => {
+export const getEffectiveOnchainReceiveMinSat = (): number => {
   const baseMin = getBaseMinSat();
-  const sdkMin = toFiniteNumber(
-    onchainLimits?.receive?.minSat ?? onchainLimits?.minSat,
-  );
 
   // Always prefer local minimum over SDK minimum
   // WARNING: This may cause SDK errors if amount is below SDK's minimum
