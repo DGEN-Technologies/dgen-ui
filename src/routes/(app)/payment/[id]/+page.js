@@ -1,4 +1,5 @@
 import { browser } from "$app/environment";
+import { resolvePaymentStatus } from "$lib/paymentStatus";
 
 export async function load({ params, parent }) {
   // Get the user from parent layout
@@ -37,11 +38,7 @@ export async function load({ params, parent }) {
         );
 
         if (payment) {
-          const resolvedStatus =
-            payment.status === "failed" &&
-            (payment.details?.refundTxId || payment.details?.refundTxAmountSat)
-              ? "refunded"
-              : payment.status;
+          const resolvedStatus = resolvePaymentStatus(payment);
           // Return payment with all SDK fields intact
           return {
             payment: {
@@ -50,7 +47,7 @@ export async function load({ params, parent }) {
                 payment.txId || payment.id || payment.paymentHash || params.id,
               rate,
               currency: parentData.user?.currency || "USD",
-              status: resolvedStatus,
+              status: resolvedStatus ?? payment.status,
               // Ensure these fields exist for compatibility
               created: payment.timestamp
                 ? payment.timestamp * 1000

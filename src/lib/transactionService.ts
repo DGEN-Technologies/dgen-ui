@@ -1,6 +1,7 @@
 import * as breezSdk from "@breeztech/breez-sdk-liquid/web";
 import { writable, derived, get } from "svelte/store";
 import * as walletService from "./walletService";
+import { resolvePaymentStatus } from "./paymentStatus";
 
 // Transaction filtering and pagination
 export interface TransactionFilter {
@@ -463,11 +464,7 @@ function enhancePayment(
     id = `payment_${paymentTime}_${payment.amountSat}_${payment.paymentType}`;
   }
 
-  const status =
-    payment.status === "failed" &&
-    (payment.details?.refundTxId || payment.details?.refundTxAmountSat)
-      ? "refunded"
-      : payment.status;
+  const status = resolvePaymentStatus(payment) ?? payment.status;
 
   const enhanced: EnhancedPayment = {
     ...payment,

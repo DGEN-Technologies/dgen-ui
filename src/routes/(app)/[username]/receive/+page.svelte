@@ -677,7 +677,11 @@
     }
 
     // Check minimum for Bitcoin on-chain (28k sats minimum)
-    if (invoiceType === types.bitcoin && newAmount < onchainMinSat) {
+    if (
+      invoiceType === types.bitcoin &&
+      Number.isFinite(onchainMinSat) &&
+      newAmount < onchainMinSat
+    ) {
       const minBtc = (onchainMinSat / sats).toFixed(8);
       fail(`Minimum: ${minBtc} BTC (${sat(onchainMinSat)} sats)`);
       // Don't close dialog - keep user on numberpad until valid amount

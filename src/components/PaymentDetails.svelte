@@ -1,6 +1,7 @@
 <script>
   import { copy, f, s, sats } from "$lib/utils";
   import { t } from "$lib/translations";
+  import { resolvePaymentStatus } from "$lib/paymentStatus";
   import { format } from "date-fns";
   import locales from "$lib/locales";
   import { PUBLIC_EXPLORER, PUBLIC_LIQUID_EXPLORER } from "$env/static/public";
@@ -67,9 +68,8 @@
         : 0,
   );
 
-  let hasRefundTx = $derived(Boolean(refundTxId) || refundTxAmountSat > 0);
   let displayStatus = $derived(
-    payment?.status === "failed" && hasRefundTx ? "refunded" : payment?.status,
+    resolvePaymentStatus(payment) ?? payment?.status,
   );
   let statusLabel = $derived.by(() => {
     if (!displayStatus) return "--";

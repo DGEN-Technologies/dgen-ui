@@ -14,6 +14,7 @@
     success,
     types,
   } from "$lib/utils";
+  import { resolvePaymentStatus } from "$lib/paymentStatus";
   import Avatar from "$comp/Avatar.svelte";
   import Icon from "$comp/Icon.svelte";
   import PaymentDetails from "$comp/PaymentDetails.svelte";
@@ -55,12 +56,7 @@
   );
   let [txid, vout] = $derived(amount > 0 && ref ? ref.split(":") : [hash]);
   let a = $derived(Math.abs(amount));
-  let hasRefundTx = $derived(
-    Boolean(p?.details?.refundTxId) || Boolean(p?.details?.refundTxAmountSat),
-  );
-  let displayStatus = $derived(
-    status === "failed" && hasRefundTx ? "refunded" : status,
-  );
+  let displayStatus = $derived(resolvePaymentStatus(p) ?? status);
   let isBitcoinOnchain = $derived(
     type === "bitcoin" || p?.details?.type === "bitcoin",
   );
@@ -142,19 +138,14 @@
             }
 
             // Set payment data
-            const resolvedStatus =
-              payment.status === "failed" &&
-              (payment.details?.refundTxId ||
-                payment.details?.refundTxAmountSat)
-                ? "refunded"
-                : payment.status;
+            const resolvedStatus = resolvePaymentStatus(payment);
             p = {
               ...payment,
               id:
                 payment.txId || payment.id || payment.paymentHash || paymentId,
               rate,
               currency: user?.currency || "USD",
-              status: resolvedStatus,
+              status: resolvedStatus ?? payment.status,
               created: payment.timestamp
                 ? payment.timestamp * 1000
                 : payment.paymentTime * 1000,

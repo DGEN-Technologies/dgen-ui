@@ -4,7 +4,6 @@
   import {
     getEffectiveOnchainReceiveMinSat,
     getOnchainReceiveMaxSat,
-    MIN_BTC_ONCHAIN_RECEIVE_SATS,
   } from "$lib/bitcoinLimits";
 
   let submit = $state();
@@ -27,13 +26,17 @@
 
   let onchainMinSat = $derived.by(() => {
     const minSat = getEffectiveOnchainReceiveMinSat(onchainLimits);
-    return Number.isFinite(minSat) ? minSat : MIN_BTC_ONCHAIN_RECEIVE_SATS;
+    return Number.isFinite(minSat) ? minSat : null;
   });
   let onchainMaxSat = $derived.by(() => {
     const maxSat = getOnchainReceiveMaxSat(onchainLimits);
     return Number.isFinite(maxSat) ? maxSat : null;
   });
-  let onchainMinBtc = $derived((onchainMinSat / 100000000).toFixed(8));
+  let onchainMinBtc = $derived(
+    Number.isFinite(onchainMinSat)
+      ? (onchainMinSat / 100000000).toFixed(8)
+      : "--",
+  );
 
   // Determine what message to show based on payment type
   let minimumMessage = $derived(() => {
@@ -45,12 +48,15 @@
       }
       return "Minimum: 100 sats • Instant settlement";
     } else if (invoiceType === "bitcoin") {
-      const min = sat(onchainMinSat);
-      if (Number.isFinite(onchainMaxSat)) {
-        const max = sat(onchainMaxSat);
-        return `Min: ${min} • Max: ${max} • Settles in ~10-60+ min`;
+      if (Number.isFinite(onchainMinSat)) {
+        const min = sat(onchainMinSat);
+        if (Number.isFinite(onchainMaxSat)) {
+          const max = sat(onchainMaxSat);
+          return `Min: ${min} • Max: ${max} • Settles in ~10-60+ min`;
+        }
+        return `Minimum BTC deposit is ${onchainMinBtc} BTC (${min} sats) • Settles in ~10-60+ min`;
       }
-      return `Minimum BTC deposit is ${onchainMinBtc} BTC (${min} sats) • Settles in ~10-60+ min`;
+      return "Bitcoin on-chain deposit • Settles in ~10-60+ min";
     } else if (invoiceType === "liquid") {
       if (selectedAsset === "usdt") {
         return "Enter USDT amount (e.g., 10 for $10)";

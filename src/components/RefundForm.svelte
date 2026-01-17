@@ -3,6 +3,8 @@
   import { t } from "$lib/translations";
   import { fail, success } from "$lib/utils";
   import {
+    isConnected,
+    parseInput,
     prepareRefund,
     recommendedFees,
     refundSwap,
@@ -19,14 +21,24 @@
 
   let loading = $state(false);
   let refundAddress = $state("");
+  let isAddressValid = $state(false);
+  let isValidatingAddress = $state(false);
+  let addressError = $state("");
   let feeRate = $state(0);
   let fees = $state(null);
+  let feeOptionResponses = $state({});
+  let feeOptionLoading = $state({});
+  let feeOptionErrors = $state({});
+  let lastFeeAddress = $state("");
   let showConfirm = $state(false);
   let preparedRefund = $state(null);
   let refundTxId = $state("");
 
   const absoluteAmount = $derived(Math.abs(amountSat || 0));
   const normalFee = $derived(fees?.halfHourFee ?? fees?.hourFee ?? null);
+  let addressValidationToken = 0;
+
+  const feeKey = (rate) => String(rate);
 
   onMount(async () => {
     try {
@@ -46,16 +58,151 @@
     }
   });
 
-  const estimatedFee = () => {
-    if (preparedRefund?.txFeeSat) {
-      return preparedRefund.txFeeSat;
+  const getFeeResponse = (rate) => {
+    if (!rate) return null;
+    const key = feeKey(rate);
+    if (feeOptionResponses[key]) {
+      return feeOptionResponses[key];
     }
-    return Math.round(feeRate * 200);
+    if (preparedRefund && rate === feeRate) {
+      return preparedRefund;
+    }
+    return null;
+  };
+
+  const estimatedFee = () => {
+    const response = getFeeResponse(feeRate);
+    return response?.txFeeSat ?? null;
+  };
+
+  const feeOptions = $derived.by(() => {
+    if (!fees) return [];
+    return [
+      { label: $t("payments.feeSlow") || "Slow", rate: fees.economyFee },
+      { label: $t("payments.feeNormal") || "Normal", rate: normalFee },
+      { label: $t("payments.feeFast") || "Fast", rate: fees.fastestFee },
+    ].filter((option) => Number.isFinite(option.rate));
+  });
+
+  const feeOptionsReady = $derived.by(() => {
+    if (!isAddressValid || feeOptions.length === 0) return false;
+    return feeOptions.every((option) => {
+      const key = feeKey(option.rate);
+      return feeOptionResponses[key] || feeOptionErrors[key];
+    });
+  });
+
+  const affordableFeeOptions = $derived.by(() => {
+    if (!feeOptionsReady) return [];
+    return feeOptions.filter((option) => isFeeAffordable(option.rate));
+  });
+
+  const isFeeAffordable = (rate) => {
+    if (!rate) return false;
+    const response = getFeeResponse(rate);
+    if (!response) return false;
+    return absoluteAmount >= response.txFeeSat;
   };
 
   const isRefundAmountValid = () => {
-    return feeRate > 0 && absoluteAmount >= estimatedFee();
+    return feeRate > 0 && isFeeAffordable(feeRate);
   };
+
+  const validateRefundAddress = async (address) => {
+    const trimmed = address.trim();
+    if (!trimmed) {
+      isAddressValid = false;
+      addressError = "";
+      return;
+    }
+
+    const token = (addressValidationToken += 1);
+    isValidatingAddress = true;
+
+    try {
+      if (!isConnected()) {
+        if (token !== addressValidationToken) return;
+        isAddressValid = false;
+        addressError = "Wallet SDK not connected";
+        return;
+      }
+
+      const parsed = await parseInput(trimmed);
+      if (token !== addressValidationToken) return;
+      isAddressValid = parsed?.type === "bitcoinAddress";
+      addressError = isAddressValid ? "" : "Enter a valid Bitcoin address";
+    } catch (error) {
+      if (token !== addressValidationToken) return;
+      isAddressValid = false;
+      addressError = "Enter a valid Bitcoin address";
+    } finally {
+      if (token === addressValidationToken) {
+        isValidatingAddress = false;
+      }
+    }
+  };
+
+  $effect(() => {
+    validateRefundAddress(refundAddress);
+  });
+
+  $effect(() => {
+    if (refundAddress !== lastFeeAddress) {
+      lastFeeAddress = refundAddress;
+      feeOptionResponses = {};
+      feeOptionLoading = {};
+      feeOptionErrors = {};
+    }
+  });
+
+  const loadFeeOption = async (rate) => {
+    if (!rate || !swapAddress || !isAddressValid) return;
+    const key = feeKey(rate);
+    if (feeOptionResponses[key] || feeOptionLoading[key]) return;
+
+    feeOptionLoading = { ...feeOptionLoading, [key]: true };
+
+    try {
+      const response = await prepareRefund({
+        swapAddress,
+        refundAddress: refundAddress.trim(),
+        feeRateSatPerVbyte: rate,
+      });
+      feeOptionResponses = { ...feeOptionResponses, [key]: response };
+    } catch (error) {
+      feeOptionErrors = {
+        ...feeOptionErrors,
+        [key]: error?.message || "Failed to estimate fee",
+      };
+    } finally {
+      feeOptionLoading = { ...feeOptionLoading, [key]: false };
+    }
+  };
+
+  $effect(() => {
+    if (!isAddressValid || !fees) return;
+    feeOptions.forEach((option) => {
+      loadFeeOption(option.rate);
+    });
+  });
+
+  $effect(() => {
+    if (!feeOptionsReady) return;
+    if (affordableFeeOptions.length === 0) {
+      feeRate = 0;
+      return;
+    }
+    const selected = affordableFeeOptions.some(
+      (option) => option.rate === feeRate,
+    );
+    if (!selected) {
+      const mid =
+        affordableFeeOptions[Math.floor(affordableFeeOptions.length / 2)];
+      if (mid?.rate !== undefined) {
+        feeRate = mid.rate;
+      }
+    }
+  });
 
   async function prepare() {
     if (!swapAddress) {
@@ -63,7 +210,7 @@
       return;
     }
 
-    if (!refundAddress) {
+    if (!refundAddress || !isAddressValid) {
       fail(
         $t("payments.refundAddressRequired") ||
           "Please enter a Bitcoin address",
@@ -173,52 +320,51 @@
             </label>
 
             {#if fees}
-              <div class="grid grid-cols-3 gap-2 mb-2">
-                <button
-                  class="btn btn-sm {feeRate === fees.economyFee
-                    ? 'btn-primary'
-                    : 'btn-outline'}"
-                  onclick={() => setFeeRate(fees.economyFee)}
-                  disabled={!fees?.economyFee}
-                >
-                  {$t("payments.feeSlow") || "Slow"}<br />
-                  {fees.economyFee ?? "--"} sat/vb
-                </button>
-                <button
-                  class="btn btn-sm {feeRate === normalFee
-                    ? 'btn-primary'
-                    : 'btn-outline'}"
-                  onclick={() => setFeeRate(normalFee)}
-                  disabled={!normalFee}
-                >
-                  {$t("payments.feeNormal") || "Normal"}<br />
-                  {normalFee ?? "--"} sat/vb
-                </button>
-                <button
-                  class="btn btn-sm {feeRate === fees.fastestFee
-                    ? 'btn-primary'
-                    : 'btn-outline'}"
-                  onclick={() => setFeeRate(fees.fastestFee)}
-                  disabled={!fees?.fastestFee}
-                >
-                  {$t("payments.feeFast") || "Fast"}<br />
-                  {fees.fastestFee ?? "--"} sat/vb
-                </button>
-              </div>
+              {#if !isAddressValid}
+                <div class="text-sm text-secondary">
+                  Enter a valid address to load fee options.
+                </div>
+              {:else if !feeOptionsReady}
+                <div class="text-sm text-secondary">
+                  Calculating fee options…
+                </div>
+              {:else if affordableFeeOptions.length === 0}
+                <div class="text-sm text-warning">
+                  No affordable fee options available.
+                </div>
+              {:else}
+                <div class="grid grid-cols-3 gap-2 mb-2">
+                  {#each affordableFeeOptions as option}
+                    <button
+                      class="btn btn-sm {feeRate === option.rate
+                        ? 'btn-primary'
+                        : 'btn-outline'}"
+                      onclick={() => setFeeRate(option.rate)}
+                    >
+                      {option.label}<br />
+                      {option.rate} sat/vb
+                    </button>
+                  {/each}
+                </div>
+              {/if}
             {/if}
 
-            <input
-              type="number"
-              bind:value={feeRate}
-              min={fees?.minimumFee}
-              max="500"
-              class="input input-bordered w-full"
-              disabled={loading}
-            />
             <div class="text-sm text-secondary mt-1">
-              Estimated fee: ~{estimatedFee()} sats
+              {#if estimatedFee()}
+                Estimated fee: {estimatedFee()} sats
+              {:else if feeRate}
+                Calculating fee…
+              {:else}
+                Select a fee option to continue.
+              {/if}
             </div>
           </div>
+
+          {#if refundAddress && !isAddressValid}
+            <div class="text-xs text-warning mt-2">
+              {addressError || "Enter a valid Bitcoin address"}
+            </div>
+          {/if}
         </div>
 
         <div class="card-actions justify-end mt-6">
@@ -230,7 +376,10 @@
           <button
             class="btn btn-primary"
             onclick={prepare}
-            disabled={loading || !refundAddress}
+            disabled={loading ||
+              isValidatingAddress ||
+              !isAddressValid ||
+              !isRefundAmountValid()}
           >
             {#if loading}
               <span class="loading loading-spinner"></span>
@@ -276,7 +425,11 @@
             <div class="text-sm text-secondary">
               {$t("payments.networkFee") || "Network Fee"}
             </div>
-            <div>~{estimatedFee()} sats ({feeRate} sat/vbyte)</div>
+            {#if estimatedFee()}
+              <div>{estimatedFee()} sats ({feeRate} sat/vbyte)</div>
+            {:else}
+              <div>Calculating fee…</div>
+            {/if}
           </div>
 
           <div>
@@ -284,19 +437,13 @@
               {$t("payments.youWillReceive") || "You will receive"}
             </div>
             <div class="text-xl font-bold">
-              ~{Math.max(absoluteAmount - estimatedFee(), 0).toLocaleString()} sats
+              {#if estimatedFee()}
+                {Math.max(absoluteAmount - estimatedFee(), 0).toLocaleString()} sats
+              {:else}
+                --
+              {/if}
             </div>
           </div>
-
-          {#if !isRefundAmountValid()}
-            <div class="alert alert-warning">
-              <iconify-icon icon="ph:warning" width="24"></iconify-icon>
-              <span>
-                Refund amount must cover the network fee. Lower the fee rate or
-                go back to adjust.
-              </span>
-            </div>
-          {/if}
 
           {#if refundTxId}
             <div class="alert alert-success">
@@ -331,7 +478,10 @@
             <button
               class="btn btn-primary"
               onclick={confirmRefund}
-              disabled={loading || !isRefundAmountValid()}
+              disabled={loading ||
+                isValidatingAddress ||
+                !isAddressValid ||
+                !isRefundAmountValid()}
             >
               {#if loading}
                 <span class="loading loading-spinner"></span>

@@ -1,5 +1,3 @@
-export const MIN_BTC_ONCHAIN_RECEIVE_SATS = 25000;
-
 type NumericLike = number | string | bigint | null | undefined;
 type OnchainLimitsLike = {
   receive?: { minSat?: NumericLike; maxSat?: NumericLike };
@@ -13,18 +11,10 @@ const toFiniteNumber = (value: NumericLike): number | null => {
   return Number.isFinite(num) ? num : null;
 };
 
-const getBaseMinSat = (): number =>
-  Number.isFinite(MIN_BTC_ONCHAIN_RECEIVE_SATS)
-    ? MIN_BTC_ONCHAIN_RECEIVE_SATS
-    : 25000;
-
-export const getEffectiveOnchainReceiveMinSat = (): number => {
-  const baseMin = getBaseMinSat();
-
-  // Always prefer local minimum over SDK minimum
-  // WARNING: This may cause SDK errors if amount is below SDK's minimum
-  return baseMin;
-};
+export const getEffectiveOnchainReceiveMinSat = (
+  onchainLimits?: OnchainLimitsLike,
+): number | null =>
+  toFiniteNumber(onchainLimits?.receive?.minSat ?? onchainLimits?.minSat);
 
 export const getOnchainReceiveMaxSat = (
   onchainLimits?: OnchainLimitsLike,

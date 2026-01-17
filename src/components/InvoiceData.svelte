@@ -5,7 +5,6 @@
   import {
     getEffectiveOnchainReceiveMinSat,
     getOnchainReceiveMaxSat,
-    MIN_BTC_ONCHAIN_RECEIVE_SATS,
   } from "$lib/bitcoinLimits";
   import { unitPreference } from "$lib/store";
   let {
@@ -32,7 +31,7 @@
   let load = () => (loaded = true);
   let onchainMinSat = $derived.by(() => {
     const minSat = getEffectiveOnchainReceiveMinSat(onchainLimits);
-    return Number.isFinite(minSat) ? minSat : MIN_BTC_ONCHAIN_RECEIVE_SATS;
+    return Number.isFinite(minSat) ? minSat : null;
   });
   let onchainMaxSat = $derived.by(() => {
     const maxSat = getOnchainReceiveMaxSat(onchainLimits);
