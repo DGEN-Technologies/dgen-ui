@@ -440,7 +440,10 @@ const startEventListening = async (): Promise<void> => {
                       }, 1000); // 1 second delay to let the payment event propagate
                     })
                     .catch((error) => {
-                      console.error("[WalletStore] Failed to import navigation module:", error);
+                      console.error(
+                        "[WalletStore] Failed to import navigation module:",
+                        error,
+                      );
                     });
                 } else {
                   console.log(
@@ -510,7 +513,10 @@ const startEventListening = async (): Promise<void> => {
                   refundablesStore.refresh();
                 })
                 .catch((error) => {
-                  console.error("[WalletStore] Failed to import refundables store:", error);
+                  console.error(
+                    "[WalletStore] Failed to import refundables store:",
+                    error,
+                  );
                 });
               break;
 
@@ -524,7 +530,10 @@ const startEventListening = async (): Promise<void> => {
                   refundablesStore.refresh();
                 })
                 .catch((error) => {
-                  console.error("[WalletStore] Failed to import refundables store:", error);
+                  console.error(
+                    "[WalletStore] Failed to import refundables store:",
+                    error,
+                  );
                 });
               break;
 
@@ -537,7 +546,10 @@ const startEventListening = async (): Promise<void> => {
                   refundablesStore.refresh();
                 })
                 .catch((error) => {
-                  console.error("[WalletStore] Failed to import refundables store:", error);
+                  console.error(
+                    "[WalletStore] Failed to import refundables store:",
+                    error,
+                  );
                 });
               break;
 
@@ -554,7 +566,10 @@ const startEventListening = async (): Promise<void> => {
                   refundablesStore.refresh();
                 })
                 .catch((error) => {
-                  console.error("[WalletStore] Failed to import refundables store:", error);
+                  console.error(
+                    "[WalletStore] Failed to import refundables store:",
+                    error,
+                  );
                 });
               break;
 
