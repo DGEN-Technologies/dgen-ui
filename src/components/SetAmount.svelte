@@ -154,8 +154,13 @@
               <button
                 type="button"
                 class="glass w-full rounded-lg py-3 px-3 text-sm sm:text-base font-semibold hover:bg-white/20 border border-white/20 hover:border-white/40 transition-all hover:scale-105 flex flex-col items-center justify-center gap-1"
+                class:opacity-50={!Number.isFinite(onchainMinSat)}
+                class:cursor-not-allowed={!Number.isFinite(onchainMinSat)}
+                disabled={!Number.isFinite(onchainMinSat)}
                 onclick={() => {
-                  newAmount = onchainMinSat;
+                  if (Number.isFinite(onchainMinSat)) {
+                    newAmount = onchainMinSat;
+                  }
                 }}
               >
                 <span>{onchainMinBtc} BTC</span>
