@@ -123,6 +123,18 @@ export const isConnected = (): boolean => {
   return sdk !== null;
 };
 
+export const waitForSdk = async (
+  options: { maxAttempts?: number; delayMs?: number } = {},
+): Promise<boolean> => {
+  const { maxAttempts = 20, delayMs = 500 } = options;
+  let attempts = 0;
+  while (!isConnected() && attempts < maxAttempts) {
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+    attempts += 1;
+  }
+  return isConnected();
+};
+
 // Main wallet initialization function
 export const initWallet = async (
   mnemonic: string,
@@ -498,6 +510,43 @@ export const fetchFiatRates = async (): Promise<breezSdk.Rate[]> => {
 export const recommendedFees = async (): Promise<breezSdk.RecommendedFees> => {
   if (!sdk) throw new Error("SDK not initialized");
   return await sdk.recommendedFees();
+};
+
+// Refund operations (Bitcoin on-chain swaps)
+export const listRefundables = async (): Promise<breezSdk.RefundableSwap[]> => {
+  if (!sdk) throw new Error("SDK not initialized");
+  try {
+    return await sdk.listRefundables();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (
+      message.includes("Failed to fetch") ||
+      message.includes("Request(request::Error")
+    ) {
+      sdkLogger.warn("Refundables fetch failed; treating as empty.", error);
+      return [];
+    }
+    throw error;
+  }
+};
+
+export const prepareRefund = async (
+  params: breezSdk.PrepareRefundRequest,
+): Promise<breezSdk.PrepareRefundResponse> => {
+  if (!sdk) throw new Error("SDK not initialized");
+  return await sdk.prepareRefund(params);
+};
+
+export const refundSwap = async (
+  params: breezSdk.RefundRequest,
+): Promise<breezSdk.RefundResponse> => {
+  if (!sdk) throw new Error("SDK not initialized");
+  return await sdk.refund(params);
+};
+
+export const rescanOnchainSwaps = async (): Promise<void> => {
+  if (!sdk) throw new Error("SDK not initialized");
+  await sdk.rescanOnchainSwaps();
 };
 
 export const preparePayOnchain = async (
