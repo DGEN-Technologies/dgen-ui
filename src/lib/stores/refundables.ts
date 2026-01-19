@@ -36,7 +36,7 @@ const refresh = async (options: { rescan?: boolean } = {}): Promise<void> => {
 
     const refundables = await listRefundables();
     const sortedRefundables = [...refundables].sort(
-      (a, b) => (b.timestamp || 0) - (a.timestamp || 0),
+      (a, b) => Number(b.timestamp || 0) - Number(a.timestamp || 0), 
     );
 
     set({ items: sortedRefundables, loading: false, error: null });
