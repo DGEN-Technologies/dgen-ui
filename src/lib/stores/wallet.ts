@@ -433,11 +433,18 @@ const startEventListening = async (): Promise<void> => {
 
                   // Navigate to success screen after short delay
                   // Import goto dynamically to avoid circular dependencies
-                  import("$app/navigation").then(({ goto }) => {
-                    setTimeout(() => {
-                      goto("/payment-received");
-                    }, 1000); // 1 second delay to let the payment event propagate
-                  });
+                  import("$app/navigation")
+                    .then(({ goto }) => {
+                      setTimeout(() => {
+                        goto("/payment-received");
+                      }, 1000); // 1 second delay to let the payment event propagate
+                    })
+                    .catch((error) => {
+                      console.error(
+                        "[WalletStore] Failed to import navigation module:",
+                        error,
+                      );
+                    });
                 } else {
                   console.log(
                     "[WalletStore] Outgoing payment waiting confirmation",
@@ -501,6 +508,16 @@ const startEventListening = async (): Promise<void> => {
               );
               walletStore.refresh();
               transactions.refresh();
+              import("$lib/stores/refundables")
+                .then(({ refundablesStore }) => {
+                  refundablesStore.refresh();
+                })
+                .catch((error) => {
+                  console.error(
+                    "[WalletStore] Failed to import refundables store:",
+                    error,
+                  );
+                });
               break;
 
             // Refund Events
@@ -508,12 +525,32 @@ const startEventListening = async (): Promise<void> => {
               console.log("[WalletStore] Payment refund pending");
               walletStore.refresh();
               transactions.refresh();
+              import("$lib/stores/refundables")
+                .then(({ refundablesStore }) => {
+                  refundablesStore.refresh();
+                })
+                .catch((error) => {
+                  console.error(
+                    "[WalletStore] Failed to import refundables store:",
+                    error,
+                  );
+                });
               break;
 
             case "paymentRefunded":
               console.log("[WalletStore] Payment refunded");
               walletStore.refresh();
               transactions.refresh();
+              import("$lib/stores/refundables")
+                .then(({ refundablesStore }) => {
+                  refundablesStore.refresh();
+                })
+                .catch((error) => {
+                  console.error(
+                    "[WalletStore] Failed to import refundables store:",
+                    error,
+                  );
+                });
               break;
 
             // Sync Events
@@ -524,6 +561,16 @@ const startEventListening = async (): Promise<void> => {
               }));
               walletStore.refresh();
               transactions.refresh();
+              import("$lib/stores/refundables")
+                .then(({ refundablesStore }) => {
+                  refundablesStore.refresh();
+                })
+                .catch((error) => {
+                  console.error(
+                    "[WalletStore] Failed to import refundables store:",
+                    error,
+                  );
+                });
               break;
 
             default:

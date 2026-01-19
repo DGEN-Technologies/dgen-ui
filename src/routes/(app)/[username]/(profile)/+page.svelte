@@ -6,6 +6,7 @@
   import Account from "$comp/Account.svelte";
   import Balance from "$comp/Balance.svelte";
   import BuyBitcoin from "$comp/BuyBitcoin.svelte";
+  import RefundablesBanner from "$comp/RefundablesBanner.svelte";
   import { t } from "$lib/translations";
   import { installPrompt, password } from "$lib/store";
   import { afterNavigate, preloadData } from "$app/navigation";
@@ -241,6 +242,10 @@
             </div>
           </div>
         </div>
+      {/if}
+
+      {#if user?.id && user.id === subject.id}
+        <RefundablesBanner />
       {/if}
 
       <!-- Syncing Indicator -->

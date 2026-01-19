@@ -14,6 +14,7 @@
     success,
     types,
   } from "$lib/utils";
+  import { resolvePaymentStatus } from "$lib/paymentStatus";
   import Avatar from "$comp/Avatar.svelte";
   import Icon from "$comp/Icon.svelte";
   import PaymentDetails from "$comp/PaymentDetails.svelte";
@@ -47,8 +48,23 @@
     status,
     swapId,
   } = $derived(p || {});
+  let swapAddress = $derived(
+    p?.details?.bitcoinAddress ||
+      p?.swapAddress ||
+      p?.details?.swapInfo?.bitcoinAddress ||
+      "",
+  );
   let [txid, vout] = $derived(amount > 0 && ref ? ref.split(":") : [hash]);
   let a = $derived(Math.abs(amount));
+  let displayStatus = $derived(resolvePaymentStatus(p) ?? status);
+  let isBitcoinOnchain = $derived(
+    type === "bitcoin" || p?.details?.type === "bitcoin",
+  );
+  let canRefund = $derived(
+    isBitcoinOnchain &&
+      (displayStatus === "failed" || displayStatus === "refundable") &&
+      swapAddress,
+  );
 
   let expl = $derived(
     {
@@ -122,12 +138,14 @@
             }
 
             // Set payment data
+            const resolvedStatus = resolvePaymentStatus(payment);
             p = {
               ...payment,
               id:
                 payment.txId || payment.id || payment.paymentHash || paymentId,
               rate,
               currency: user?.currency || "USD",
+              status: resolvedStatus ?? payment.status,
               created: payment.timestamp
                 ? payment.timestamp * 1000
                 : payment.paymentTime * 1000,
@@ -184,6 +202,39 @@
       </button>
     </div>
 
+    {#if canRefund}
+      <div class="mt-6">
+        <div class="card bg-warning/10 border-2 border-warning">
+          <div class="card-body p-4 space-y-3">
+            <div class="flex items-start gap-3">
+              <div class="text-warning mt-1">
+                <iconify-icon icon="ph:warning-circle" width="28"
+                ></iconify-icon>
+              </div>
+              <div class="space-y-1">
+                <h2 class="text-lg font-semibold">Refund required</h2>
+                <p class="text-sm text-secondary">
+                  This on-chain deposit fell below the minimum. Use the refund
+                  flow to recover your funds.
+                </p>
+              </div>
+            </div>
+            {#if p?.details?.refundTxId}
+              <div class="text-xs text-secondary break-all">
+                Last refund txid: {p.details.refundTxId}
+              </div>
+            {/if}
+            <button
+              class="btn btn-primary btn-sm w-full sm:w-auto"
+              onclick={() => goto("/refunds")}
+            >
+              {p?.details?.refundTxId ? "Retry Refund" : "Refund"}
+            </button>
+          </div>
+        </div>
+      </div>
+    {/if}
+
     <!-- Use payment details component if we have SDK payment data -->
     {#if p.details || p.paymentType}
       <PaymentDetails payment={p} {user} />
@@ -201,32 +252,39 @@
           <div class="text-center mb-8">
             <span
               class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium
-        {status === 'complete' || status === 'confirmed'
+        {displayStatus === 'complete' || displayStatus === 'confirmed'
                 ? 'bg-green-500/20 text-green-400 border border-green-500/30'
                 : ''}
-        {status === 'pending'
+        {displayStatus === 'pending'
                 ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
                 : ''}
-        {status === 'failed'
+        {displayStatus === 'refunded'
+                ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                : ''}
+        {displayStatus === 'failed'
                 ? 'bg-red-500/20 text-red-400 border border-red-500/30'
                 : ''}
       "
             >
-              {#if status === "complete" || status === "confirmed"}
+              {#if displayStatus === "complete" || displayStatus === "confirmed"}
                 <iconify-icon icon="ph:check-circle" width="20"></iconify-icon>
                 <span>Completed</span>
-              {:else if status === "pending"}
+              {:else if displayStatus === "pending"}
                 <iconify-icon icon="ph:clock" width="20" class="animate-pulse"
                 ></iconify-icon>
                 <span>Pending </span>
-              {:else if status === "failed"}
+              {:else if displayStatus === "refunded"}
+                <iconify-icon icon="ph:arrow-u-up-left" width="20"
+                ></iconify-icon>
+                <span>Refunded</span>
+              {:else if displayStatus === "failed"}
                 <iconify-icon icon="ph:x-circle" width="20"></iconify-icon>
                 <span>Failed</span>
               {:else}
-                <span>{status}</span>
+                <span>{displayStatus}</span>
               {/if}
             </span>
-            {#if status === "pending"}
+            {#if displayStatus === "pending"}
               <button
                 onclick={() => window.location.reload()}
                 class="inline-flex items-center px-2 py-1 hover:bg-white/10 rounded transition-colors"
@@ -408,7 +466,7 @@
           </div>
         {/if}
 
-        {#if type === "bitcoin" && (status === "failed" || status === "refundable") && swapId}
+        {#if canRefund}
           <div class="mt-8 space-y-4">
             <div class="card bg-warning/10 border-2 border-warning">
               <div class="card-body p-4">
@@ -432,7 +490,7 @@
 
             <button
               class="btn btn-warning btn-lg w-full gap-2"
-              onclick={() => goto(`/payment/${id}/refund`)}
+              onclick={() => goto("/refunds")}
             >
               <iconify-icon icon="ph:arrow-u-up-left" width="24"></iconify-icon>
               <span>{$t("payments.refund") || "Refund Payment"}</span>
