@@ -110,22 +110,8 @@
 
     isInitialLoad = false;
 
-    // Set up auto-refresh every 30 seconds - silently in background
-    const refreshInterval = setInterval(async () => {
-      if (!document.hidden) {
-        try {
-          const { isConnected } = await import("$lib/walletService");
-          if (isConnected()) {
-            // Refresh silently without showing notification
-            await transactionStore.loadTransactions(true);
-          }
-        } catch (error) {
-          console.warn("[PaymentsList] Error during auto-refresh:", error);
-        }
-      }
-    }, 30000);
-
-    return () => clearInterval(refreshInterval);
+    // Note: Auto-refresh is now handled by PollManager in wallet.ts
+    // No need for component-level polling - reduces duplicate API calls
   });
 
   // Apply filters when they change
