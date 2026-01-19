@@ -2,6 +2,10 @@
   import Amount from "$comp/Amount.svelte";
 
   import { btc, copy, f, sat, s, sats, types } from "$lib/utils";
+  import {
+    getEffectiveOnchainReceiveMinSat,
+    getOnchainReceiveMaxSat,
+  } from "$lib/bitcoinLimits";
   import { unitPreference } from "$lib/store";
   let {
     showQr,
@@ -23,9 +27,18 @@
   } = $props();
 
   let loaded = $state(false);
-  let minAmount = $state(28000);
   let { memo } = $derived(invoice);
   let load = () => (loaded = true);
+  let onchainMinSat = $derived.by(() => {
+    const minSat = getEffectiveOnchainReceiveMinSat(onchainLimits);
+    return Number.isFinite(minSat) ? minSat : null;
+  });
+  let onchainMaxSat = $derived.by(() => {
+    const maxSat = getOnchainReceiveMaxSat(onchainLimits);
+    return Number.isFinite(maxSat) ? maxSat : null;
+  });
+  let hasOnchainMin = $derived(Number.isFinite(onchainMinSat));
+  let hasOnchainMax = $derived(Number.isFinite(onchainMaxSat));
 
   // Truncate address for display (first 6...last 4 chars)
   function truncateAddress(address) {
@@ -39,37 +52,44 @@
   <div class="mx-auto max-w-md mt-4 mb-4">
     <div class="rounded-2xl p-4 bg-yellow-500/10 border-2 border-yellow-500/30">
       <div class="text-center">
-        <iconify-icon
-          noobserver
-          icon="ph:warning-bold"
-          width="24"
-          class="text-yellow-400 mb-2"
-        ></iconify-icon>
-        <p class="text-yellow-200 font-semibold leading-relaxed text-xl">
-          {#if onchainLimits.receive?.minSat && onchainLimits.receive?.maxSat}
-            Min: <span class="font-bold text-yellow-100 text-lg sm:text-4xl"
-              >{sat(Math.max(minAmount, onchainLimits.receive.minSat))} sats</span
+        <p
+          class="text-yellow-200 font-semibold leading-relaxed text-base sm:text-lg"
+        >
+          {#if hasOnchainMin && hasOnchainMax}
+            Min:
+            <span class="font-bold text-yellow-100"
+              >{sat(onchainMinSat)} sats</span
             >
             <br />
             Max:
-            <span class="font-bold text-yellow-100 text-lg sm:text-4xl"
-              >{sat(onchainLimits.receive.maxSat)} sats</span
+            <span class="font-bold text-yellow-100"
+              >{sat(onchainMaxSat)} sats</span
             >
-          {:else if onchainLimits.receive?.minSat}
-            Minimum: <span class="font-bold text-yellow-100 text-lg sm:text-4xl"
-              >{sat(Math.max(minAmount, onchainLimits.receive.minSat))} sats</span
+          {:else if hasOnchainMin}
+            Minimum:
+            <span class="font-bold text-yellow-100"
+              >{sat(onchainMinSat)} sats</span
             >
-          {:else if onchainLimits.receive?.maxSat}
-            Maximum: <span class="font-bold text-yellow-100 text-lg sm:text-4xl"
-              >{sat(onchainLimits.receive.maxSat)} sats</span
+          {:else if hasOnchainMax}
+            Maximum:
+            <span class="font-bold text-yellow-100"
+              >{sat(onchainMaxSat)} sats</span
             >
           {:else}
             Bitcoin on-chain payments require network fees
           {/if}
         </p>
-        <p class="text-yellow-300/70 text-sm mt-2">
-          Amounts outside this range will not work
-        </p>
+        <div
+          class="mt-3 flex items-center justify-center gap-2 text-yellow-300/80 text-base sm:text-lg"
+        >
+          <iconify-icon
+            noobserver
+            icon="ph:warning-bold"
+            width="18"
+            class="text-yellow-400"
+          ></iconify-icon>
+          <span>Amounts outside this range will not work</span>
+        </div>
       </div>
     </div>
   </div>

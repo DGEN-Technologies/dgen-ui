@@ -25,9 +25,9 @@
   });
 </script>
 
-<div class="container mx-auto max-w-2xl px-4 space-y-6 text-center">
+<div class="container mx-auto max-w-2xl px-4 space-y-6">
   <div
-    class="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-4"
+    class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
   >
     <div>
       <h1 class="text-3xl font-semibold">Refundable Deposits</h1>
@@ -35,19 +35,18 @@
         Refund on-chain deposits that fell below the network minimum.
       </p>
     </div>
-    <!-- <button
-     // KEEPING THIS BUTTON TO SUPPORT TESTING FOR NOW
+    <button
       class="btn btn-primary btn-sm w-full sm:w-auto"
       onclick={() => refresh({ rescan: true })}
     >
       Rescan
-    </button> -->
+    </button>
   </div>
 
   {#if $refundablesStore.loading}
     <div class="card bg-base-200">
       <div class="card-body">
-        <div class="flex items-center justify-center gap-3">
+        <div class="flex items-center gap-3">
           <span class="loading loading-spinner"></span>
           <span>Loading refundable swaps…</span>
         </div>

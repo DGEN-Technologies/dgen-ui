@@ -1,6 +1,7 @@
 <script>
   import { copy, f, s, sats } from "$lib/utils";
   import { t } from "$lib/translations";
+  import { resolvePaymentStatus } from "$lib/paymentStatus";
   import { format } from "date-fns";
   import locales from "$lib/locales";
   import { PUBLIC_EXPLORER, PUBLIC_LIQUID_EXPLORER } from "$env/static/public";
@@ -66,6 +67,33 @@
         ? details?.refundTxAmountSat || 0
         : 0,
   );
+
+  let displayStatus = $derived(
+    resolvePaymentStatus(payment) ?? payment?.status,
+  );
+  let statusLabel = $derived.by(() => {
+    if (!displayStatus) return "--";
+    switch (displayStatus) {
+      case "waitingFeeAcceptance":
+      case "pending":
+        return "Pending";
+      case "waitingConfirmation":
+        return "Confirming";
+      case "refundPending":
+        return "Refunding";
+      case "refundable":
+        return "Refundable";
+      case "refunded":
+        return "Refunded";
+      case "complete":
+      case "success":
+        return "Complete";
+      case "failed":
+        return "Failed";
+      default:
+        return displayStatus;
+    }
+  });
 
   // Extract fields based on payment details type (Lightning, Bitcoin, or Liquid)
   let invoice = $derived(isLightningPayment ? details?.invoice || "" : "");
@@ -147,32 +175,48 @@
           <div class="flex items-center gap-2 mt-1">
             <span
               class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium
-              {payment.status === 'complete'
+              {displayStatus === 'complete' || displayStatus === 'success'
                 ? 'bg-green-500/20 text-green-400 border border-green-500/30'
                 : ''}
-              {payment.status === 'pending' ||
-              payment.status === 'waitingFeeAcceptance'
+              {displayStatus === 'pending' ||
+              displayStatus === 'waitingFeeAcceptance'
                 ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
                 : ''}
-              {payment.status === 'failed'
+              {displayStatus === 'waitingConfirmation'
+                ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                : ''}
+              {displayStatus === 'refundable' ||
+              displayStatus === 'refundPending'
+                ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
+                : ''}
+              {displayStatus === 'refunded'
+                ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                : ''}
+              {displayStatus === 'failed'
                 ? 'bg-red-500/20 text-red-400 border border-red-500/30'
                 : ''}
             "
             >
-              {#if payment.status === "complete"}
+              {#if displayStatus === "complete" || displayStatus === "success"}
                 <iconify-icon icon="ph:check-circle" width="16"></iconify-icon>
-              {:else if payment.status === "pending" || payment.status === "waitingFeeAcceptance"}
+              {:else if displayStatus === "pending" || displayStatus === "waitingFeeAcceptance"}
                 <iconify-icon icon="ph:clock" width="16" class="animate-pulse"
                 ></iconify-icon>
-              {:else if payment.status === "failed"}
+              {:else if displayStatus === "waitingConfirmation"}
+                <iconify-icon icon="ph:clock" width="16"></iconify-icon>
+              {:else if displayStatus === "refundable" || displayStatus === "refundPending"}
+                <iconify-icon icon="ph:arrow-counter-clockwise" width="16"
+                ></iconify-icon>
+              {:else if displayStatus === "refunded"}
+                <iconify-icon icon="ph:arrow-u-up-left" width="16"
+                ></iconify-icon>
+              {:else if displayStatus === "failed"}
                 <iconify-icon icon="ph:x-circle" width="16"></iconify-icon>
               {/if}
-              {payment.status === "waitingFeeAcceptance"
-                ? "Pending"
-                : payment.status}
+              {statusLabel}
             </span>
           </div>
-          {#if payment.status === "waitingFeeAcceptance"}
+          {#if displayStatus === "waitingFeeAcceptance"}
             <div class="text-xs text-yellow-400/80 mt-2">
               Waiting for fee acceptance
             </div>
