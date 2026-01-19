@@ -6,9 +6,19 @@
   import { isConnected, listRefundables } from "$lib/walletService";
   import RefundForm from "$comp/RefundForm.svelte";
 
-  let swapAddress = $derived(
-    decodeURIComponent($page.params.swapAddress || ""),
+  const decodeSwapAddress = (value) => {
+    if (!value) return { value: "", error: "" };
+    try {
+      return { value: decodeURIComponent(value), error: "" };
+    } catch (err) {
+      return { value: "", error: "Invalid swap address." };
+    }
+  };
+
+  let decodedSwapAddress = $derived.by(() =>
+    decodeSwapAddress($page.params.swapAddress || ""),
   );
+  let swapAddress = $derived.by(() => decodedSwapAddress.value);
   let refundable = $state(null);
   let loading = $state(true);
   let error = $state(null);
@@ -24,6 +34,16 @@
 
   onMount(async () => {
     try {
+      if (decodedSwapAddress.error) {
+        error = decodedSwapAddress.error;
+        return;
+      }
+
+      if (!swapAddress) {
+        error = "Swap address not found.";
+        return;
+      }
+
       const ready = await waitForSdk();
       if (!ready) {
         error = "Wallet SDK not connected.";

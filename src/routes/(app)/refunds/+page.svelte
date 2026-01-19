@@ -2,14 +2,15 @@
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import { format } from "date-fns";
-  import { t } from "$lib/translations";
   import { sat } from "$lib/utils";
   import { refundablesStore } from "$lib/stores/refundables";
+
+  const MS_TIMESTAMP_THRESHOLD = 10000000000; // 10-digit seconds vs 13-digit milliseconds.
 
   const formatTimestamp = (timestamp) => {
     if (!timestamp) return "--";
     const date =
-      timestamp > 10000000000
+      timestamp > MS_TIMESTAMP_THRESHOLD
         ? new Date(timestamp)
         : new Date(timestamp * 1000);
     return format(date, "h:mmaaa MMM d, yyyy");
@@ -63,7 +64,9 @@
   {:else if $refundablesStore.items.length === 0}
     <div class="card bg-base-200">
       <div class="card-body">
-        <p>{$t("payments.noRefundables") || "No refundable deposits found."}</p>
+        <p>
+          {"No Refundables Available"}
+        </p>
       </div>
     </div>
   {:else}

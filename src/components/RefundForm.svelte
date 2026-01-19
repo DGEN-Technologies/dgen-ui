@@ -32,6 +32,7 @@
   let lastFeeAddress = $state("");
   let showConfirm = $state(false);
   let preparedRefund = $state(null);
+  let refundBroadcasted = $state(false);
   let refundTxId = $state("");
 
   const absoluteAmount = $derived(Math.abs(amountSat || 0));
@@ -247,6 +248,7 @@
           "Refund transaction broadcast successfully!",
       );
       refundablesStore.refresh();
+      refundBroadcasted = true;
       refundTxId = result?.refundTxId || "";
     } catch (error) {
       fail(error?.message || "Failed to process refund");
@@ -445,21 +447,25 @@
             </div>
           </div>
 
-          {#if refundTxId}
+          {#if refundBroadcasted}
             <div class="alert alert-success">
               <iconify-icon icon="ph:check-circle" width="24"></iconify-icon>
               <div class="text-sm">
                 <div>
                   {$t("payments.refundBroadcast") || "Refund broadcast"}
                 </div>
-                <div class="font-mono break-all">{refundTxId}</div>
+                {#if refundTxId}
+                  <div class="font-mono break-all">{refundTxId}</div>
+                {:else}
+                  <div class="text-secondary">Transaction ID unavailable.</div>
+                {/if}
               </div>
             </div>
           {/if}
         </div>
 
         <div class="card-actions justify-end mt-6">
-          {#if refundTxId}
+          {#if refundBroadcasted}
             <button
               class="btn btn-primary"
               onclick={handleDone}

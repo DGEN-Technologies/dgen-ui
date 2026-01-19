@@ -503,7 +503,19 @@ export const recommendedFees = async (): Promise<breezSdk.RecommendedFees> => {
 // Refund operations (Bitcoin on-chain swaps)
 export const listRefundables = async (): Promise<breezSdk.RefundableSwap[]> => {
   if (!sdk) throw new Error("SDK not initialized");
-  return await sdk.listRefundables();
+  try {
+    return await sdk.listRefundables();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (
+      message.includes("Failed to fetch") ||
+      message.includes("Request(request::Error")
+    ) {
+      sdkLogger.warn("Refundables fetch failed; treating as empty.", error);
+      return [];
+    }
+    throw error;
+  }
 };
 
 export const prepareRefund = async (

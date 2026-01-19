@@ -44,9 +44,11 @@ const refresh = async (options: { rescan?: boolean } = {}): Promise<void> => {
     }
 
     const refundables = await listRefundables();
-    refundables.sort((a, b) => b.timestamp - a.timestamp);
+    const sortedRefundables = [...refundables].sort(
+      (a, b) => b.timestamp - a.timestamp,
+    );
 
-    set({ items: refundables, loading: false, error: null });
+    set({ items: sortedRefundables, loading: false, error: null });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     set({ ...initialState, error: message });
