@@ -452,7 +452,7 @@
               <iconify-icon icon="ph:check-circle" width="24"></iconify-icon>
               <div class="text-sm">
                 <div>
-                  {$t("payments.refundBroadcast") || "Refund broadcast"}
+                  {"Refund broadcast"}
                 </div>
                 {#if refundTxId}
                   <div class="font-mono break-all">{refundTxId}</div>
