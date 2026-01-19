@@ -45,22 +45,17 @@
   // Initialize on mount
   onMount(async () => {
     // Wait for SDK to be ready
-    const waitForSdk = async () => {
+    const waitForSdkReady = async () => {
       try {
-        const { isConnected } = await import("$lib/walletService");
-        let attempts = 0;
-        while (!isConnected() && attempts < 20) {
-          await new Promise((resolve) => setTimeout(resolve, 500));
-          attempts++;
-        }
-        return isConnected();
+        const { waitForSdk } = await import("$lib/walletService");
+        return await waitForSdk();
       } catch (error) {
         console.warn("[PaymentsList] Error checking SDK connection:", error);
         return false;
       }
     };
 
-    const sdkReady = await waitForSdk();
+    const sdkReady = await waitForSdkReady();
 
     if (sdkReady) {
       // Fetch current fiat rate

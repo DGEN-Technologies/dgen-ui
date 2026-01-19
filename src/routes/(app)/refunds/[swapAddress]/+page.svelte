@@ -3,7 +3,7 @@
   import { goto } from "$app/navigation";
   import { page } from "$app/stores";
   import { t } from "$lib/translations";
-  import { isConnected, listRefundables } from "$lib/walletService";
+  import { listRefundables, waitForSdk } from "$lib/walletService";
   import RefundForm from "$comp/RefundForm.svelte";
 
   const decodeSwapAddress = (value) => {
@@ -22,15 +22,6 @@
   let refundable = $state(null);
   let loading = $state(true);
   let error = $state(null);
-
-  const waitForSdk = async () => {
-    let attempts = 0;
-    while (!isConnected() && attempts < 20) {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      attempts += 1;
-    }
-    return isConnected();
-  };
 
   onMount(async () => {
     try {

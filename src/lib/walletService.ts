@@ -123,6 +123,18 @@ export const isConnected = (): boolean => {
   return sdk !== null;
 };
 
+export const waitForSdk = async (
+  options: { maxAttempts?: number; delayMs?: number } = {},
+): Promise<boolean> => {
+  const { maxAttempts = 20, delayMs = 500 } = options;
+  let attempts = 0;
+  while (!isConnected() && attempts < maxAttempts) {
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+    attempts += 1;
+  }
+  return isConnected();
+};
+
 // Main wallet initialization function
 export const initWallet = async (
   mnemonic: string,

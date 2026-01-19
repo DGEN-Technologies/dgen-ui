@@ -19,7 +19,7 @@ export const resolvePaymentStatus = (
 ): string | undefined => {
   if (!payment) return undefined;
   const { status, details } = payment;
-  const refundTxId = details?.refundTxId;
+  const refundTxId = details?.refundTxId?.trim();
   if (
     status === "failed" &&
     (refundTxId || hasRefundAmount(details?.refundTxAmountSat))

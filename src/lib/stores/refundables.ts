@@ -1,9 +1,9 @@
 import { writable } from "svelte/store";
 import type { RefundableSwap } from "@breeztech/breez-sdk-liquid/web";
 import {
-  isConnected,
   listRefundables,
   rescanOnchainSwaps,
+  waitForSdk,
 } from "$lib/walletService";
 
 type RefundablesState = {
@@ -19,15 +19,6 @@ const initialState: RefundablesState = {
 };
 
 const { subscribe, set } = writable<RefundablesState>(initialState);
-
-const waitForSdk = async (): Promise<boolean> => {
-  let attempts = 0;
-  while (!isConnected() && attempts < 20) {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    attempts += 1;
-  }
-  return isConnected();
-};
 
 const refresh = async (options: { rescan?: boolean } = {}): Promise<void> => {
   set({ ...initialState, loading: true });
@@ -45,7 +36,7 @@ const refresh = async (options: { rescan?: boolean } = {}): Promise<void> => {
 
     const refundables = await listRefundables();
     const sortedRefundables = [...refundables].sort(
-      (a, b) => b.timestamp - a.timestamp,
+      (a, b) => (b.timestamp || 0) - (a.timestamp || 0),
     );
 
     set({ items: sortedRefundables, loading: false, error: null });
