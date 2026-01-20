@@ -254,8 +254,6 @@
         <button
           class="text-white border border-white/10 rounded-xl w-full py-2"
           onclick={() => {
-            console.log("newPassword: ", newPassword);
-            console.log("confirmPassword: ", confirmPassword);
             if (confirmPassword !== newPassword) {
               fail("Passwords do not match");
               return;
