@@ -1578,6 +1578,7 @@
           bind:showQr={$showQr}
           {txt}
           t={$t}
+          showSetAmount={false}
         />
 
         <!-- Transaction History button - only show for default Lightning view -->
