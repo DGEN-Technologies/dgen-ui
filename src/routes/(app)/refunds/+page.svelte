@@ -36,6 +36,7 @@
       </p>
     </div>
     <!-- <button
+     // KEEPING THIS BUTTON TO SUPPORT TESTING FOR NOW
       class="btn btn-primary btn-sm w-full sm:w-auto"
       onclick={() => refresh({ rescan: true })}
     >
