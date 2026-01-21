@@ -25,7 +25,7 @@
       style="animation-delay: 4s;"
     ></div>
     <div
-      class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-[800px] bg-gradient-to-r from-dgen-aqua/10 via-dgen-cyan/10 to-dgen-purple/10 rounded-full filter blur-3xl animate-pulse"
+      class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-[800px] bg-gradient-to-r from-dgen-aqua/10 via-dgen-cyan/10 to-dgen-purple/10 rounded-full filter blur-3xl animate-pulse pointer-events-none"
     ></div>
   </div>
 
@@ -46,7 +46,10 @@
   <!-- Content -->
   <div class="relative z-10 flex flex-col items-center justify-start px-4">
     <!-- Disclaimer -->
-    <div class="text-center px-4" in:fly={{ y: 20, duration: 800, delay: 900 }}>
+    <div
+      class="text-center px-4 mt-14 sm:mt-28"
+      in:fly={{ y: 20, duration: 800, delay: 900 }}
+    >
       <div
         class="glass px-4 py-3 sm:px-6 rounded-full border border-white/60 bg-white/10 inline-block"
       >

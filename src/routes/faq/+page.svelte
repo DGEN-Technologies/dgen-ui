@@ -1,7 +1,24 @@
 <script>
   import { goto } from "$app/navigation";
-  import FAQ from "../../components/FAQ.svelte";
+  import FAQ from "$comp/FAQ.svelte";
 </script>
+
+<svelte:head>
+  <title>DGEN Wallet - FAQ</title>
+
+  <meta
+    name="description"
+    content="Frequently asked questions about the DGEN wallet, Bitcoin, Lightning Network, swaps, fees, security, and self-custody."
+  />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="DGEN Wallet - FAQ" />
+  <meta
+    property="og:description"
+    content="Answers to common questions about DGEN wallet, Bitcoin, Lightning, swaps, security, and self-custody."
+  />
+  <meta property="og:type" content="website" />
+</svelte:head>
 
 <FAQ />
 <div

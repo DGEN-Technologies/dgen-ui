@@ -19,7 +19,7 @@
 </script>
 
 <header
-  class="w-full px-6 py-4 sticky z-50 top-0 lg:bg-base-100/80 lg:backdrop-blur-xl lg:border-b lg:border-white/10"
+  class="w-full px-6 py-4 fixed z-50 top-0 lg:bg-base-100/80 lg:backdrop-blur-xl lg:border-b lg:border-white/10"
   bind:this={header}
 >
   <nav class="flex justify-between items-center max-w-7xl mx-auto">

@@ -1,5 +1,8 @@
 <script>
-  import { PUBLIC_DGEN_URL } from "$env/static/public";
+  import {
+    PUBLIC_DGEN_URL,
+    PUBLIC_MASTERCARD_IS_LIVE_URL,
+  } from "$env/static/public";
   import { banner, theme, newPayment } from "$lib/store";
   import { goto } from "$app/navigation";
   import { getImageUrl } from "$lib/utils";
@@ -108,7 +111,7 @@
     <!-- DGEN Mastercard -->
     <div class="mr-2 sm:mr-5 flex justify-end">
       <a
-        href="https://card.dgentech.io/pages/r?c=AMeaqiij"
+        href={PUBLIC_MASTERCARD_IS_LIVE_URL}
         target="_blank"
         class="inline-flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 rounded-xl bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-2 border-blue-500/30"
       >

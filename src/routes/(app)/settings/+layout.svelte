@@ -22,11 +22,12 @@
 
   let formElement = $state();
 
-  var newPassword = $state("");
+  let newPassword = $state("");
   let confirmPassword = $state("");
   let showConfirmPassword = $state(false);
   let showFinalConfirm = $state(false);
-  var pendingBody = $state(null);
+  let pendingBody = $state(null);
+  let hide = $state(false);
 
   let { token, cookies, subscriptions } = $derived(data);
   let { tab } = $derived(data);
@@ -221,6 +222,12 @@
     if (!$loading && $page.url.searchParams.get("verified"))
       success($t("user.settings.verified"));
   });
+
+  let toggle = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    hide = !hide;
+  };
 </script>
 
 {#if user?.haspin && $pin?.length !== 6}
@@ -246,6 +253,7 @@
           onclick={() => {
             showConfirmPassword = false;
             showFinalConfirm = false;
+            confirmPassword = "";
           }}
         >
           Cancel
@@ -260,6 +268,7 @@
             }
             showConfirmPassword = false;
             showFinalConfirm = true;
+            confirmPassword = "";
           }}
         >
           Confirm
@@ -273,13 +282,35 @@
     <div class="glass w-full max-w-sm rounded-2xl p-4 sm:p-6">
       <h2 class="text-lg sm:text-xl font-bold mb-4">Are you sure?</h2>
 
-      <p class="text-white/70 mb-4">
+      <div class="text-white/70 mb-4">
         You are changing your password to:
         <br />
-        <span class="text-white text-lg sm:text-xl break-all"
-          >{newPassword}</span
+
+        <!-- <button
+          class="mt-2 text-xs text-dgen-aqua hover:underline"
+          onclick={() => (showPassword = !showPassword)}
         >
-      </p>
+          {showPassword ? "Hide password" : "Show password"}
+        </button> -->
+        <div class="flex flex-row justify-between">
+          <span class="text-white text-lg sm:text-xl break-all">
+            {hide ? newPassword : "•".repeat(newPassword.length)}
+          </span>
+
+          <button
+            type="button"
+            class="contents flex-shrink-0 items-end"
+            onclick={toggle}
+          >
+            <iconify-icon
+              noobserver
+              icon={hide ? "ph:eye-bold" : "ph:eye-slash-bold"}
+              width="28"
+              class="sm:w-8"
+            ></iconify-icon></button
+          >
+        </div>
+      </div>
 
       <div class="flex gap-3 sm:gap-4">
         <button
@@ -287,6 +318,7 @@
           onclick={() => {
             showFinalConfirm = false;
             pendingBody = null;
+            hide = false;
           }}
         >
           No
@@ -306,6 +338,7 @@
             applyAction(result);
 
             pendingBody = null;
+            hide = false;
           }}
         >
           Yes, Change Password

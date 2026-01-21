@@ -48,7 +48,7 @@
           </p>
 
           <p class="mb-3 font-semibold">To swap:</p>
-          <ul class="mb-3list-disc list-inside space-y-1 opacity-90">
+          <ul class="mb-3 list-disc list-inside space-y-1 opacity-90">
             <li>
               Choose the 2 cryptocurrencies you want to swap & the amounts.
             </li>
@@ -74,7 +74,7 @@
             SAVE YOUR EXCHANGE ID when it pops up, in the case of any issues
             happening with your swap.
           </p>
-          <p class="mb-3">DO NOT USE MIXERS/COINJOINERS with anything r</p>
+          <p class="mb-3">DO NOT USE MIXERS/COINJOINERS with anything</p>
           <p class="mb-3">
             Note: Off-Ramp feature is not available but it will be soon. The
             On-Ramp feature here is available.
