@@ -26,9 +26,7 @@
 
   // Convert relative URLs to full backend URLs for production compatibility
   let bg = $derived(bannerUrl ? `url(${getImageUrl(bannerUrl)})` : null);
-  let mastercardUrl = $derived(
-    publicEnv.PUBLIC_MASTERCARD_IS_LIVE_URL || "",
-  );
+  let mastercardUrl = $derived(publicEnv.PUBLIC_MASTERCARD_IS_LIVE_URL || "");
 
   const links = $derived([
     {
