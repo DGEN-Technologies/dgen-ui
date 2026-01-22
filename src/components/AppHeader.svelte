@@ -30,9 +30,7 @@
     try {
       const parsed = new URL(url);
       const allowedHosts = new Set(["card.dgentech.io", "dgentech.io"]);
-      return (
-        parsed.protocol === "https:" && allowedHosts.has(parsed.hostname)
-      );
+      return parsed.protocol === "https:" && allowedHosts.has(parsed.hostname);
     } catch (e) {
       return false;
     }
