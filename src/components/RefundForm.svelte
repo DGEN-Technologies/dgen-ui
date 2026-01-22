@@ -35,6 +35,11 @@
   let refundBroadcasted = $state(false);
   let refundTxId = $state("");
 
+  const safeT = (key, fallback) => {
+    const value = $t(key);
+    return value && value !== key ? value : fallback;
+  };
+
   const absoluteAmount = $derived(Math.abs(amountSat || 0));
   const normalFee = $derived(fees?.halfHourFee ?? fees?.hourFee ?? null);
   let addressValidationToken = 0;
@@ -452,12 +457,17 @@
               <iconify-icon icon="ph:check-circle" width="24"></iconify-icon>
               <div class="text-sm">
                 <div>
-                  {"Refund broadcast"}
+                  {safeT("payments.refundBroadcast", "Refund broadcast")}
                 </div>
                 {#if refundTxId}
                   <div class="font-mono break-all">{refundTxId}</div>
                 {:else}
-                  <div class="text-secondary">Transaction ID unavailable.</div>
+                  <div class="text-secondary">
+                    {safeT(
+                      "payments.refundTxIdUnavailable",
+                      "Transaction ID unavailable.",
+                    )}
+                  </div>
                 {/if}
               </div>
             </div>
