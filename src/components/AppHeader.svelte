@@ -26,7 +26,22 @@
 
   // Convert relative URLs to full backend URLs for production compatibility
   let bg = $derived(bannerUrl ? `url(${getImageUrl(bannerUrl)})` : null);
-  let mastercardUrl = $derived(publicEnv.PUBLIC_MASTERCARD_IS_LIVE_URL || "");
+  const isValidMastercardUrl = (url) => {
+    try {
+      const parsed = new URL(url);
+      const allowedHosts = new Set(["card.dgentech.io", "dgentech.io"]);
+      return (
+        parsed.protocol === "https:" && allowedHosts.has(parsed.hostname)
+      );
+    } catch (e) {
+      return false;
+    }
+  };
+  let mastercardUrl = $derived(
+    isValidMastercardUrl(publicEnv.PUBLIC_MASTERCARD_IS_LIVE_URL || "")
+      ? publicEnv.PUBLIC_MASTERCARD_IS_LIVE_URL
+      : "",
+  );
 
   const links = $derived([
     {

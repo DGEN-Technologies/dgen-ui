@@ -13,6 +13,7 @@
   import { avatar, banner, signer, password, pin, save } from "$lib/store";
   import { upload } from "$lib/upload";
   import { page } from "$app/stores";
+  const sign = null;
   // import { sign, send, getPrivateKey } from "$lib/nostr"; // NOSTR DISABLED
   import { invalidateAll, goto } from "$app/navigation";
   // import { getPublicKey } from "nostr-tools"; // NOSTR DISABLED
@@ -66,25 +67,28 @@
 
     await tick();
 
-    if (!user.pubkey || user.pubkey === prev.pubkey) {
-      body.delete("pubkey");
-    } else {
-      $signer = null;
+      if (!user.pubkey || user.pubkey === prev.pubkey) {
+        body.delete("pubkey");
+      } else if (!sign) {
+        body.delete("pubkey");
+        warning("Nostr signing is disabled; pubkey update skipped.");
+      } else {
+        $signer = null;
 
-      let event = {
-        kind: 27235,
-        created_at: Date.now(),
-        content: "",
-        tags: [
-          ["u", `${PUBLIC_DGEN_URL}/api/nostrAuth`],
-          ["method", "POST"],
-          ["challenge", user.challenge],
-        ],
-      };
+        let event = {
+          kind: 27235,
+          created_at: Date.now(),
+          content: "",
+          tags: [
+            ["u", `${PUBLIC_DGEN_URL}/api/nostrAuth`],
+            ["method", "POST"],
+            ["challenge", user.challenge],
+          ],
+        };
 
-      let signedEvent = await sign(event);
-      body.set("event", JSON.stringify(signedEvent));
-    }
+        let signedEvent = await sign(event);
+        body.set("event", JSON.stringify(signedEvent));
+      }
 
     if ($avatar) {
       try {
