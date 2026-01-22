@@ -18,6 +18,12 @@
   let { currency, username } = user;
   let locale = loc(user);
 
+  /**
+   * Minimum sats for on-chain Bitcoin send.
+   * Below this threshold, network fees make the transaction uneconomical.
+   */
+  const MIN_ONCHAIN_SATS = 28000;
+
   let amount = $state(0);
   let a = $state(0);
   let submit = $state(),
@@ -60,7 +66,7 @@
     bind:rate={$rate}
     {locale}
     skipBalanceCheck={true}
-    minAmount={28000}
+    minAmount={MIN_ONCHAIN_SATS}
   />
 
   <div class="flex justify-center gap-2">

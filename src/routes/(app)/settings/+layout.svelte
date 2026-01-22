@@ -27,7 +27,7 @@
   let showConfirmPassword = $state(false);
   let showFinalConfirm = $state(false);
   let pendingBody = $state(null);
-  let hide = $state(false);
+  let showPassword = $state(false);
 
   let { token, cookies, subscriptions } = $derived(data);
   let { tab } = $derived(data);
@@ -226,7 +226,7 @@
   let toggle = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    hide = !hide;
+    showPassword = !showPassword;
   };
 </script>
 
@@ -294,7 +294,7 @@
         </button> -->
         <div class="flex flex-row justify-between">
           <span class="text-white text-lg sm:text-xl break-all">
-            {hide ? newPassword : "•".repeat(newPassword.length)}
+            {showPassword ? newPassword : "•".repeat(newPassword.length)}
           </span>
 
           <button
@@ -304,7 +304,7 @@
           >
             <iconify-icon
               noobserver
-              icon={hide ? "ph:eye-bold" : "ph:eye-slash-bold"}
+              icon={showPassword ? "ph:eye-slash-bold" : "ph:eye-bold"}
               width="28"
               class="sm:w-8"
             ></iconify-icon></button
@@ -318,7 +318,7 @@
           onclick={() => {
             showFinalConfirm = false;
             pendingBody = null;
-            hide = false;
+            showPassword = false;
           }}
         >
           No
@@ -338,7 +338,7 @@
             applyAction(result);
 
             pendingBody = null;
-            hide = false;
+            showPassword = false;
           }}
         >
           Yes, Change Password

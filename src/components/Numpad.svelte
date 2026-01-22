@@ -16,7 +16,7 @@
     submit = undefined,
     skipBalanceCheck = false,
     isUSDT = false,
-    minAmount,
+    minAmount = 0, // Optional: minimum sats to display warning
   } = $props();
 
   // ---- Simple state ----
