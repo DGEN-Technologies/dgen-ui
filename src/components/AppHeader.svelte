@@ -1,8 +1,6 @@
 <script>
-  import {
-    PUBLIC_DGEN_URL,
-    PUBLIC_MASTERCARD_IS_LIVE_URL,
-  } from "$env/static/public";
+  import { PUBLIC_DGEN_URL } from "$env/static/public";
+  import { env as publicEnv } from "$env/dynamic/public";
   import { banner, theme, newPayment } from "$lib/store";
   import { goto } from "$app/navigation";
   import { getImageUrl } from "$lib/utils";
@@ -28,6 +26,9 @@
 
   // Convert relative URLs to full backend URLs for production compatibility
   let bg = $derived(bannerUrl ? `url(${getImageUrl(bannerUrl)})` : null);
+  let mastercardUrl = $derived(
+    publicEnv.PUBLIC_MASTERCARD_IS_LIVE_URL || "",
+  );
 
   const links = $derived([
     {
@@ -108,29 +109,31 @@
       {/if}
     </nav>
     <!-- DGEN Mastercard -->
-    <div class="mr-2 sm:mr-5 flex justify-end">
-      <a
-        href={PUBLIC_MASTERCARD_IS_LIVE_URL}
-        target="_blank"
-        class="inline-flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 rounded-xl bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-2 border-blue-500/30"
-      >
-        <div>
-          <iconify-icon
-            icon="ph:credit-card-bold"
-            class="text-blue-400"
-            width="16"
-          ></iconify-icon>
-        </div>
-        <div class="flex flex-col items-center">
-          <span class="text-xs sm:text-sm font-semibold text-blue-300"
-            >DGEN Mastercard is live</span
-          >
-          <span class="text-[7px] sm:text-xs font-semibold text-blue-300"
-            >(click here to see it)</span
-          >
-        </div>
-      </a>
-    </div>
+    {#if mastercardUrl}
+      <div class="mr-2 sm:mr-5 flex justify-end">
+        <a
+          href={mastercardUrl}
+          target="_blank"
+          class="inline-flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 rounded-xl bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-2 border-blue-500/30"
+        >
+          <div>
+            <iconify-icon
+              icon="ph:credit-card-bold"
+              class="text-blue-400"
+              width="16"
+            ></iconify-icon>
+          </div>
+          <div class="flex flex-col items-center">
+            <span class="text-xs sm:text-sm font-semibold text-blue-300"
+              >DGEN Mastercard is live</span
+            >
+            <span class="text-[7px] sm:text-xs font-semibold text-blue-300"
+              >(click here to see it)</span
+            >
+          </div>
+        </a>
+      </div>
+    {/if}
     {#if subject}
       <div
         class="absolute md:w-[64px] md:mx-auto lg:left-[154px] xl:left-[194px] left-[calc(50vw-64px)] -bottom-[64px] z-30"
