@@ -548,6 +548,8 @@
     "feeFast": "Fast",
     "confirmRefund": "Confirm Refund",
     "refundWarning": "Please verify the refund address is correct. This transaction cannot be reversed.",
+    "refundBroadcast": "Refund broadcast",
+    "refundTxIdUnavailable": "Transaction ID unavailable.",
     "youWillReceive": "You will receive",
     "refundSuccess": "Refund transaction broadcast successfully!"
   },

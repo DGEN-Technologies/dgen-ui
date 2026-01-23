@@ -13,6 +13,7 @@
   import { avatar, banner, signer, password, pin, save } from "$lib/store";
   import { upload } from "$lib/upload";
   import { page } from "$app/stores";
+  const NOSTR_SIGNING_ENABLED = false;
   // import { sign, send, getPrivateKey } from "$lib/nostr"; // NOSTR DISABLED
   import { invalidateAll, goto } from "$app/navigation";
   // import { getPublicKey } from "nostr-tools"; // NOSTR DISABLED
@@ -21,6 +22,13 @@
   let { children, data, form } = $props();
 
   let formElement = $state();
+
+  let newPassword = $state("");
+  let confirmPassword = $state("");
+  let showConfirmPassword = $state(false);
+  let showFinalConfirm = $state(false);
+  let pendingBody = $state(null);
+  let showPassword = $state(false);
 
   let { token, cookies, subscriptions } = $derived(data);
   let { tab } = $derived(data);
@@ -48,143 +56,166 @@
   let submitting = $state();
   let cancel = () => goto(`/${username}`);
 
+  async function submitBody(body) {
+    form = {
+      user: await fd({
+        formData() {
+          return body;
+        },
+      }),
+    };
+
+    await tick();
+
+    if (!user.pubkey || user.pubkey === prev.pubkey) {
+      body.delete("pubkey");
+    } else if (!NOSTR_SIGNING_ENABLED) {
+      body.delete("pubkey");
+      warning("Nostr signing is disabled; pubkey update skipped.");
+    } else {
+      $signer = null;
+
+      let event = {
+        kind: 27235,
+        created_at: Date.now(),
+        content: "",
+        tags: [
+          ["u", `${PUBLIC_DGEN_URL}/api/nostrAuth`],
+          ["method", "POST"],
+          ["challenge", user.challenge],
+        ],
+      };
+
+      const { sign } = await import("$lib/nostr");
+      let signedEvent = await sign(event);
+      body.set("event", JSON.stringify(signedEvent));
+    }
+
+    if ($avatar) {
+      try {
+        let uploadResult = await upload(
+          $avatar.file,
+          $avatar.type,
+          $avatar.progress,
+          token,
+        );
+        let { hash, ext } = JSON.parse(uploadResult);
+
+        // Use full backend URL for production compatibility
+        let url = `${PUBLIC_DGEN_URL}/public/${hash}.${ext || "webp"}`;
+        body.set("picture", url);
+
+        await fetch(url, { cache: "reload", mode: "no-cors" });
+
+        // Update avatar store with new URL for immediate display
+        $avatar = { ...$avatar, src: url };
+      } catch (e) {
+        console.log("problem uploading avatar", e);
+      }
+    }
+
+    if ($banner) {
+      try {
+        let { hash, ext } = JSON.parse(
+          await upload($banner.file, $banner.type, $banner.progress, token),
+        );
+
+        // Use full backend URL for production compatibility
+        let url = `${PUBLIC_DGEN_URL}/public/${hash}.${ext || "webp"}`;
+        body.set("banner", url);
+        await fetch(url, { cache: "reload", mode: "no-cors" });
+
+        // Update banner store with new URL for immediate display
+        $banner = { ...$banner, src: url };
+      } catch (e) {
+        console.log("problem uploading banner", e);
+      }
+    }
+
+    // Nostr profile update disabled for MVP - the backend will handle all profile data
+    // if (
+    //   ["username", "about", "picture", "display", "banner"].some(
+    //     (a) => user[a] && user[a] !== prev[a],
+    //   )
+    // ) {
+    //   let event = {
+    //     pubkey: user.pubkey,
+    //     created_at: Math.floor(Date.now() / 1000),
+    //     kind: 0,
+    //     content: JSON.stringify({
+    //       name: user.username,
+    //       about: user.about,
+    //       picture: user.picture,
+    //       banner: user.banner,
+    //       displayName: user.display,
+    //       lud16: `${user.username}@${$page.url.hostname}`,
+    //     }),
+    //     tags: [],
+    //   };
+
+    //   try {
+    //     event = await sign(event, user);
+    //     send(event);
+    //   } catch (e) {
+    //     console.log(e);
+    //     warning("Nostr profile could not be updated");
+    //   }
+    // }
+
+    let email = body.get("email");
+    if (email && email !== prev.email) {
+      try {
+        cookies.get = function (n) {
+          return this.find((c) => c.name === n).value;
+        };
+
+        user.verified = false;
+
+        await post("/email", { email });
+
+        warning($t("user.settings.verifying"), false);
+      } catch (e) {
+        fail(e.message);
+        console.log(e);
+      }
+    }
+
+    const response = await fetch(formElement.action, {
+      method: "POST",
+      body,
+    });
+
+    const result = deserialize(await response.text());
+
+    if (result.type === "success") {
+      await invalidateAll();
+      if (body.get("password")) $password = body.get("password");
+      newPassword = "";
+      confirmPassword = "";
+      showConfirmPassword = false;
+      showFinalConfirm = false;
+    }
+
+    applyAction(result);
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     try {
       submitting = true;
       let body = new FormData(formElement);
-      form = {
-        user: await fd({
-          formData() {
-            return body;
-          },
-        }),
-      };
 
-      await tick();
+      newPassword = body.get("password") || "";
 
-      if (!user.pubkey || user.pubkey === prev.pubkey) {
-        body.delete("pubkey");
-      } else {
-        $signer = null;
-
-        let event = {
-          kind: 27235,
-          created_at: Date.now(),
-          content: "",
-          tags: [
-            ["u", `${PUBLIC_DGEN_URL}/api/nostrAuth`],
-            ["method", "POST"],
-            ["challenge", user.challenge],
-          ],
-        };
-
-        let signedEvent = await sign(event);
-        body.set("event", JSON.stringify(signedEvent));
+      /* STEP 1: user entered password → stop submit */
+      if (newPassword && !showConfirmPassword && !showFinalConfirm) {
+        pendingBody = body;
+        showConfirmPassword = true;
+        submitting = false;
+        return;
       }
 
-      if ($avatar) {
-        try {
-          let uploadResult = await upload(
-            $avatar.file,
-            $avatar.type,
-            $avatar.progress,
-            token,
-          );
-          let { hash, ext } = JSON.parse(uploadResult);
-
-          // Use full backend URL for production compatibility
-          let url = `${PUBLIC_DGEN_URL}/public/${hash}.${ext || "webp"}`;
-          body.set("picture", url);
-
-          await fetch(url, { cache: "reload", mode: "no-cors" });
-
-          // Update avatar store with new URL for immediate display
-          $avatar = { ...$avatar, src: url };
-        } catch (e) {
-          console.log("problem uploading avatar", e);
-        }
-      }
-
-      if ($banner) {
-        try {
-          let { hash, ext } = JSON.parse(
-            await upload($banner.file, $banner.type, $banner.progress, token),
-          );
-
-          // Use full backend URL for production compatibility
-          let url = `${PUBLIC_DGEN_URL}/public/${hash}.${ext || "webp"}`;
-          body.set("banner", url);
-          await fetch(url, { cache: "reload", mode: "no-cors" });
-
-          // Update banner store with new URL for immediate display
-          $banner = { ...$banner, src: url };
-        } catch (e) {
-          console.log("problem uploading banner", e);
-        }
-      }
-
-      // Nostr profile update disabled for MVP - the backend will handle all profile data
-      // if (
-      //   ["username", "about", "picture", "display", "banner"].some(
-      //     (a) => user[a] && user[a] !== prev[a],
-      //   )
-      // ) {
-      //   let event = {
-      //     pubkey: user.pubkey,
-      //     created_at: Math.floor(Date.now() / 1000),
-      //     kind: 0,
-      //     content: JSON.stringify({
-      //       name: user.username,
-      //       about: user.about,
-      //       picture: user.picture,
-      //       banner: user.banner,
-      //       displayName: user.display,
-      //       lud16: `${user.username}@${$page.url.hostname}`,
-      //     }),
-      //     tags: [],
-      //   };
-
-      //   try {
-      //     event = await sign(event, user);
-      //     send(event);
-      //   } catch (e) {
-      //     console.log(e);
-      //     warning("Nostr profile could not be updated");
-      //   }
-      // }
-
-      let email = body.get("email");
-      if (email && email !== prev.email) {
-        try {
-          cookies.get = function (n) {
-            return this.find((c) => c.name === n).value;
-          };
-
-          user.verified = false;
-
-          await post("/email", { email });
-
-          warning($t("user.settings.verifying"), false);
-        } catch (e) {
-          fail(e.message);
-          console.log(e);
-        }
-      }
-
-      const response = await fetch(formElement.action, {
-        method: "POST",
-        body,
-      });
-
-      const result = deserialize(await response.text());
-
-      if (result.type === "success") {
-        await invalidateAll();
-        if (body.get("password")) $password = body.get("password");
-      }
-
-      applyAction(result);
+      await submitBody(body);
     } catch (e) {
       console.log(e);
       fail("Something went wrong");
@@ -204,12 +235,135 @@
     if (!$loading && $page.url.searchParams.get("verified"))
       success($t("user.settings.verified"));
   });
+
+  let toggle = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    showPassword = !showPassword;
+  };
 </script>
 
 {#if user?.haspin && $pin?.length !== 6}
   <Pin bind:value={$pin} {cancel} />
 {/if}
 
+{#if showConfirmPassword}
+  <div
+    class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 sm:p-0"
+  >
+    <div class="glass w-full max-w-sm rounded-2xl p-4 sm:p-6">
+      <h2 class="text-lg sm:text-xl font-bold mb-4">Confirm Password</h2>
+
+      <input
+        type="password"
+        class="input w-full mb-4"
+        placeholder="Confirm password"
+        bind:value={confirmPassword}
+      />
+      <div class="flex gap-3 sm:gap-4">
+        <button
+          class="text-white border border-white/10 rounded-xl w-full py-2"
+          onclick={() => {
+            showConfirmPassword = false;
+            showFinalConfirm = false;
+            confirmPassword = "";
+            newPassword = "";
+            pendingBody = null;
+          }}
+        >
+          Cancel
+        </button>
+
+        <button
+          class="text-white border border-white/10 rounded-xl w-full py-2"
+          onclick={() => {
+            if (confirmPassword !== newPassword) {
+              fail("Passwords do not match");
+              return;
+            }
+            showConfirmPassword = false;
+            showFinalConfirm = true;
+            confirmPassword = "";
+          }}
+        >
+          Confirm
+        </button>
+      </div>
+    </div>
+  </div>
+{/if}
+{#if showFinalConfirm}
+  <div class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center">
+    <div class="glass w-full max-w-sm rounded-2xl p-4 sm:p-6">
+      <h2 class="text-lg sm:text-xl font-bold mb-4">Are you sure?</h2>
+
+      <div class="text-white/70 mb-4">
+        You are changing your password to:
+        <br />
+
+        <!-- <button
+          class="mt-2 text-xs text-dgen-aqua hover:underline"
+          onclick={() => (showPassword = !showPassword)}
+        >
+          {showPassword ? "Hide password" : "Show password"}
+        </button> -->
+        <div class="flex flex-row justify-between">
+          <span class="text-white text-lg sm:text-xl break-all">
+            {showPassword ? newPassword : "•".repeat(newPassword.length)}
+          </span>
+
+          <button
+            type="button"
+            class="contents flex-shrink-0 items-end"
+            onclick={toggle}
+          >
+            <iconify-icon
+              noobserver
+              icon={showPassword ? "ph:eye-slash-bold" : "ph:eye-bold"}
+              width="28"
+              class="sm:w-8"
+            ></iconify-icon></button
+          >
+        </div>
+      </div>
+
+      <div class="flex gap-3 sm:gap-4">
+        <button
+          class="text-white border border-white/40 rounded-lg w-full"
+          onclick={() => {
+            showFinalConfirm = false;
+            pendingBody = null;
+            showPassword = false;
+            newPassword = "";
+          }}
+        >
+          No
+        </button>
+
+        <button
+          class="text-red-400 border border-red-200/40 rounded-lg w-full"
+          onclick={async () => {
+            showFinalConfirm = false;
+            if (!pendingBody) return;
+            submitting = true;
+            try {
+              await submitBody(pendingBody);
+            } catch (e) {
+              console.log(e);
+              fail("Something went wrong");
+            }
+            pendingBody = null;
+            showPassword = false;
+            newPassword = "";
+            submitting = false;
+          }}
+        >
+          Yes, Change Password
+        </button>
+      </div>
+    </div>
+  </div>
+{/if}
 <div class="min-h-screen relative">
   <form
     method="POST"
@@ -220,7 +374,7 @@
     <input type="hidden" name="pin" value={$pin} />
     <input type="hidden" name="tab" value={tab} />
 
-    <div class="container mx-auto max-w-2xl px-4 py-20">
+    <div class="container mx-auto max-w-2xl px-4 py-2 sm:py-20">
       <div class="header animate-fadeInUp">
         <!-- Title with epic glow effect -->
         <h1 class="text-center text-4xl md:text-5xl font-bold mb-2">
