@@ -69,11 +69,11 @@
 
     if (!user.pubkey || user.pubkey === prev.pubkey) {
       body.delete("pubkey");
-      } else if (!NOSTR_SIGNING_ENABLED) {
-        body.delete("pubkey");
-        warning("Nostr signing is disabled; pubkey update skipped.");
-      } else {
-        $signer = null;
+    } else if (!NOSTR_SIGNING_ENABLED) {
+      body.delete("pubkey");
+      warning("Nostr signing is disabled; pubkey update skipped.");
+    } else {
+      $signer = null;
 
       let event = {
         kind: 27235,
@@ -86,8 +86,8 @@
         ],
       };
 
-        const { sign } = await import("$lib/nostr");
-        let signedEvent = await sign(event);
+      const { sign } = await import("$lib/nostr");
+      let signedEvent = await sign(event);
       body.set("event", JSON.stringify(signedEvent));
     }
 
