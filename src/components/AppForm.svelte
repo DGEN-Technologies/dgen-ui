@@ -14,6 +14,9 @@
   import { enhance } from "$app/forms";
   import { env as publicEnv } from "$env/dynamic/public";
 
+  const walletPubkey = env.PUBLIC_DGEN_PUBKEY || "";
+  const relayUrl = env.PUBLIC_DGEN_RELAY || "";
+
   let {
     rate,
     user,
