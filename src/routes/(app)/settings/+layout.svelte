@@ -13,7 +13,7 @@
   import { avatar, banner, signer, password, pin, save } from "$lib/store";
   import { upload } from "$lib/upload";
   import { page } from "$app/stores";
-  const sign = null;
+  const NOSTR_SIGNING_ENABLED = false;
   // import { sign, send, getPrivateKey } from "$lib/nostr"; // NOSTR DISABLED
   import { invalidateAll, goto } from "$app/navigation";
   // import { getPublicKey } from "nostr-tools"; // NOSTR DISABLED
@@ -69,11 +69,11 @@
 
     if (!user.pubkey || user.pubkey === prev.pubkey) {
       body.delete("pubkey");
-    } else if (!sign) {
-      body.delete("pubkey");
-      warning("Nostr signing is disabled; pubkey update skipped.");
-    } else {
-      $signer = null;
+      } else if (!NOSTR_SIGNING_ENABLED) {
+        body.delete("pubkey");
+        warning("Nostr signing is disabled; pubkey update skipped.");
+      } else {
+        $signer = null;
 
       let event = {
         kind: 27235,
@@ -86,7 +86,8 @@
         ],
       };
 
-      let signedEvent = await sign(event);
+        const { sign } = await import("$lib/nostr");
+        let signedEvent = await sign(event);
       body.set("event", JSON.stringify(signedEvent));
     }
 
