@@ -1,6 +1,6 @@
 <script>
-  import { onMount } from 'svelte';
-  import { tabSync } from '$lib/tabSync';
+  import { onMount } from "svelte";
+  import { tabSync } from "$lib/tabSync";
 
   let { onTakeover = () => {}, onRefresh = () => {} } = $props();
 
@@ -12,7 +12,7 @@
 
   onMount(() => {
     // Check if user has seen this message before
-    const seen = localStorage.getItem('tab_lock_message_seen');
+    const seen = localStorage.getItem("tab_lock_message_seen");
     hasSeenMessage = !!seen;
 
     // Get lock holder info
@@ -26,7 +26,7 @@
 
   function updateLockInfo() {
     lockHolder = tabSync.getLockHolder();
-    const lockKey = localStorage.getItem('breez_wallet_lock');
+    const lockKey = localStorage.getItem("breez_wallet_lock");
     if (lockKey) {
       lockTime = new Date(parseInt(lockKey));
     }
@@ -38,7 +38,7 @@
 
   async function confirmTakeover() {
     // Mark as seen so user doesn't get educated message again
-    localStorage.setItem('tab_lock_message_seen', 'true');
+    localStorage.setItem("tab_lock_message_seen", "true");
 
     showConfirm = false;
     await onTakeover();
@@ -54,14 +54,14 @@
   }
 
   function dismissEducation() {
-    localStorage.setItem('tab_lock_message_seen', 'true');
+    localStorage.setItem("tab_lock_message_seen", "true");
     hasSeenMessage = true;
   }
 
   function getRelativeTime() {
-    if (!lockTime) return '';
+    if (!lockTime) return "";
     const seconds = Math.floor((Date.now() - lockTime.getTime()) / 1000);
-    if (seconds < 60) return 'just now';
+    if (seconds < 60) return "just now";
     const minutes = Math.floor(seconds / 60);
     if (minutes < 60) return `${minutes}m ago`;
     const hours = Math.floor(minutes / 60);
@@ -69,7 +69,9 @@
   }
 </script>
 
-<div class="fixed top-0 left-0 right-0 z-[100] border-b border-cyan-600/30 bg-gradient-to-r from-cyan-500/95 to-blue-500/95 backdrop-blur-sm shadow-lg">
+<div
+  class="fixed top-0 left-0 right-0 z-[100] border-b border-cyan-600/30 bg-gradient-to-r from-cyan-500/95 to-blue-500/95 backdrop-blur-sm shadow-lg"
+>
   <div class="max-w-7xl mx-auto px-3 sm:px-4 py-3">
     {#if !showConfirm}
       <!-- Main Banner Content -->
@@ -77,7 +79,8 @@
         <!-- Icon and Main Message -->
         <div class="flex items-start gap-2 flex-1">
           <div class="flex-shrink-0 mt-0.5">
-            <iconify-icon icon="mdi:alert-circle" width="20" class="text-white"></iconify-icon>
+            <iconify-icon icon="mdi:alert-circle" width="20" class="text-white"
+            ></iconify-icon>
           </div>
           <div class="flex-1 min-w-0">
             <div class="text-white font-semibold text-sm sm:text-base">
@@ -94,7 +97,8 @@
 
             {#if !hasSeenMessage}
               <div class="mt-2 text-xs text-white/80 bg-white/10 rounded p-2">
-                <strong>Why?</strong> The wallet can only run in one tab at a time to prevent payment conflicts and ensure security.
+                <strong>Why?</strong> The wallet can only run in one tab at a
+                time to prevent payment conflicts and ensure security.
                 <button
                   onclick={() => dismissEducation()}
                   class="ml-2 underline hover:text-white"
@@ -126,7 +130,7 @@
             Use This Tab
           </button>
           <button
-            onclick={() => showDetails = !showDetails}
+            onclick={() => (showDetails = !showDetails)}
             class="p-1.5 hover:bg-white/20 rounded transition-colors"
             type="button"
             aria-label="Toggle details"
@@ -148,15 +152,24 @@
               <div class="font-semibold mb-1">What you can do in this tab:</div>
               <ul class="space-y-1 text-xs">
                 <li class="flex items-center gap-1.5">
-                  <iconify-icon icon="mdi:check" width="14" class="text-green-300"></iconify-icon>
+                  <iconify-icon
+                    icon="mdi:check"
+                    width="14"
+                    class="text-green-300"
+                  ></iconify-icon>
                   View balance and transactions
                 </li>
                 <li class="flex items-center gap-1.5">
-                  <iconify-icon icon="mdi:check" width="14" class="text-green-300"></iconify-icon>
+                  <iconify-icon
+                    icon="mdi:check"
+                    width="14"
+                    class="text-green-300"
+                  ></iconify-icon>
                   Copy receive addresses
                 </li>
                 <li class="flex items-center gap-1.5">
-                  <iconify-icon icon="mdi:close" width="14" class="text-red-300"></iconify-icon>
+                  <iconify-icon icon="mdi:close" width="14" class="text-red-300"
+                  ></iconify-icon>
                   Send payments (active tab only)
                 </li>
               </ul>
@@ -172,7 +185,9 @@
           </div>
           {#if lockHolder}
             <div class="mt-2 text-xs text-white/70">
-              Active tab ID: <code class="bg-white/10 px-1 rounded">{lockHolder.slice(0, 16)}...</code>
+              Active tab ID: <code class="bg-white/10 px-1 rounded"
+                >{lockHolder.slice(0, 16)}...</code
+              >
             </div>
           {/if}
         </div>
@@ -181,13 +196,18 @@
       <!-- Confirmation Dialog -->
       <div class="flex flex-col gap-3">
         <div class="flex items-start gap-2">
-          <iconify-icon icon="mdi:alert" width="20" class="text-white flex-shrink-0 mt-0.5"></iconify-icon>
+          <iconify-icon
+            icon="mdi:alert"
+            width="20"
+            class="text-white flex-shrink-0 mt-0.5"
+          ></iconify-icon>
           <div class="flex-1">
             <div class="text-white font-semibold text-sm sm:text-base">
               Switch to This Tab?
             </div>
             <div class="text-white/90 text-xs sm:text-sm mt-1">
-              This will make the other tab view-only. Any pending actions in that tab may be interrupted.
+              This will make the other tab view-only. Any pending actions in
+              that tab may be interrupted.
             </div>
           </div>
         </div>

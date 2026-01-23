@@ -1,6 +1,11 @@
 <script>
   import { btc, f, sat } from "$lib/utils";
-  import { walletBalance, walletInfo, walletStore, isWalletLoading } from "$lib/stores/wallet";
+  import {
+    walletBalance,
+    walletInfo,
+    walletStore,
+    isWalletLoading,
+  } from "$lib/stores/wallet";
   import { unitPreference } from "$lib/store";
   import { onMount } from "svelte";
   import BalancePlaceholder from "$comp/BalancePlaceholder.svelte";
@@ -9,11 +14,13 @@
 
   // Following misty-breez pattern: check walletInfo != null for loading state
   let walletIsLoading = $derived(
-    account?.browserManaged && $walletInfo === null
+    account?.browserManaged && $walletInfo === null,
   );
 
   // Use browser SDK balance if account is browser managed, otherwise use server balance
-  let balance = $derived(account?.browserManaged ? $walletBalance : (account?.balance || 0));
+  let balance = $derived(
+    account?.browserManaged ? $walletBalance : account?.balance || 0,
+  );
   let currency = $derived(user?.currency || "USD");
   let unit = $derived(currency); // Default to fiat currency display
   let isLoading = $state(false);
@@ -21,17 +28,17 @@
   // Debug logging
   $effect(() => {
     if (account?.browserManaged) {
-      console.log('[Balance] State:', {
+      console.log("[Balance] State:", {
         walletInfo: $walletInfo,
         walletIsLoading,
-        balance: $walletBalance
+        balance: $walletBalance,
       });
     }
   });
 
   let displayBalance = $derived.by(() => {
     if (unit === "sats") return sat(balance);
-    if (unit === "btc") return btc(balance) + ' BTC';
+    if (unit === "btc") return btc(balance) + " BTC";
     // Convert sats to BTC then multiply by rate
     return f((balance / 100000000) * rate, currency);
   });

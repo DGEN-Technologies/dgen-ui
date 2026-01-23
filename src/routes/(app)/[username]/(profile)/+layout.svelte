@@ -19,7 +19,10 @@
   import { bech32 } from "@scure/base";
   import { page } from "$app/stores";
   import { PUBLIC_DOMAIN } from "$env/static/public";
-  import { lnAddressStore, isLoading as lnAddressLoading } from "$lib/stores/lightningAddress";
+  import {
+    lnAddressStore,
+    isLoading as lnAddressLoading,
+  } from "$lib/stores/lightningAddress";
 
   let { data, children } = $props();
 
@@ -124,20 +127,22 @@
   let following = $derived(list.some((t) => t.includes(subject.pubkey)));
 
   // Get lightning address from store (source of truth) or fall back to database value
-  let displayLightningAddress = $derived($lnAddressStore.lnAddress || subject?.lightningAddress);
+  let displayLightningAddress = $derived(
+    $lnAddressStore.lnAddress || subject?.lightningAddress,
+  );
 </script>
 
 <div class="container mx-auto w-full px-4 flex flex-wrap lg:flex-nowrap">
   <div
-    class="w-full lg:w-[280px] xl:w-[360px] lg:absolute space-y-2 lg:left-20 mx-auto pb-8 lg:pb-0"
+    class="w-full lg:w-[280px] xl:w-[360px] lg:absolute space-y-2 lg:left-20 mx-auto sm:pb-8 lg:pb-0"
   >
     <div class="space-y-1">
       <div
-        class="flex text-3xl font-bold text-center mx-auto justify-center gap-1 items-center"
+        class="flex text-lg sm:text-3xl font-bold text-center mx-auto justify-center gap-1 items-center"
       >
         <button class="flex gap-1 items-center" onclick={toggleDetails}>
           <div class="break-words">{display || username}</div>
-          <iconify-icon noobserver icon="ph:list-bold" width="32"></iconify-icon>
+          <iconify-icon noobserver icon="ph:list-bold"></iconify-icon>
         </button>
         <!-- <a href={`/${subject.pubkey}/notes`}> -->
         <!--   <iconify-icon noobserver icon="ph:note-bold" width="32"></iconify-icon> -->
@@ -154,19 +159,15 @@
             </button>
           {:else if $lnAddressLoading}
             <div class="text-xs text-white/60 flex items-center gap-1">
-              <iconify-icon noobserver icon="ph:spinner" width="14" class="animate-spin"></iconify-icon>
+              <iconify-icon
+                noobserver
+                icon="ph:spinner"
+                width="14"
+                class="animate-spin"
+              ></iconify-icon>
               <span>Setting up your Lightning Address...</span>
             </div>
           {/if}
-        </div>
-
-        <!-- Visa Card Coming Soon -->
-        <div class="mt-3 flex justify-center">
-          <div class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-2 border-blue-500/30">
-            <iconify-icon icon="ph:credit-card-bold" class="text-blue-400" width="20"></iconify-icon>
-            <span class="text-sm font-semibold text-blue-300">Visa Card</span>
-            <span class="text-xs text-white/60 bg-white/10 px-2 py-0.5 rounded-full">Coming Soon</span>
-          </div>
         </div>
       {/if}
     </div>
@@ -261,13 +262,18 @@
 
         {#if displayLightningAddress && subject.id === user?.id}
           <div class="flex flex-col items-center lg:items-start">
-            <div class="text-secondary">{$t("user.settings.LIGHTNING_ADDRESS")}</div>
+            <div class="text-secondary">
+              {$t("user.settings.LIGHTNING_ADDRESS")}
+            </div>
             <div class="flex gap-4">
               <div class="break-all grow text-xl">
                 {displayLightningAddress}
               </div>
               <div class="flex mb-auto gap-1">
-                <button class="my-auto" onclick={() => copy(displayLightningAddress)} aria-label="Copy Lightning address"
+                <button
+                  class="my-auto"
+                  onclick={() => copy(displayLightningAddress)}
+                  aria-label="Copy Lightning address"
                   ><iconify-icon noobserver icon="ph:copy-bold" width="32"
                   ></iconify-icon></button
                 >
@@ -394,7 +400,9 @@
           <span class="text-gray-400">1</span>
           <img src="/images/bitcoin.svg" class="w-5 h-5" alt="Bitcoin" />
           <span class="text-gray-400">=</span>
-          <span class="text-orange-400 font-semibold">{f(rate, currency, locale, 0, 0)}</span>
+          <span class="text-orange-400 font-semibold"
+            >{f(rate, currency, locale, 0, 0)}</span
+          >
         </div>
       </div>
       <div class="flex items-center gap-1 text-sm font-mono">
@@ -406,7 +414,9 @@
         ></iconify-icon>
         <span class="text-gray-400">{s((1 * sats) / rate)}</span>
         <span class="text-gray-400">=</span>
-        <span class="text-yellow-400 font-semibold">{f(1, currency, locale, 0, 0)}</span>
+        <span class="text-yellow-400 font-semibold"
+          >{f(1, currency, locale, 0, 0)}</span
+        >
       </div>
     </div>
   </div>

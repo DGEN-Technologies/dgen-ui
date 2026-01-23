@@ -5,9 +5,9 @@ import { dev } from "$app/environment";
 const opts = {
   expires: new Date(0),
   path: "/",
-  httpOnly: !dev,  // true in production (prevents JS access)
-  secure: !dev,     // true in production (HTTPS only)
-  sameSite: (dev ? "lax" : "strict") as const,  // strict in production (CSRF protection)
+  httpOnly: !dev, // true in production (prevents JS access)
+  secure: !dev, // true in production (HTTPS only)
+  sameSite: (dev ? "lax" : "strict") as const, // strict in production (CSRF protection)
 };
 
 export async function load({ cookies, fetch }) {

@@ -1,7 +1,13 @@
 import getRates from "$lib/rates";
 import { redirect } from "@sveltejs/kit";
 
-export const load = async ({ cookies, params: { username }, parent, url, fetch }) => {
+export const load = async ({
+  cookies,
+  params: { username },
+  parent,
+  url,
+  fetch,
+}) => {
   const token = cookies.get("token");
   const rates = await getRates(fetch);
   if (!token) redirect(307, `/pay/${username}`);

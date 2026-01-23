@@ -1,4 +1,5 @@
 <script>
+  import { goto } from "$app/navigation";
   import LocaleSelector from "$comp/LocaleSelector.svelte";
   import { t } from "$lib/translations";
 
@@ -19,18 +20,18 @@
   id="about"
   class="border-t border-white/10 mt-20 pt-12 pb-8 px-6 bg-black/20 backdrop-blur-sm"
 >
-  <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
-    <div class="space-y-4">
-      <a href="/" aria-label="Home" class="block">
-        <div class="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-          DGEN Technologies
-        </div>
-      </a>
-      <p class="text-sm text-gray-400 max-w-xs">
-        Lightning-fast Bitcoin payments for everyone
-      </p>
+  <div
+    class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between gap-8"
+  >
+    <div class="gap-x-48 flex flex-col sm:flex-row">
       <div class="pt-2">
         <LocaleSelector />
+      </div>
+      <div class="pt-2">
+        <button
+          class="w-full border border-white/20 py-5 px-7 rounded-2xl"
+          onclick={() => goto("/faq")}>FAQ</button
+        >
       </div>
     </div>
 
@@ -72,10 +73,6 @@
     </div>
     -->
 
-    <!-- Placeholder columns to push network section to the right -->
-    <div></div>
-    <div></div>
-
     <div class="flex items-start justify-center md:justify-end">
       <div class="text-center space-y-2">
         <div>
@@ -93,7 +90,7 @@
       </div>
     </div>
   </div>
-  
+
   <div class="mt-12 pt-8 border-t border-white/5 text-center">
     <p class="text-xs text-gray-500">
       © 2025 DGEN Technologies. All rights reserved.

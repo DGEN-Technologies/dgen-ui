@@ -25,7 +25,9 @@
         "/settings/apps/development",
   );
 
-  let script = $derived(`<script src="${$page.url.protocol}//${$page.url.host}/${user.username}/shopify.js"><\/script>`);
+  let script = $derived(
+    `<script src="${$page.url.protocol}//${$page.url.host}/${user.username}/shopify.js"><\/script>`,
+  );
 </script>
 
 <div>

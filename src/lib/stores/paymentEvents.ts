@@ -1,8 +1,14 @@
-import { writable } from 'svelte/store';
-import type { Payment } from '@breeztech/breez-sdk-liquid';
-import { notifyPaymentReceived as showBrowserNotification } from '$lib/notifications';
+import { writable } from "svelte/store";
+import type { Payment } from "@breeztech/breez-sdk-liquid";
+import { notifyPaymentReceived as showBrowserNotification } from "$lib/notifications";
 
-export type PaymentStatus = 'pending' | 'confirmed' | 'complete' | 'fee_acceptance' | 'failed' | 'refundable';
+export type PaymentStatus =
+  | "pending"
+  | "confirmed"
+  | "complete"
+  | "fee_acceptance"
+  | "failed"
+  | "refundable";
 
 export interface PaymentEvent {
   payment: any; // Payment details from SDK event
@@ -21,13 +27,16 @@ export const paymentReceived = writable<PaymentEvent | null>(null);
 // - 'fee_acceptance': Allow user to review fees (Bitcoin amountless swap)
 // - 'failed': Payment failed
 // - 'refundable': Payment failed but needs refund (Bitcoin only)
-export function notifyPaymentReceived(payment: any, status: PaymentStatus = 'pending') {
-  console.log('[PaymentEvents] Payment received:', { payment, status });
+export function notifyPaymentReceived(
+  payment: any,
+  status: PaymentStatus = "pending",
+) {
+  console.log("[PaymentEvents] Payment received:", { payment, status });
 
   const event: PaymentEvent = {
     payment,
     status,
-    timestamp: Date.now()
+    timestamp: Date.now(),
   };
 
   paymentReceived.set(event);
@@ -39,7 +48,7 @@ export function notifyPaymentReceived(payment: any, status: PaymentStatus = 'pen
 
   // Clear after 5 seconds for 'confirmed' status (to allow UI transitions)
   // Don't auto-clear for 'pending' or 'fee_acceptance' (they need user interaction)
-  if (status === 'confirmed' || status === 'complete') {
+  if (status === "confirmed" || status === "complete") {
     setTimeout(() => {
       paymentReceived.set(null);
     }, 5000);

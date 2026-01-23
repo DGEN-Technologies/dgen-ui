@@ -8,10 +8,10 @@
   const features = [
     {
       id: "lightning",
-      title: "Lightning Fast",
-      subtitle: "Instant global transfers",
+      title: "Swift Global Transfers",
+      subtitle: "Efficient global transfers",
       description:
-        "Send Bitcoin anywhere on Earth instantly. Faster and more cost-effective than any traditional bank transfer. Instant payment settlement - Visa/MC take 1-2 business days to settle.",
+        "Send Bitcoin anywhere on Earth with efficient transaction times. Payment settlement typically occurs quickly.",
       icon: "tabler:bolt",
       color: "yellow",
       stats: ["300ms", "Global", "Minimal fees"],
@@ -19,10 +19,10 @@
     },
     {
       id: "security",
-      title: "High-Grade Security",
+      title: "Enhanced Security",
       subtitle: "Your choice, your control",
       description:
-        "High-grade encryption, hardware wallet support, multi-signature vaults. Fully non-custodial - you control your keys.",
+        "Wallet Encryption. Non-custodial - You control your keys, so you don’t have to trust a 3rd party to hold your keys for you.",
       icon: "ph:shield-check-bold",
       color: "green",
       stats: ["256-bit", "Multi-sig", "Biometric"],
@@ -42,7 +42,7 @@
     {
       id: "liquid",
       title: "The Liquid Network",
-      subtitle: "Confidential & fast sidechains",
+      subtitle: "Fast Bitcoin Transactions onchain",
       description:
         "Transact with bitcoin using confidential transactions with speeds averaging 1 minute (compared to Bitcoin's typical 10min-2 hour transactions). All transactions here settle on the Liquid Network on the back end.",
       icon: "ph:drop-bold",
@@ -78,10 +78,12 @@
 </script>
 
 {#if mounted}
-  <section class="relative py-32">
+  <section class="relative py-20 sm:py-32">
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
       <div class="text-center mb-12 sm:mb-16" in:fly={{ y: 30, duration: 800 }}>
-        <h2 class="text-3xl sm:text-4xl md:text-6xl font-bold mb-4">
+        <h2
+          class="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 heading-condensed"
+        >
           <span class="holographic">Built Different</span>
         </h2>
         <p class="text-lg sm:text-xl md:text-2xl opacity-80 px-2">
@@ -90,9 +92,9 @@
       </div>
 
       <!-- 3D Feature Cards Carousel -->
-      <div class="relative max-w-6xl mx-auto">
+      <div class="relative max-w-5xl mx-auto">
         <!-- Desktop view: side-by-side layout -->
-        <div class="hidden lg:grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+        <div class="hidden lg:grid lg:grid-cols-2 gap-4 lg:gap-12 items-center">
           <!-- Feature Display -->
           <div class="relative">
             {#each features as feature, i}
@@ -107,7 +109,7 @@
                     >
                       <!-- Floating visual -->
                       <div
-                        class="absolute top-8 right-8 text-8xl opacity-20 animate-float"
+                        class="absolute top-8 right-8 text-6xl opacity-20 animate-float"
                       >
                         {feature.visual}
                       </div>
@@ -116,7 +118,7 @@
                       <div class="relative z-10">
                         <div class="mb-8">
                           <div
-                            class="w-20 h-20 rounded-3xl bg-gradient-to-br {getColorClasses(
+                            class="w-16 h-16 rounded-3xl bg-gradient-to-br {getColorClasses(
                               feature.color,
                             ).split(' ')[0]} {getColorClasses(
                               feature.color,
@@ -132,27 +134,31 @@
                         </div>
 
                         <h3
-                          class="text-2xl sm:text-3xl font-bold mb-2 {getColorClasses(
+                          class="text-2xl sm:text-2xl font-bold mb-1 {getColorClasses(
                             feature.color,
                           ).split(' ')[4]}"
                         >
                           {feature.title}
                         </h3>
-                        <p class="text-lg sm:text-xl opacity-80 mb-4">
+                        <p class="text-lg sm:text-lg opacity-80 mb-2">
                           {feature.subtitle}
                         </p>
-                        <p class="text-base sm:text-lg opacity-70 mb-6 sm:mb-8">
+                        <p
+                          class="text-base sm:text-base opacity-70 mb-6 sm:mb-6"
+                        >
                           {feature.description}
                         </p>
 
                         <!-- Stats -->
-                        <div class="flex flex-wrap gap-2 sm:gap-3 justify-center sm:justify-start">
+                        <div
+                          class="flex flex-wrap gap-2 sm:gap-1 justify-center sm:justify-start"
+                        >
                           {#each feature.stats as stat}
                             <div
-                              class="glass px-3 sm:px-4 py-2 sm:py-3 rounded-xl border border-white/20 min-w-fit"
+                              class="glass px-3 sm:px-2 py-2 sm:py-1 rounded-xl border border-white/10 min-w-fit"
                             >
                               <span
-                                class="font-bold text-sm sm:text-base whitespace-nowrap {getColorClasses(
+                                class="font-bold text-sm sm:text-sm whitespace-nowrap {getColorClasses(
                                   feature.color,
                                 ).split(' ')[4]}">{stat}</span
                               >
@@ -181,7 +187,7 @@
           </div>
 
           <!-- Feature Selector -->
-          <div class="space-y-4">
+          <div class="space-y-2">
             {#each features as feature, i}
               <button
                 class="w-full text-left premium-card border-2 transition-all duration-500 {i ===
@@ -190,9 +196,9 @@
                   : 'border-white/10 hover:border-white/30'}"
                 onclick={() => (activeFeature = i)}
               >
-                <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2">
                   <div
-                    class="w-12 h-12 rounded-xl bg-gradient-to-br {getColorClasses(
+                    class="w-10 h-10 rounded-xl bg-gradient-to-br {getColorClasses(
                       feature.color,
                     ).split(' ')[0]} {getColorClasses(feature.color).split(
                       ' ',
@@ -207,13 +213,13 @@
                   </div>
                   <div class="flex-1">
                     <h4
-                      class="font-bold text-lg {i === activeFeature
+                      class="font-bold text-base {i === activeFeature
                         ? getColorClasses(feature.color).split(' ')[4]
                         : 'text-white/80'}"
                     >
                       {feature.title}
                     </h4>
-                    <p class="text-sm opacity-60">{feature.subtitle}</p>
+                    <p class="text-xs opacity-60">{feature.subtitle}</p>
                   </div>
                   {#if i === activeFeature}
                     <div class="text-2xl animate-pulse">
@@ -225,7 +231,7 @@
                 {#if i === activeFeature}
                   <!-- Progress bar -->
                   <div
-                    class="mt-4 h-1 bg-black/30 rounded-full overflow-hidden"
+                    class="mt-2 h-1 bg-black/30 rounded-full overflow-hidden"
                   >
                     <div
                       class="h-full bg-gradient-to-r {getColorClasses(
@@ -243,7 +249,7 @@
         </div>
 
         <!-- Mobile view: dropdown accordion -->
-        <div class="lg:hidden space-y-4">
+        <div class="lg:hidden space-y-2">
           {#each features as feature, i}
             <button
               class="w-full text-left premium-card border-2 transition-all duration-500 {i ===
@@ -252,9 +258,9 @@
                 : 'border-white/10 hover:border-white/30'}"
               onclick={() => (activeFeature = activeFeature === i ? -1 : i)}
             >
-              <div class="flex items-center gap-4">
+              <div class="flex items-center gap-2">
                 <div
-                  class="w-12 h-12 rounded-xl bg-gradient-to-br {getColorClasses(
+                  class="w-8 h-8 rounded-xl bg-gradient-to-br {getColorClasses(
                     feature.color,
                   ).split(' ')[0]} {getColorClasses(feature.color).split(
                     ' ',
@@ -262,41 +268,48 @@
                     ? ''
                     : 'opacity-50'}"
                 >
-                  <iconify-icon
-                    icon={feature.icon}
-                    class="text-white text-2xl"
+                  <iconify-icon icon={feature.icon} class="text-white text-xl"
                   ></iconify-icon>
                 </div>
                 <div class="flex-1">
                   <h4
-                    class="font-bold text-lg {i === activeFeature
+                    class="font-bold text-sm {i === activeFeature
                       ? getColorClasses(feature.color).split(' ')[4]
                       : 'text-white/80'}"
                   >
                     {feature.title}
                   </h4>
-                  <p class="text-sm opacity-60">{feature.subtitle}</p>
+                  <p class="text-xs opacity-60">{feature.subtitle}</p>
                 </div>
-                <div class="text-2xl transition-transform duration-300 {i === activeFeature ? 'rotate-180' : ''}">
-                  <iconify-icon icon="ph:caret-down-bold" width="24"></iconify-icon>
+                <div
+                  class="text-xl transition-transform duration-300 {i ===
+                  activeFeature
+                    ? 'rotate-180'
+                    : ''}"
+                >
+                  <iconify-icon icon="ph:caret-down-bold" width="15"
+                  ></iconify-icon>
                 </div>
               </div>
 
               {#if i === activeFeature}
                 <!-- Dropdown content -->
-                <div class="mt-4 pt-4 border-t border-white/10" in:fade={{ duration: 300 }}>
-                  <p class="text-base opacity-70 mb-4">
+                <div
+                  class="mt-2 pt-2 border-t border-white/10"
+                  in:fade={{ duration: 300 }}
+                >
+                  <p class="text-sm opacity-70 mb-2">
                     {feature.description}
                   </p>
 
                   <!-- Stats -->
-                  <div class="flex flex-wrap gap-2">
+                  <div class="flex flex-wrap gap-1">
                     {#each feature.stats as stat}
                       <div
-                        class="glass px-3 py-2 rounded-xl border border-white/20"
+                        class="glass px-1 py-1 rounded-xl border border-white/20"
                       >
                         <span
-                          class="font-bold text-sm whitespace-nowrap {getColorClasses(
+                          class="font-bold text-xs whitespace-nowrap {getColorClasses(
                             feature.color,
                           ).split(' ')[4]}">{stat}</span
                         >

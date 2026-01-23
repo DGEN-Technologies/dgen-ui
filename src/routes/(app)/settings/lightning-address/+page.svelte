@@ -1,26 +1,30 @@
 <script>
-  import { onMount } from 'svelte';
-  import { page } from '$app/stores';
+  import { onMount } from "svelte";
+  import { page } from "$app/stores";
   import {
     setupLightningAddress,
     unregisterLightningAddress,
     getWalletInfo,
-    UsernameConflictError
-  } from '$lib/walletService';
-  import { lnAddressStore, hasValidAddress, isLoading } from '$lib/stores/lightningAddress';
-  import UpdateUsernameModal from '$lib/../components/UpdateUsernameModal.svelte';
-  import { post, fail, success } from '$lib/utils';
-  import { browser } from '$app/environment';
-  import { PUBLIC_DGEN_URL } from '$env/static/public';
+    UsernameConflictError,
+  } from "$lib/walletService";
+  import {
+    lnAddressStore,
+    hasValidAddress,
+    isLoading,
+  } from "$lib/stores/lightningAddress";
+  import UpdateUsernameModal from "$lib/../components/UpdateUsernameModal.svelte";
+  import { post, fail, success } from "$lib/utils";
+  import { browser } from "$app/environment";
+  import { PUBLIC_DGEN_URL } from "$env/static/public";
 
   let { data } = $props();
   let { user } = $derived(data || {});
 
-  let username = $state('');
+  let username = $state("");
   let registering = $state(false);
   let checking = $state(false);
   let available = $state(null);
-  let error = $state('');
+  let error = $state("");
   let showUpdateModal = $state(false);
   let recovering = $state(false);
   let copied = $state(false);
@@ -54,9 +58,9 @@
 
     fetchingWalletInfo = true;
     try {
-      const { isConnected } = await import('$lib/walletService');
+      const { isConnected } = await import("$lib/walletService");
       if (!isConnected()) {
-        console.log('[Wallet Info] SDK not connected yet');
+        console.log("[Wallet Info] SDK not connected yet");
         fetchingWalletInfo = false;
         return;
       }
@@ -66,7 +70,7 @@
         walletPubkey = info.walletInfo.pubkey;
       }
     } catch (e) {
-      console.error('[Wallet Info] Failed to fetch:', e);
+      console.error("[Wallet Info] Failed to fetch:", e);
     } finally {
       fetchingWalletInfo = false;
     }
@@ -80,20 +84,23 @@
 
   // Derive current lightning address from store
   const lightningAddress = $derived($lnAddressStore.lnAddress);
-  const currentUsername = $derived(lightningAddress ? lightningAddress.split('@')[0] : '');
+  const currentUsername = $derived(
+    lightningAddress ? lightningAddress.split("@")[0] : "",
+  );
 
   // Validation
   const validateUsername = (value) => {
-    if (!value) return 'Username is required';
-    if (value.length < 3) return 'Username must be at least 3 characters';
-    if (value.length > 20) return 'Username must be less than 20 characters';
-    if (!/^[a-z0-9_-]+$/.test(value)) return 'Username can only contain lowercase letters, numbers, hyphens, and underscores';
+    if (!value) return "Username is required";
+    if (value.length < 3) return "Username must be at least 3 characters";
+    if (value.length > 20) return "Username must be less than 20 characters";
+    if (!/^[a-z0-9_-]+$/.test(value))
+      return "Username can only contain lowercase letters, numbers, hyphens, and underscores";
     return null;
   };
 
   // Auto-sanitize username input
   const sanitizeUsername = (value) => {
-    return value.toLowerCase().replace(/[^a-z0-9_-]/g, '');
+    return value.toLowerCase().replace(/[^a-z0-9_-]/g, "");
   };
 
   const handleUsernameInput = (e) => {
@@ -123,9 +130,13 @@
     lnAddressStore.setLoading();
 
     try {
-      const { isConnected, recoverLightningAddress } = await import('$lib/walletService');
+      const { isConnected, recoverLightningAddress } = await import(
+        "$lib/walletService"
+      );
       if (!isConnected()) {
-        console.log('[Lightning Address] SDK not connected yet, skipping recovery');
+        console.log(
+          "[Lightning Address] SDK not connected yet, skipping recovery",
+        );
         lnAddressStore.reset();
         recovering = false;
         return;
@@ -133,29 +144,34 @@
 
       // Use current origin (HTTPS) and route through backend proxy
       const currentOrigin = browser ? window.location.origin : PUBLIC_DGEN_URL;
-      const webhookUrl = new URL('/api/backend/api/v1/notify', currentOrigin);
-      webhookUrl.searchParams.set('user', user.id);
+      const webhookUrl = new URL("/api/backend/api/v1/notify", currentOrigin);
+      webhookUrl.searchParams.set("user", user.id);
 
-      console.log('[Lightning Address] Checking if address is active for this seed...');
+      console.log(
+        "[Lightning Address] Checking if address is active for this seed...",
+      );
 
       // Try recovery - only succeeds if THIS seed already has a registration
       const recovered = await recoverLightningAddress(webhookUrl.toString());
 
       if (recovered && recovered.lightningAddress) {
-        console.log('[Lightning Address] Address is active for this seed:', recovered.lightningAddress);
+        console.log(
+          "[Lightning Address] Address is active for this seed:",
+          recovered.lightningAddress,
+        );
 
         lnAddressStore.setSuccess(
           recovered.lnurl,
           recovered.lightningAddress,
-          recovered.bip353Address
+          recovered.bip353Address,
         );
 
         // Update DB if address changed
         if (user.lightningAddress !== recovered.lightningAddress) {
-          await post('/user', {
+          await post("/user", {
             lightningAddress: recovered.lightningAddress,
             lnurl: recovered.lnurl,
-            bip353Address: recovered.bip353Address
+            bip353Address: recovered.bip353Address,
           });
 
           user.lightningAddress = recovered.lightningAddress;
@@ -164,13 +180,15 @@
         }
       } else {
         // No registration for this seed - clear stale DB address
-        console.log('[Lightning Address] No active address for this seed, clearing stale data');
+        console.log(
+          "[Lightning Address] No active address for this seed, clearing stale data",
+        );
 
         if (user.lightningAddress) {
-          await post('/user', {
+          await post("/user", {
             lightningAddress: null,
             lnurl: null,
-            bip353Address: null
+            bip353Address: null,
           });
 
           user.lightningAddress = null;
@@ -180,9 +198,8 @@
 
         lnAddressStore.reset();
       }
-
     } catch (e) {
-      console.error('[Lightning Address] Recovery check failed:', e);
+      console.error("[Lightning Address] Recovery check failed:", e);
       lnAddressStore.reset();
     } finally {
       recovering = false;
@@ -197,47 +214,55 @@
       return;
     }
 
-    const { isConnected, registerLightningAddress, formatUsername } = await import('$lib/walletService');
+    const { isConnected, registerLightningAddress, formatUsername } =
+      await import("$lib/walletService");
     if (!isConnected()) {
-      error = 'Wallet SDK is still initializing. Please wait a moment and try again.';
+      error =
+        "Wallet SDK is still initializing. Please wait a moment and try again.";
       fail(error);
       return;
     }
 
     registering = true;
-    error = '';
+    error = "";
     lnAddressStore.setLoading();
 
     try {
       // Use current origin (HTTPS) and route through backend proxy
       const currentOrigin = browser ? window.location.origin : PUBLIC_DGEN_URL;
-      const webhookUrl = new URL('/api/backend/api/v1/notify', currentOrigin);
-      webhookUrl.searchParams.set('user', user.id);
+      const webhookUrl = new URL("/api/backend/api/v1/notify", currentOrigin);
+      webhookUrl.searchParams.set("user", user.id);
 
       // Format username before registration
       const formattedUsername = formatUsername(username);
-      console.log('[Lightning Address] Registering with formatted username:', formattedUsername);
+      console.log(
+        "[Lightning Address] Registering with formatted username:",
+        formattedUsername,
+      );
 
       // Use direct registration with automatic retry
       // This will automatically try with discriminators if username is taken
       const result = await registerLightningAddress(
         formattedUsername,
-        webhookUrl.toString()
+        webhookUrl.toString(),
       );
 
-      console.log('[Lightning Address] Registration successful:', result.lightningAddress);
+      console.log(
+        "[Lightning Address] Registration successful:",
+        result.lightningAddress,
+      );
 
       lnAddressStore.setSuccess(
         result.lnurl,
-        result.lightningAddress || '',
-        result.bip353Address
+        result.lightningAddress || "",
+        result.bip353Address,
       );
 
       // Save to user profile
-      await post('/user', {
+      await post("/user", {
         lightningAddress: result.lightningAddress,
         lnurl: result.lnurl,
-        bip353Address: result.bip353Address
+        bip353Address: result.bip353Address,
       });
 
       user.lightningAddress = result.lightningAddress;
@@ -245,22 +270,24 @@
       user.bip353Address = result.bip353Address;
 
       // Show the final registered address (might have discriminator)
-      const finalUsername = result.lightningAddress?.split('@')[0];
+      const finalUsername = result.lightningAddress?.split("@")[0];
       if (finalUsername && finalUsername !== formattedUsername) {
-        success(`Lightning address registered: ${result.lightningAddress} (username was adjusted to ensure uniqueness)`);
+        success(
+          `Lightning address registered: ${result.lightningAddress} (username was adjusted to ensure uniqueness)`,
+        );
       } else {
         success(`Lightning address registered: ${result.lightningAddress}`);
       }
-
     } catch (e) {
-      console.error('[Lightning Address] Registration error:', e);
+      console.error("[Lightning Address] Registration error:", e);
 
-      let errorMessage = 'Registration failed';
+      let errorMessage = "Registration failed";
 
       // The retry logic handles UsernameConflictError internally now
       // If we get here with that error, it means all retries failed
-      if (e instanceof Error && e.name === 'UsernameConflictError') {
-        errorMessage = 'All username variations are taken. Please try a different username.';
+      if (e instanceof Error && e.name === "UsernameConflictError") {
+        errorMessage =
+          "All username variations are taken. Please try a different username.";
         error = errorMessage;
       } else if (e instanceof Error) {
         errorMessage = e.message;
@@ -269,7 +296,6 @@
 
       lnAddressStore.setError(e instanceof Error ? e : new Error(errorMessage));
       fail(errorMessage);
-
     } finally {
       registering = false;
     }
@@ -277,10 +303,10 @@
 
   const handleUpdateSuccess = async (result) => {
     // Update user profile
-    await post('/user', {
+    await post("/user", {
       lightningAddress: result.lightningAddress,
       lnurl: result.lnurl,
-      bip353Address: result.bip353Address
+      bip353Address: result.bip353Address,
     });
 
     user.lightningAddress = result.lightningAddress;
@@ -295,16 +321,16 @@
       removing = true;
       // Use current origin (HTTPS) and route through backend proxy
       const currentOrigin = browser ? window.location.origin : PUBLIC_DGEN_URL;
-      const webhookUrl = new URL('/api/backend/api/v1/notify', currentOrigin);
-      webhookUrl.searchParams.set('user', user.id);
+      const webhookUrl = new URL("/api/backend/api/v1/notify", currentOrigin);
+      webhookUrl.searchParams.set("user", user.id);
 
       await unregisterLightningAddress(webhookUrl.toString());
 
       // Clear from user profile
-      await post('/user', {
+      await post("/user", {
         lightningAddress: null,
         lnurl: null,
-        bip353Address: null
+        bip353Address: null,
       });
 
       user.lightningAddress = null;
@@ -312,15 +338,14 @@
       user.bip353Address = null;
 
       lnAddressStore.reset();
-      success('Lightning address removed');
+      success("Lightning address removed");
 
       // Reset state
       showRemove = false;
       confirmRemove = false;
-
     } catch (e) {
-      console.error('[Lightning Address] Unregister error:', e);
-      fail('Failed to remove Lightning address');
+      console.error("[Lightning Address] Unregister error:", e);
+      fail("Failed to remove Lightning address");
     } finally {
       removing = false;
     }
@@ -332,24 +357,26 @@
     try {
       await navigator.clipboard.writeText(lightningAddress);
       copied = true;
-      success('Copied to clipboard!');
+      success("Copied to clipboard!");
 
       // Reset copied state after 2 seconds
       setTimeout(() => {
         copied = false;
       }, 2000);
     } catch (e) {
-      console.error('[Copy] Failed:', e);
-      fail('Failed to copy to clipboard');
+      console.error("[Copy] Failed:", e);
+      fail("Failed to copy to clipboard");
     }
   };
 </script>
 
 <div class="container mx-auto max-w-2xl px-4 py-8">
   <div class="mb-6">
-    <h1 class="text-3xl font-bold mb-2">Lightning Address</h1>
-    <p class="text-white/60">
-      Here you can modify your Lightning Address. With DGEN, users can send you lightning with just your Lightning Address (easier than a long string of letters/numbers)
+    <h1 class="text-3xl text-yellow-400 font-bold mb-2">Lightning Address</h1>
+    <p class="text-yellow-400/90">
+      Here you can modify your Lightning Address. With DGEN, users can send you
+      lightning with just your Lightning Address (easier than a long string of
+      letters/numbers)
     </p>
   </div>
 
@@ -358,7 +385,11 @@
       <div class="card-header">
         <div class="lightning-icon">
           <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" />
+            <path
+              fill-rule="evenodd"
+              d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"
+              clip-rule="evenodd"
+            />
           </svg>
         </div>
         <div>
@@ -379,24 +410,57 @@
         </div>
         <div class="copy-indicator">
           {#if copied}
-            <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            <svg
+              class="w-5 h-5 text-green-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"
+              />
             </svg>
           {:else}
-            <svg class="w-5 h-5 text-white/40 group-hover:text-white/80 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            <svg
+              class="w-5 h-5 text-white/40 group-hover:text-white/80 transition-colors"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+              />
             </svg>
           {/if}
         </div>
       </button>
 
       <div class="info-box">
-        <svg class="w-5 h-5 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <svg
+          class="w-5 h-5 text-green-400 flex-shrink-0"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
         </svg>
         <div class="info-text">
           <p class="font-medium">Ready to receive payments!</p>
-          <p class="text-sm text-white/60 mt-1">Anyone can send you sats using this Lightning address from any wallet.</p>
+          <p class="text-sm text-white/60 mt-1">
+            Anyone can send you sats using this Lightning address from any
+            wallet.
+          </p>
         </div>
       </div>
 
@@ -404,15 +468,31 @@
       {#if walletPubkey}
         <div class="wallet-info-box">
           <div class="flex items-start gap-2 sm:gap-3">
-            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-blue-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+            <svg
+              class="w-4 h-4 sm:w-5 sm:h-5 text-blue-400 flex-shrink-0 mt-0.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+              />
             </svg>
             <div class="flex-1 min-w-0">
-              <p class="font-medium text-blue-400 mb-1 text-sm sm:text-base">Wallet Identity</p>
-              <p class="text-xs sm:text-sm text-white/60 mb-2">This Lightning address is tied to your wallet seed</p>
+              <p class="font-medium text-blue-400 mb-1 text-sm sm:text-base">
+                Wallet Identity
+              </p>
+              <p class="text-xs sm:text-sm text-white/60 mb-2">
+                This Lightning address is tied to your wallet seed
+              </p>
               <div class="wallet-pubkey-display">
                 <span class="text-xs text-white/40 font-mono">Pubkey:</span>
-                <span class="text-xs text-white/80 font-mono ml-2 break-all">{truncatePubkey(walletPubkey)}</span>
+                <span class="text-xs text-white/80 font-mono ml-2 break-all"
+                  >{truncatePubkey(walletPubkey)}</span
+                >
               </div>
             </div>
           </div>
@@ -422,20 +502,59 @@
       <!-- Seed = Address Warning -->
       <div class="warning-box">
         <div class="flex items-start gap-2 sm:gap-3">
-          <svg class="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          <svg
+            class="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 flex-shrink-0 mt-0.5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
           </svg>
           <div class="flex-1 min-w-0">
-            <p class="font-medium text-amber-400 mb-2 text-sm sm:text-base">Your Seed = Your Lightning Address</p>
+            <p class="font-medium text-amber-400 mb-2 text-sm sm:text-base">
+              Your Seed = Your Lightning Address
+            </p>
             <ul class="text-xs sm:text-sm text-white/70 space-y-2">
-              <li><strong>• This Lightning address is tied to THIS seed phrase only</strong></li>
-              <li>• New device = new seed = new Lightning address (e.g., user → user1234)</li>
-              <li>• To use this same address on another device, you must <strong>restore this seed phrase</strong></li>
-              <li>• If you import a different seed, you'll get a different Lightning address</li>
+              <li>
+                <strong
+                  >• This Lightning address is tied to THIS seed phrase only</strong
+                >
+              </li>
+              <li>
+                • New device = new seed = new Lightning address (e.g., user →
+                user1234)
+              </li>
+              <li>
+                • To use this same address on another device, you must <strong
+                  >restore this seed phrase</strong
+                >
+              </li>
+              <li>
+                • If you import a different seed, you'll get a different
+                Lightning address
+              </li>
             </ul>
-            <a href="/settings/security" class="inline-flex items-center gap-1 text-xs sm:text-sm text-blue-400 hover:text-blue-300 mt-3 transition-colors font-medium">
-              <svg class="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            <a
+              href="/settings/security"
+              class="inline-flex items-center gap-1 text-xs sm:text-sm text-blue-400 hover:text-blue-300 mt-3 transition-colors font-medium"
+            >
+              <svg
+                class="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
               </svg>
               Backup Seed Phrase Now
             </a>
@@ -448,21 +567,41 @@
       <div class="action-buttons">
         <button
           type="button"
-          onclick={() => showUpdateModal = true}
+          onclick={() => (showUpdateModal = true)}
           class="btn btn-secondary"
         >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+            />
           </svg>
           Update Username
         </button>
         <button
           type="button"
-          onclick={() => showRemove = true}
+          onclick={() => (showRemove = true)}
           class="btn btn-danger"
         >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+            />
           </svg>
           Remove
         </button>
@@ -471,25 +610,44 @@
 
     <!-- Remove Lightning Address Confirmation Section -->
     {#if showRemove}
-      <div class="glass rounded-xl p-6 border-2 border-red-500/50 bg-red-500/10 mt-4 animate-scaleIn">
+      <div
+        class="glass rounded-xl p-6 border-2 border-red-500/50 bg-red-500/10 mt-4 animate-scaleIn"
+      >
         <div class="space-y-4">
           <div class="bg-red-500/20 border-2 border-red-500/50 rounded-xl p-4">
             <div class="flex items-start gap-3">
-              <svg class="w-6 h-6 text-red-400 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              <svg
+                class="w-6 h-6 text-red-400 mt-1 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
               </svg>
               <div>
-                <p class="font-bold text-red-400 text-lg">Warning - This Will Remove Your Lightning Address!</p>
+                <p class="font-bold text-red-400 text-lg">
+                  Warning - This Will Remove Your Lightning Address!
+                </p>
                 <p class="text-white/90 text-sm mt-2">
-                  Removing your Lightning address (<strong>{lightningAddress}</strong>) will:
+                  Removing your Lightning address (<strong
+                    >{lightningAddress}</strong
+                  >) will:
                 </p>
                 <ul class="text-white/80 text-sm mt-2 ml-4 list-disc space-y-1">
-                  <li>Unregister your Lightning address from the Breez service</li>
+                  <li>
+                    Unregister your Lightning address from the Breez service
+                  </li>
                   <li>Stop you from receiving payments at this address</li>
                   <li>Free up the address for others to potentially use</li>
                 </ul>
                 <p class="text-white/90 text-sm mt-3 font-semibold">
-                  You can register a new Lightning address later, but you may not get the same one back.
+                  You can register a new Lightning address later, but you may
+                  not get the same one back.
                 </p>
               </div>
             </div>
@@ -499,30 +657,59 @@
             <div class="flex flex-col sm:flex-row gap-3">
               <button
                 type="button"
-                onclick={() => confirmRemove = true}
+                onclick={() => (confirmRemove = true)}
                 disabled={removing}
                 class="flex-1 px-6 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 style="background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%); color: white;"
               >
-                <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                     style="background: linear-gradient(135deg, #DC2626 0%, #EF4444 100%);"></div>
-                <svg class="w-5 h-5 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                <div
+                  class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  style="background: linear-gradient(135deg, #DC2626 0%, #EF4444 100%);"
+                ></div>
+                <svg
+                  class="w-5 h-5 relative z-10"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
                 </svg>
-                <span class="relative z-10">Yes, Remove My Lightning Address</span>
+                <span class="relative z-10"
+                  >Yes, Remove My Lightning Address</span
+                >
               </button>
 
               <button
                 type="button"
-                onclick={() => { showRemove = false; confirmRemove = false; }}
+                onclick={() => {
+                  showRemove = false;
+                  confirmRemove = false;
+                }}
                 disabled={removing}
                 class="flex-1 px-6 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 style="background: linear-gradient(135deg, #6B7280 0%, #4B5563 100%); color: white;"
               >
-                <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                     style="background: linear-gradient(135deg, #4B5563 0%, #6B7280 100%);"></div>
-                <svg class="w-5 h-5 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                <div
+                  class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  style="background: linear-gradient(135deg, #4B5563 0%, #6B7280 100%);"
+                ></div>
+                <svg
+                  class="w-5 h-5 relative z-10"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
                 <span class="relative z-10">Cancel</span>
               </button>
@@ -530,20 +717,38 @@
           {:else}
             <!-- EXTRA CONFIRMATION with BIG LETTERS -->
             <div class="space-y-4 animate-scaleIn">
-              <div class="bg-red-500/30 border-2 border-red-500/70 rounded-xl p-4">
+              <div
+                class="bg-red-500/30 border-2 border-red-500/70 rounded-xl p-4"
+              >
                 <div class="flex items-start gap-3">
-                  <svg class="w-8 h-8 text-red-400 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  <svg
+                    class="w-8 h-8 text-red-400 mt-1 flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
                   </svg>
                   <div>
-                    <p class="font-bold text-red-400 text-2xl uppercase tracking-wide mb-3">
+                    <p
+                      class="font-bold text-red-400 text-2xl uppercase tracking-wide mb-3"
+                    >
                       Are You Absolutely Sure?
                     </p>
                     <p class="text-white/90 text-base font-semibold mb-2">
-                      This will permanently remove: <span class="font-mono">{lightningAddress}</span>
+                      This will permanently remove: <span class="font-mono"
+                        >{lightningAddress}</span
+                      >
                     </p>
                     <p class="text-white/80 text-sm">
-                      This action cannot be undone. You will not be able to receive payments at this address anymore, and someone else may claim it.
+                      This action cannot be undone. You will not be able to
+                      receive payments at this address anymore, and someone else
+                      may claim it.
                     </p>
                   </div>
                 </div>
@@ -557,30 +762,58 @@
                   class="flex-1 px-6 py-3 rounded-2xl font-bold text-base transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                   style="background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%); color: white;"
                 >
-                  <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                       style="background: linear-gradient(135deg, #DC2626 0%, #EF4444 100%);"></div>
+                  <div
+                    class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    style="background: linear-gradient(135deg, #DC2626 0%, #EF4444 100%);"
+                  ></div>
                   {#if removing}
-                    <span class="loading loading-spinner loading-sm relative z-10"></span>
+                    <span
+                      class="loading loading-spinner loading-sm relative z-10"
+                    ></span>
                     <span class="relative z-10">Removing...</span>
                   {:else}
-                    <svg class="w-6 h-6 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    <svg
+                      class="w-6 h-6 relative z-10"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                      />
                     </svg>
-                    <span class="relative z-10 uppercase">Yes, I'm Absolutely Sure</span>
+                    <span class="relative z-10 uppercase"
+                      >Yes, I'm Absolutely Sure</span
+                    >
                   {/if}
                 </button>
 
                 <button
                   type="button"
-                  onclick={() => confirmRemove = false}
+                  onclick={() => (confirmRemove = false)}
                   disabled={removing}
                   class="flex-1 px-6 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                   style="background: linear-gradient(135deg, #6B7280 0%, #4B5563 100%); color: white;"
                 >
-                  <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                       style="background: linear-gradient(135deg, #4B5563 0%, #6B7280 100%);"></div>
-                  <svg class="w-5 h-5 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  <div
+                    class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    style="background: linear-gradient(135deg, #4B5563 0%, #6B7280 100%);"
+                  ></div>
+                  <svg
+                    class="w-5 h-5 relative z-10"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                   <span class="relative z-10">Go Back</span>
                 </button>
@@ -608,9 +841,11 @@
               disabled={registering}
               maxlength="20"
               autocomplete="off"
-              onkeydown={(e) => e.key === 'Enter' && e.preventDefault()}
+              onkeydown={(e) => e.key === "Enter" && e.preventDefault()}
             />
-            <div class="bg-black/30 border border-white/20 rounded-lg sm:rounded-l-none px-4 py-3 text-white/60 text-center sm:text-left text-sm sm:text-base">
+            <div
+              class="bg-black/30 border border-white/20 rounded-lg sm:rounded-l-none px-4 py-3 text-white/60 text-center sm:text-left text-sm sm:text-base"
+            >
               @breez.fun
             </div>
           </div>
@@ -627,12 +862,16 @@
         </div>
 
         {#if error}
-          <div class="bg-red-500/20 border border-red-500/50 rounded-lg p-3 text-red-400 text-sm">
+          <div
+            class="bg-red-500/20 border border-red-500/50 rounded-lg p-3 text-red-400 text-sm"
+          >
             {error}
           </div>
         {/if}
 
-        <div class="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 text-sm">
+        <div
+          class="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 text-sm"
+        >
           <div class="font-semibold mb-2">How it works:</div>
           <ul class="space-y-1 text-white/80">
             <li>• Your browser generates a reusable BOLT12 offer</li>
@@ -642,21 +881,40 @@
           </ul>
         </div>
 
-        <div class="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 text-sm">
+        <div
+          class="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 text-sm"
+        >
           <div class="font-semibold mb-2 text-amber-400">Important:</div>
           <ul class="space-y-1 text-white/70">
-            <li>• If your username is taken, we'll automatically add a 4-digit code (e.g., cole → cole1234)</li>
-            <li>• This address is permanently tied to <strong>this seed phrase</strong></li>
-            <li>• Backup your seed phrase to keep access to this Lightning address</li>
+            <li>
+              • If your username is taken, we'll automatically add a 4-digit
+              code (e.g., cole → cole1234)
+            </li>
+            <li>
+              • This address is permanently tied to <strong
+                >this seed phrase</strong
+              >
+            </li>
+            <li>
+              • Backup your seed phrase to keep access to this Lightning address
+            </li>
           </ul>
         </div>
 
         <button
           type="button"
           onclick={handleRegister}
-          disabled={registering || !username || checking || validateUsername(username) || available !== true}
+          disabled={registering ||
+            !username ||
+            checking ||
+            validateUsername(username) ||
+            available !== true}
           class="btn btn-primary w-full text-sm sm:text-base"
-          class:opacity-50={registering || !username || checking || validateUsername(username) || available !== true}
+          class:opacity-50={registering ||
+            !username ||
+            checking ||
+            validateUsername(username) ||
+            available !== true}
         >
           {#if registering}
             <span class="loading loading-spinner loading-sm"></span>
@@ -671,18 +929,30 @@
     </div>
 
     <div class="mt-6 text-sm text-white/60">
-      <p class="mb-2"><strong>Note:</strong> Your Lightning address will be hosted on breez.fun (Breez's free service).</p>
-      <p>To receive payments, you need to be online or have been online within the last 30 seconds.</p>
+      <p class="mb-2">
+        <strong>Note:</strong> Your Lightning address will be hosted on breez.fun
+        (Breez's free service).
+      </p>
+      <p>
+        To receive payments, you need to be online or have been online within
+        the last 30 seconds.
+      </p>
     </div>
   {/if}
 
   {#if recovering}
-    <div class="glass rounded-xl p-6 border-2 border-blue-500/30 bg-blue-500/10 mt-4">
+    <div
+      class="glass rounded-xl p-6 border-2 border-blue-500/30 bg-blue-500/10 mt-4"
+    >
       <div class="flex items-center gap-3">
         <span class="loading loading-spinner loading-md text-blue-400"></span>
         <div>
-          <div class="font-semibold text-blue-400">Recovering Lightning Address...</div>
-          <div class="text-sm text-white/60">Checking for existing registration</div>
+          <div class="font-semibold text-blue-400">
+            Recovering Lightning Address...
+          </div>
+          <div class="text-sm text-white/60">
+            Checking for existing registration
+          </div>
         </div>
       </div>
     </div>
@@ -692,16 +962,20 @@
 <!-- Update Username Modal -->
 {#if showUpdateModal && currentUsername}
   <UpdateUsernameModal
-    currentUsername={currentUsername}
+    {currentUsername}
     userId={user.id}
-    onClose={() => showUpdateModal = false}
+    onClose={() => (showUpdateModal = false)}
     onSuccess={handleUpdateSuccess}
   />
 {/if}
 
 <style>
   .lightning-card {
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(147, 51, 234, 0.1));
+    background: linear-gradient(
+      135deg,
+      rgba(59, 130, 246, 0.1),
+      rgba(147, 51, 234, 0.1)
+    );
     backdrop-filter: blur(16px);
     border: 2px solid rgba(59, 130, 246, 0.3);
     border-radius: 1.5rem;
@@ -732,7 +1006,8 @@
   }
 
   @keyframes pulse {
-    0%, 100% {
+    0%,
+    100% {
       transform: scale(1);
       box-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
     }
@@ -757,7 +1032,7 @@
   }
 
   .card-status::before {
-    content: '';
+    content: "";
     display: none; /* Hide status indicator */
     width: 8px;
     height: 8px;
@@ -767,8 +1042,13 @@
   }
 
   @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
   }
 
   /* Address Container */
@@ -800,7 +1080,9 @@
 
   .address-display {
     flex: 1;
+    flex-direction: column;
     display: flex;
+    justify-content: center;
     align-items: center;
     gap: 0.75rem;
     min-width: 0;
@@ -821,11 +1103,19 @@
     flex-shrink: 0;
   }
 
+  @media (max-width: 425px) {
+    .address-icon {
+      font-size: 1rem;
+      width: 2rem;
+      height: 2rem;
+    }
+  }
+
   .address-text {
     font-size: 1.125rem;
     font-weight: 600;
     color: white;
-    font-family: 'Monaco', 'Courier New', monospace;
+    font-family: "Monaco", "Courier New", monospace;
     overflow-wrap: break-word;
     word-wrap: break-word;
     word-break: break-word;
@@ -911,7 +1201,12 @@
   /* Divider */
   .divider {
     height: 1px;
-    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.2), transparent);
+    background: linear-gradient(
+      to right,
+      transparent,
+      rgba(255, 255, 255, 0.2),
+      transparent
+    );
     margin: 1.5rem 0;
   }
 

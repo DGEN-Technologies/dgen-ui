@@ -1,7 +1,7 @@
 <script>
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount, onDestroy } from "svelte";
 
-  let { class: className = '' } = $props();
+  let { class: className = "" } = $props();
 
   // Animated loading dots
   let dotCount = $state(0);
@@ -17,8 +17,8 @@
     if (interval) clearInterval(interval);
   });
 
-  const dots = $derived('.'.repeat(dotCount));
-  const paddingDots = $derived('.'.repeat(3 - dotCount));
+  const dots = $derived(".".repeat(dotCount));
+  const paddingDots = $derived(".".repeat(3 - dotCount));
 </script>
 
 <!-- Shimmer placeholder similar to misty-breez PlaceholderBalanceText -->

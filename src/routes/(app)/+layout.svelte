@@ -69,16 +69,20 @@
 
   const checkBrowserCompatibility = () => {
     if (!browser) return false;
-    
+
     const hasWebCrypto = window.crypto && window.crypto.subtle;
     const hasIndexedDB = window.indexedDB;
-    const hasWasm = typeof WebAssembly === 'object';
-    
+    const hasWasm = typeof WebAssembly === "object";
+
     if (!window.crypto.subtle) {
-      console.warn('Web Crypto API not available. This requires HTTPS or localhost.');
-      console.warn('To test on local network, run with: HTTPS=true bun run dev');
+      console.warn(
+        "Web Crypto API not available. This requires HTTPS or localhost.",
+      );
+      console.warn(
+        "To test on local network, run with: HTTPS=true bun run dev",
+      );
     }
-    
+
     return hasWebCrypto && hasIndexedDB && hasWasm;
   };
 
@@ -105,17 +109,20 @@
 
         // Listen for wallet updates from primary tab
         tabSync.onMessage(async (message) => {
-          if (message.type === 'WALLET_UPDATED') {
+          if (message.type === "WALLET_UPDATED") {
             // Refresh wallet data from shared storage if needed
-            const { walletStore } = await import('$lib/stores/wallet');
+            const { walletStore } = await import("$lib/stores/wallet");
             await walletStore.refresh();
-          } else if (message.type === 'LOCK_RELEASED') {
+          } else if (message.type === "LOCK_RELEASED") {
             // Try to become primary tab
             isSecondaryTab = false;
             showTabLockBanner = false;
             walletInitialized = false;
             setTimeout(() => initializeBrowserWallet(), 1000);
-          } else if (message.type === 'LOCK_ACQUIRED' && message.tabId !== tabSync.getTabId()) {
+          } else if (
+            message.type === "LOCK_ACQUIRED" &&
+            message.tabId !== tabSync.getTabId()
+          ) {
             // Another tab took over, we become secondary
             isSecondaryTab = true;
             showTabLockBanner = true;
@@ -127,9 +134,9 @@
 
       isAcquiringLock = false;
     } catch (error) {
-      console.error('[Layout] Error acquiring wallet lock:', error);
+      console.error("[Layout] Error acquiring wallet lock:", error);
       isAcquiringLock = false;
-      walletInitError = 'Failed to acquire wallet lock';
+      walletInitError = "Failed to acquire wallet lock";
       return;
     }
 
@@ -143,7 +150,7 @@
       walletInitError = null;
 
       // Import wallet service and cross-device sync
-      const walletService = await import('$lib/walletService');
+      const walletService = await import("$lib/walletService");
       const userId = user.id || user.username;
 
       // Get persistent encryption password
@@ -162,19 +169,24 @@
 
         // Notify server about new wallet
         try {
-          const { post } = await import('$lib/utils');
+          const { post } = await import("$lib/utils");
           const info = await walletService.getWalletInfo();
           if (info) {
-            const pubkey = info.pubkey || info.nodeState?.id || "breez_liquid_pubkey";
-            const fingerprint = info.fingerprint || info.nodeState?.id || "breez_liquid_id";
+            const pubkey =
+              info.pubkey || info.nodeState?.id || "breez_liquid_pubkey";
+            const fingerprint =
+              info.fingerprint || info.nodeState?.id || "breez_liquid_id";
             await post("/wallet/create", {
               pubkey,
               fingerprint,
-              type: "liquid"
+              type: "liquid",
             });
           }
         } catch (e) {
-          console.warn('[Layout] Failed to notify server about auto-generated wallet:', e);
+          console.warn(
+            "[Layout] Failed to notify server about auto-generated wallet:",
+            e,
+          );
         }
 
         mnemonic = await walletService.getSavedMnemonic(userPassword, userId);
@@ -185,77 +197,88 @@
 
       // Check if connected successfully
       if (!walletService.isConnected()) {
-        throw new Error('Failed to connect to wallet SDK');
+        throw new Error("Failed to connect to wallet SDK");
       }
 
       // Initialize transaction event handling FIRST to catch dataSynced events
-      const { initTransactionEventHandling } = await import('$lib/transactionService');
+      const { initTransactionEventHandling } = await import(
+        "$lib/transactionService"
+      );
       try {
         await initTransactionEventHandling();
       } catch (error) {
-        console.warn('[Layout] Could not initialize transaction event handling:', error);
+        console.warn(
+          "[Layout] Could not initialize transaction event handling:",
+          error,
+        );
       }
 
       // Setup event listener for SDK events AFTER connection (only if not already registered)
       try {
         if (!walletEventListenerId) {
-          walletEventListenerId = await walletService.addEventListener(async (event) => {
+          walletEventListenerId = await walletService.addEventListener(
+            async (event) => {
+              // Handle synced events with debouncing
+              if (event.type === "synced") {
+                const now = Date.now();
 
-          // Handle synced events with debouncing
-          if (event.type === 'synced') {
-            const now = Date.now();
+                // Prevent rapid successive syncs (within 10 seconds)
+                // BUT: Always allow the first sync (lastSyncTime === 0) to ensure
+                // transactions are loaded when wallet opens (e.g., after Bitcoin purchase)
+                if (lastSyncTime !== 0 && now - lastSyncTime < 10000) {
+                  return;
+                }
 
-            // Prevent rapid successive syncs (within 10 seconds)
-            // BUT: Always allow the first sync (lastSyncTime === 0) to ensure
-            // transactions are loaded when wallet opens (e.g., after Bitcoin purchase)
-            if (lastSyncTime !== 0 && now - lastSyncTime < 10000) {
-              return;
-            }
+                lastSyncTime = now;
 
-            lastSyncTime = now;
+                // Clear any pending refresh
+                if (syncDebounceTimer) {
+                  clearTimeout(syncDebounceTimer);
+                }
 
-            // Clear any pending refresh
-            if (syncDebounceTimer) {
-              clearTimeout(syncDebounceTimer);
-            }
+                // Debounce the refresh to avoid rapid successive calls
+                syncDebounceTimer = setTimeout(async () => {
+                  try {
+                    // Refresh wallet data only (deduplication prevents unnecessary updates)
+                    const { walletStore } = await import("$lib/stores/wallet");
+                    await walletStore.refresh();
 
-            // Debounce the refresh to avoid rapid successive calls
-            syncDebounceTimer = setTimeout(async () => {
-              try {
-                // Refresh wallet data only (deduplication prevents unnecessary updates)
-                const { walletStore } = await import('$lib/stores/wallet');
-                await walletStore.refresh();
+                    // Mark initial sync as complete
+                    walletStore.update((state) => ({
+                      ...state,
+                      didCompleteInitialSync: true,
+                    }));
 
-                // Mark initial sync as complete
-                walletStore.update(state => ({ ...state, didCompleteInitialSync: true }));
+                    // Get updated balance and broadcast to other tabs (only if changed)
+                    const info = await walletService.getWalletInfo();
+                    const balance = info?.walletInfo?.balanceSat || 0;
 
-                // Get updated balance and broadcast to other tabs (only if changed)
-                const info = await walletService.getWalletInfo();
-                const balance = info?.walletInfo?.balanceSat || 0;
+                    // Broadcast wallet update to other tabs
+                    tabSync.broadcastWalletUpdate(balance);
 
-                // Broadcast wallet update to other tabs
-                tabSync.broadcastWalletUpdate(balance);
-
-                // Refresh transactions through transactionService to respect filters
-                const { transactionStore } = await import('$lib/transactionService');
-                await transactionStore.loadTransactions(true);
-              } catch (e) {
-                console.error('[Layout] Error refreshing after sync:', e);
+                    // Refresh transactions through transactionService to respect filters
+                    const { transactionStore } = await import(
+                      "$lib/transactionService"
+                    );
+                    await transactionStore.loadTransactions(true);
+                  } catch (e) {
+                    console.error("[Layout] Error refreshing after sync:", e);
+                  }
+                }, 1000); // Wait 1 second before refreshing
               }
-            }, 1000); // Wait 1 second before refreshing
-          }
 
-          // Note: Payment events (paymentPending, paymentWaitingConfirmation, paymentSucceeded, etc.)
-          // are handled comprehensively in wallet.ts:371-500 with proper navigation and notifications.
-          // We don't handle them here to avoid duplicate processing.
-          });
+              // Note: Payment events (paymentPending, paymentWaitingConfirmation, paymentSucceeded, etc.)
+              // are handled comprehensively in wallet.ts:371-500 with proper navigation and notifications.
+              // We don't handle them here to avoid duplicate processing.
+            },
+          );
         }
       } catch (e) {
-        console.error('[Layout] Failed to add event listener:', e);
+        console.error("[Layout] Failed to add event listener:", e);
       }
-      
+
       // SDK is connected - initialize wallet store which will start event listening
-      const { walletStore, transactions } = await import('$lib/stores/wallet');
+      const { walletStore, transactions } = await import("$lib/stores/wallet");
 
       // Initialize the wallet store, which will:
       // 1. Get wallet info
@@ -266,13 +289,15 @@
 
       // Auto-register Lightning Address for new users (non-blocking)
       // This runs in background and doesn't block the UI
-      autoRegisterLightningAddressInBackground().catch(error => {
-        console.warn('[Layout] Background LN address registration failed (non-critical):', error);
+      autoRegisterLightningAddressInBackground().catch((error) => {
+        console.warn(
+          "[Layout] Background LN address registration failed (non-critical):",
+          error,
+        );
       });
-
     } catch (error) {
-      console.error('[Layout] Browser wallet initialization failed:', error);
-      walletInitError = error?.message || 'Failed to initialize wallet';
+      console.error("[Layout] Browser wallet initialization failed:", error);
+      walletInitError = error?.message || "Failed to initialize wallet";
       // Reset initialized flag on error to allow retry
       walletInitialized = false;
       isAcquiringLock = false;
@@ -289,57 +314,69 @@
 
     // Already has Lightning Address - skip
     if (user.lightningAddress) {
-      console.log('[Layout] User already has Lightning Address:', user.lightningAddress);
-      lnAddressStore.initialize(user.lnurl, user.lightningAddress, user.bip353Address);
+      console.log(
+        "[Layout] User already has Lightning Address:",
+        user.lightningAddress,
+      );
+      lnAddressStore.initialize(
+        user.lnurl,
+        user.lightningAddress,
+        user.bip353Address,
+      );
       return;
     }
 
-    console.log('[Layout] Auto-registering Lightning Address for new user...');
+    console.log("[Layout] Auto-registering Lightning Address for new user...");
     lnAddressStore.setLoading();
 
     try {
-      const walletService = await import('$lib/walletService');
+      const walletService = await import("$lib/walletService");
 
       // Wait for SDK to be ready (max 10 seconds)
       let attempts = 0;
       while (!walletService.isConnected() && attempts < 40) {
-        await new Promise(resolve => setTimeout(resolve, 250));
+        await new Promise((resolve) => setTimeout(resolve, 250));
         attempts++;
       }
 
       if (!walletService.isConnected()) {
-        console.log('[Layout] SDK not ready for LN address registration');
+        console.log("[Layout] SDK not ready for LN address registration");
         lnAddressStore.reset();
         return;
       }
 
-      console.log('[Layout] SDK ready, proceeding with auto-registration');
+      console.log("[Layout] SDK ready, proceeding with auto-registration");
 
       // Use current origin (HTTPS) and route through backend proxy
       const currentOrigin = browser ? window.location.origin : PUBLIC_DGEN_URL;
-      const webhookUrl = new URL('/api/backend/api/v1/notify', currentOrigin);
-      webhookUrl.searchParams.set('user', user.id);
+      const webhookUrl = new URL("/api/backend/api/v1/notify", currentOrigin);
+      webhookUrl.searchParams.set("user", user.id);
 
       // Try recovery first - this checks if current seed already has a registered address
-      console.log('[Layout] Attempting recovery first...');
-      const recovered = await walletService.recoverLightningAddress(webhookUrl.toString());
+      console.log("[Layout] Attempting recovery first...");
+      const recovered = await walletService.recoverLightningAddress(
+        webhookUrl.toString(),
+      );
 
       if (recovered && recovered.lightningAddress) {
-        console.log('[Layout] Recovered existing address:', recovered.lightningAddress);
+        console.log(
+          "[Layout] Recovered existing address:",
+          recovered.lightningAddress,
+        );
 
         lnAddressStore.setSuccess(
           recovered.lnurl,
-          recovered.lightningAddress || '',
-          recovered.bip353Address
+          recovered.lightningAddress || "",
+          recovered.bip353Address,
         );
 
         // Save to user profile
-        const { post } = await import('$lib/utils');
-        const { invalidate } = await import('$app/navigation');
-        await post('/user', {
+        const { post } = await import("$lib/utils");
+        const { invalidate } = await import("$app/navigation");
+        await post("/user", {
           lightningAddress: recovered.lightningAddress,
           lnurl: recovered.lnurl,
-          bip353Address: recovered.bip353Address
+          bip353Address: recovered.bip353Address,
         });
 
         user.lightningAddress = recovered.lightningAddress;
@@ -355,12 +392,15 @@
       // No existing address for this seed
       // Clear stale database address if one exists (from previous seed)
       if (user.lightningAddress) {
-        console.log('[Layout] Clearing stale database address:', user.lightningAddress);
-        const { post } = await import('$lib/utils');
-        await post('/user', {
+        console.log(
+          "[Layout] Clearing stale database address:",
+          user.lightningAddress,
+        );
+        const { post } = await import("$lib/utils");
+        await post("/user", {
           lightningAddress: null,
           lnurl: null,
-          bip353Address: null
+          bip353Address: null,
         });
         user.lightningAddress = null;
         user.lnurl = null;
@@ -368,38 +408,46 @@
       }
 
       // Register new address with retry logic
-      console.log('[Layout] No existing address found, registering new one...');
+      console.log("[Layout] No existing address found, registering new one...");
 
       // Use formatted username from user account
       const baseUsername = walletService.formatUsername(user.username);
-      console.log('[Layout] Auto-registering with username:', baseUsername);
+      console.log("[Layout] Auto-registering with username:", baseUsername);
 
       // registerLightningAddress now includes automatic retry with discriminators
       const result = await walletService.registerLightningAddress(
         baseUsername,
-        webhookUrl.toString()
+        webhookUrl.toString(),
       );
 
-      console.log('[Layout] Auto-registration successful:', result.lightningAddress);
+      console.log(
+        "[Layout] Auto-registration successful:",
+        result.lightningAddress,
+      );
 
       // Log if username was modified with discriminator
       if (result.usernameModified) {
-        console.log('[Layout] Username was modified from', result.requestedUsername, 'to', result.actualUsername);
+        console.log(
+          "[Layout] Username was modified from",
+          result.requestedUsername,
+          "to",
+          result.actualUsername,
+        );
       }
 
       lnAddressStore.setSuccess(
         result.lnurl,
-        result.lightningAddress || '',
-        result.bip353Address
+        result.lightningAddress || "",
+        result.bip353Address,
       );
 
       // Save to user profile
-      const { post } = await import('$lib/utils');
-      const { invalidate } = await import('$app/navigation');
-      await post('/user', {
+      const { post } = await import("$lib/utils");
+      const { invalidate } = await import("$app/navigation");
+      await post("/user", {
         lightningAddress: result.lightningAddress,
         lnurl: result.lnurl,
-        bip353Address: result.bip353Address
+        bip353Address: result.bip353Address,
       });
 
       user.lightningAddress = result.lightningAddress;
@@ -408,9 +456,8 @@
 
       // Invalidate to refresh all user data across the app
       await invalidate("app:user");
-
     } catch (e) {
-      console.error('[Layout] Auto-registration failed:', e);
+      console.error("[Layout] Auto-registration failed:", e);
       lnAddressStore.setError(e instanceof Error ? e : new Error(String(e)));
     }
   };
@@ -434,12 +481,12 @@
         // Reinitialize the wallet with the lock
         await initializeBrowserWallet();
       } else {
-        console.error('[Layout] Failed to take over lock');
-        warning('Failed to take over wallet. Please try again.');
+        console.error("[Layout] Failed to take over lock");
+        warning("Failed to take over wallet. Please try again.");
       }
     } catch (error) {
-      console.error('[Layout] Error during takeover:', error);
-      warning('Error taking over wallet. Please try refreshing the page.');
+      console.error("[Layout] Error during takeover:", error);
+      warning("Error taking over wallet. Please try refreshing the page.");
     } finally {
       isAcquiringLock = false;
     }
@@ -453,10 +500,12 @@
 
     if (!lockInfo.isAlive) {
       // Other tab appears dead, try to take over
-      console.log('[Layout] Other tab appears inactive, attempting takeover...');
+      console.log(
+        "[Layout] Other tab appears inactive, attempting takeover...",
+      );
       await handleTakeover();
     } else {
-      console.log('[Layout] Other tab is still active');
+      console.log("[Layout] Other tab is still active");
       // Could show a toast here if desired
     }
   }
@@ -582,11 +631,11 @@
       // Clean up wallet event listener
       if (walletEventListenerId) {
         try {
-          const ws = await import('$lib/walletService');
+          const ws = await import("$lib/walletService");
           await ws.removeEventListener(walletEventListenerId);
           walletEventListenerId = null;
         } catch (e) {
-          console.error('[Layout] Failed to remove event listener:', e);
+          console.error("[Layout] Failed to remove event listener:", e);
         }
       }
     }
@@ -602,20 +651,31 @@
 {/if}
 
 {#if walletInitError}
-  <div class="fixed top-4 left-4 right-4 bg-red-500 text-white p-3 rounded-lg z-50">
+  <div
+    class="fixed top-4 left-4 right-4 bg-red-500 text-white p-3 rounded-lg z-50"
+  >
     Wallet initialization failed: {walletInitError}
   </div>
 {/if}
 
 {#if browser && !browserCompatible}
-  <div class="fixed top-4 left-4 right-4 bg-yellow-500 text-white p-3 rounded-lg z-50">
-    Browser wallet not supported. Missing: Web Crypto API, IndexedDB, or WebAssembly.
+  <div
+    class="fixed top-4 left-4 right-4 bg-yellow-500 text-white p-3 rounded-lg z-50"
+  >
+    Browser wallet not supported. Missing: Web Crypto API, IndexedDB, or
+    WebAssembly.
   </div>
 {/if}
 
 {#if browser && isAcquiringLock && !showTabLockBanner}
-  <div class="fixed top-4 left-4 bg-yellow-500 text-white p-2 sm:p-3 rounded-lg z-50 flex items-center gap-2 shadow-lg max-w-xs sm:max-w-sm">
-    <iconify-icon icon="mdi:loading" width="16" class="flex-shrink-0 animate-spin"></iconify-icon>
+  <div
+    class="fixed top-4 left-4 bg-yellow-500 text-white p-2 sm:p-3 rounded-lg z-50 flex items-center gap-2 shadow-lg max-w-xs sm:max-w-sm"
+  >
+    <iconify-icon
+      icon="mdi:loading"
+      width="16"
+      class="flex-shrink-0 animate-spin"
+    ></iconify-icon>
     <span class="text-xs sm:text-sm">Initializing wallet...</span>
   </div>
 {/if}
@@ -665,10 +725,10 @@
       style="animation-delay: 4s;"
     ></div>
     {#if $proMode}
-    <div
-      class="absolute top-1/2 right-1/4 w-96 h-96 bg-dgen-aqua rounded-full mix-blend-screen filter blur-3xl opacity-15 blob"
-      style="animation-delay: 6s;"
-    ></div>
+      <div
+        class="absolute top-1/2 right-1/4 w-96 h-96 bg-dgen-aqua rounded-full mix-blend-screen filter blur-3xl opacity-15 blob"
+        style="animation-delay: 6s;"
+      ></div>
     {/if}
   </div>
 
@@ -677,21 +737,26 @@
 
   <!-- Lightning Bolts (Pro Mode Only) -->
   {#if $proMode}
-  <div class="lightning-container">
-    {#each Array.from({length: 6}) as _, i}
-      <div
-        class="lightning-bolt"
-        style="left: {10 + i * 15}%; animation-delay: {i * 3 + Math.random() * 2}s; animation-duration: {2 + Math.random()}s"
-      >
-        <iconify-icon icon="ph:lightning-fill" width="24" class="text-cyan-400"></iconify-icon>
-      </div>
-    {/each}
-  </div>
+    <div class="lightning-container">
+      {#each Array.from({ length: 6 }) as _, i}
+        <div
+          class="lightning-bolt"
+          style="left: {10 + i * 15}%; animation-delay: {i * 3 +
+            Math.random() * 2}s; animation-duration: {2 + Math.random()}s"
+        >
+          <iconify-icon
+            icon="ph:lightning-fill"
+            width="24"
+            class="text-cyan-400"
+          ></iconify-icon>
+        </div>
+      {/each}
+    </div>
   {/if}
 
   <!-- Particle System -->
   <div class="particles">
-    {#each Array.from({length: $proMode ? 16 : 12}) as _, i}
+    {#each Array.from({ length: $proMode ? 16 : 12 }) as _, i}
       <div
         class="particle"
         style="left: {Math.random() * 100}%; animation-delay: {Math.random() *
@@ -701,7 +766,11 @@
   </div>
 </div>
 
-<div class="min-h-dvh bg-transparent relative z-10" data-theme={theme} class:pro-mode={$proMode}>
+<div
+  class="min-h-dvh bg-transparent relative z-10"
+  data-theme={theme}
+  class:pro-mode={$proMode}
+>
   <AppHeader {user} {subject} />
   <main class="pb-4 pro-mode-inherit">
     {#if !$loading && !isSwitchingUsers}

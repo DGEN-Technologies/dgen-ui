@@ -15,12 +15,24 @@
   font-style: normal;
 }
 
+/* Heading font for hero + section titles */
+.heading-condensed {
+  font-family:
+    "Roboto Condensed",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  letter-spacing: 0.08em;
+}
+
 /* Modern Color System */
 :root {
   /* Primary Gradients - DGEN Aqua Theme */
-  --gradient-primary: linear-gradient(135deg, #74EBD5 0%, #9688DD 100%);
-  --gradient-secondary: linear-gradient(135deg, #6AEEC7 0%, #5FE5D0 100%);
-  --gradient-accent: linear-gradient(135deg, #74EBD5 0%, #6AEEC7 100%);
+  --gradient-primary: linear-gradient(135deg, #74ebd5 0%, #9688dd 100%);
+  --gradient-secondary: linear-gradient(135deg, #6aeec7 0%, #5fe5d0 100%);
+  --gradient-accent: linear-gradient(135deg, #74ebd5 0%, #6aeec7 100%);
   --gradient-dark: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%);
 
   /* Glow Effects */
@@ -34,9 +46,9 @@
 }
 
 [data-theme="dark"] {
-  --gradient-primary: linear-gradient(135deg, #74EBD5 0%, #9688DD 100%);
-  --gradient-secondary: linear-gradient(135deg, #6AEEC7 0%, #5FE5D0 100%);
-  --gradient-accent: linear-gradient(135deg, #74EBD5 0%, #6AEEC7 100%);
+  --gradient-primary: linear-gradient(135deg, #74ebd5 0%, #9688dd 100%);
+  --gradient-secondary: linear-gradient(135deg, #6aeec7 0%, #5fe5d0 100%);
+  --gradient-accent: linear-gradient(135deg, #74ebd5 0%, #6aeec7 100%);
   --glass-bg: rgba(255, 255, 255, 0.03);
   --glass-border: rgba(255, 255, 255, 0.08);
 }
@@ -405,10 +417,8 @@ textarea.clean {
 
 /* Cyber Grid */
 .cyber-grid {
-  background-image: linear-gradient(
-      rgba(102, 126, 234, 0.1) 1px,
-      transparent 1px
-    ),
+  background-image:
+    linear-gradient(rgba(102, 126, 234, 0.1) 1px, transparent 1px),
     linear-gradient(90deg, rgba(102, 126, 234, 0.1) 1px, transparent 1px);
   background-size: 50px 50px;
   animation: grid-move 10s linear infinite;
@@ -663,7 +673,7 @@ textarea.clean {
   opacity: 0;
   animation: lightning-strike 3s ease-in-out infinite;
   filter: drop-shadow(0 0 15px rgba(34, 211, 238, 0.9))
-          drop-shadow(0 0 30px rgba(34, 211, 238, 0.6));
+    drop-shadow(0 0 30px rgba(34, 211, 238, 0.6));
 }
 
 @keyframes lightning-strike {
@@ -681,7 +691,7 @@ textarea.clean {
   15% {
     opacity: 1;
     filter: drop-shadow(0 0 25px rgba(34, 211, 238, 1))
-            drop-shadow(0 0 50px rgba(34, 211, 238, 0.8));
+      drop-shadow(0 0 50px rgba(34, 211, 238, 0.8));
   }
   20% {
     opacity: 0.4;
@@ -819,7 +829,8 @@ button:focus-visible {
 
 /* Ultra Premium Effects */
 .ultra-premium {
-  background: linear-gradient(
+  background:
+    linear-gradient(
       135deg,
       rgba(255, 255, 255, 0.1) 0%,
       rgba(255, 255, 255, 0.05) 100%
@@ -1013,7 +1024,8 @@ main.pro-mode .landing-page-content * {
 }
 
 @keyframes pulse-enhanced {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {

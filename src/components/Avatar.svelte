@@ -14,8 +14,7 @@
   let link = $derived(user?.anon ? `/${user.pubkey}` : `/${user.username}`);
 
   let profile = $derived(
-    user?.profile ? user.profile :
-    user?.picture ? user.picture : null,
+    user?.profile ? user.profile : user?.picture ? user.picture : null,
   );
   let tmp = $derived($avatar?.id && $avatar.id === user?.id && $avatar.src);
   // Convert relative URLs to full backend URLs for production compatibility
@@ -25,7 +24,7 @@
 
 {#snippet body()}
   <div
-    class="w-{s} h-{s} rounded-full border-4 border-base-100 overflow-hidden bg-gradient-to-r from-primary to-gradient flex justify-center items-center"
+    class="w-{s} h-{s} mx-3 my-1 sm:mx-0 sm:my-0 rounded-full border-4 border-base-100 overflow-hidden bg-gradient-to-r from-primary to-gradient flex justify-center items-center"
   >
     {#if !src || hasError}
       <!-- Default avatar with DGEN logo -->

@@ -2,7 +2,14 @@ import getRates from "$lib/rates";
 import { auth, fd, g, p, types } from "$lib/utils";
 import { error, fail, redirect } from "@sveltejs/kit";
 
-export async function load({ cookies, depends, params: { id }, parent, url, fetch }) {
+export async function load({
+  cookies,
+  depends,
+  params: { id },
+  parent,
+  url,
+  fetch,
+}) {
   depends("app:trust");
   const { user } = await parent();
   // const { subject, user } = await parent(); // subject is unused
@@ -18,7 +25,12 @@ export async function load({ cookies, depends, params: { id }, parent, url, fetc
       if (!invoice.tip && invoice.user.prompt) {
         if (user.tip > 0) {
           invoice.tip = Math.round(invoice.amount * (user.tip / 100));
-          invoice = await p(`/invoice/${id}`, { invoice }, fetch, auth(cookies));
+          invoice = await p(
+            `/invoice/${id}`,
+            { invoice },
+            fetch,
+            auth(cookies),
+          );
         } else {
           throw new Error("tip");
         }

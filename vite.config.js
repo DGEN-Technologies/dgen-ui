@@ -48,11 +48,12 @@ const config = {
         secure: false,
       },
       // Only proxy specific wallet API endpoints, not UI routes
-      "^/wallet/(info|generate-mnemonic|initialize|verify-backup|get-mnemonic|store-mnemonic)$": {
-        target: process.env.VITE_API_URL || "http://localhost:3119",
-        changeOrigin: true,
-        secure: false,
-      },
+      "^/wallet/(info|generate-mnemonic|initialize|verify-backup|get-mnemonic|store-mnemonic)$":
+        {
+          target: process.env.VITE_API_URL || "http://localhost:3119",
+          changeOrigin: true,
+          secure: false,
+        },
       // Proxy auth endpoints
       "/me": {
         target: process.env.VITE_API_URL || "http://localhost:3119",

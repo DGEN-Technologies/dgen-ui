@@ -108,8 +108,10 @@
             class="flex-1 px-6 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center justify-center gap-2"
             style="background: linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%); color: white;"
           >
-            <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                 style="background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%);"></div>
+            <div
+              class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              style="background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%);"
+            ></div>
             <iconify-icon
               noobserver
               icon="ph:camera-bold"
@@ -126,8 +128,10 @@
           style="background: linear-gradient(135deg, #74EBD5 0%, #9688DD 100%); color: white;"
           onclick={paste}
         >
-          <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-               style="background: linear-gradient(135deg, #9688DD 0%, #74EBD5 100%);"></div>
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+            style="background: linear-gradient(135deg, #9688DD 0%, #74EBD5 100%);"
+          ></div>
           <iconify-icon
             noobserver
             icon="ph:clipboard-text-bold"
@@ -144,8 +148,10 @@
         class="w-full px-6 py-4 rounded-2xl font-bold text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-2xl active:scale-95 relative overflow-hidden group inline-flex items-center justify-center gap-3"
         style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);"
       >
-        <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-             style="background: linear-gradient(135deg, #059669 0%, #10B981 100%);"></div>
+        <div
+          class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+          style="background: linear-gradient(135deg, #059669 0%, #10B981 100%);"
+        ></div>
         <iconify-icon
           noobserver
           icon="ph:paper-plane-right-bold"

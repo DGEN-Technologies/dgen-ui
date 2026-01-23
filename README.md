@@ -15,4 +15,3 @@ To get started, clone or download the repo, then:
    ```
 
 You'll need to run [`dgen-server`](https://github.com/DGEN-Technologies/dgen-server) as well
-

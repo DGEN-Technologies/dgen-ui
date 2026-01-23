@@ -15,7 +15,7 @@
       key: "nav.merch",
       icon: "ph:storefront-bold",
       href: `#`,
-      comingSoon: true
+      comingSoon: true,
     },
     // Dark mode toggle disabled for now - light mode needs more work
     // { key: "nav.dark", icon: "ph:moon-stars-bold", href: `/dark` },
@@ -34,7 +34,9 @@
       aria-label="Open menu"
       ><iconify-icon noobserver icon="ph:list-bold" width={w > 640 ? 32 : 24}
       ></iconify-icon>
-      <span class="hidden md:block text-xs font-semibold whitespace-nowrap">SETTINGS</span>
+      <span class="hidden md:block text-xs font-semibold whitespace-nowrap"
+        >SETTINGS</span
+      >
     </button>
 
     <div
@@ -79,13 +81,17 @@
       <div class="mb-4">
         <ProModeToggle />
       </div>
-      <a href="/?stay=true" class="hover:opacity-80 transition-opacity"><div class="text-xl font-bold dark:text-white text-gray-800">Website Home Page</div></a>
+      <a href="/?stay=true" class="hover:opacity-80 transition-opacity"
+        ><div class="text-xl font-bold dark:text-white text-gray-800">
+          Website Home Page
+        </div></a
+      >
     </div>
   </OutClick>
 </div>
 
 <style>
   .btn-menu {
-    @apply flex justify-center items-center glass backdrop-blur-xl dark:bg-black/50 bg-white/80 dark:border-white/20 border-gray-300/50 border dark:text-white text-gray-800 p-2 rounded-full w-12 h-12 sm:w-16 sm:h-16 md:w-auto md:h-auto md:rounded-2xl md:px-3 md:py-2 drop-shadow-xl;
+    @apply flex justify-center items-center glass backdrop-blur-xl bg-black/50 border-dgen-aqua/20 border-dgen-cyan/30 border text-gray-50 p-2 rounded-full w-12 h-12 sm:w-16 sm:h-16 md:w-auto md:h-auto md:rounded-2xl md:px-3 md:py-2 drop-shadow-xl border-dgen-aqua/50  transition-all duration-300;
   }
 </style>

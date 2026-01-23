@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [dev, main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Flag sensitive file changes
+        if: github.event_name == 'pull_request'
+        run: |
+          SENSITIVE_FILES="svelte.config.js src/lib/secureStorage.ts src/lib/walletService.ts"
+          CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          for file in $SENSITIVE_FILES; do
+            if echo "$CHANGED" | grep -q "^$file$"; then
+              echo "::warning file=$file::⚠️ SENSITIVE FILE MODIFIED - requires careful review (CSP, security headers)"
+            fi
+          done
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Check formatting
+        run: bun run lint
+
+      - name: Build
+        run: bun run build
+        env:
+          PUBLIC_DGEN_URL: http://localhost:3119
+          PUBLIC_DGEN_NETWORK: mainnet
+          PUBLIC_SOCKET: ws://localhost:3119/ws
+          PUBLIC_DOMAIN: localhost
+          PUBLIC_EXPLORER: https://blockstream.info
+          PUBLIC_LIQUID_EXPLORER: https://blockstream.info
+          PUBLIC_WIDGET_API_BASE: https://example.com
+          PUBLIC_ORG_ID: ci
+          PUBLIC_SWAPSPACE_WIDGET_URL: https://swapspace.co/widget/ci
+          PUBLIC_DGEN_PUBKEY: 0000000000000000000000000000000000000000000000000000000000000000
+          PUBLIC_DGEN_RELAY: wss://relay.example.com
+          PUBLIC_RECAPTCHA_SITE_KEY: 6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI

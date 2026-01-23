@@ -1,6 +1,14 @@
 <script>
   import { onMount } from "svelte";
-  import { parseInput, prepareSendPayment, sendPayment, prepareLnurlPay, lnurlPay, fetchLightningLimits, isConnected } from "$lib/walletService";
+  import {
+    parseInput,
+    prepareSendPayment,
+    sendPayment,
+    prepareLnurlPay,
+    lnurlPay,
+    fetchLightningLimits,
+    isConnected,
+  } from "$lib/walletService";
   import { fail, loc, sats } from "$lib/utils";
   import { goto } from "$app/navigation";
   import Spinner from "./Spinner.svelte";
@@ -12,6 +20,8 @@
 
   let initializing = $state(true);
   let loading = $state(false);
+  let paymentStartTime = $state(null);
+  let pendingTimeoutWarning = $state(false);
   let parsed = $state(null);
   let error = $state("");
   let preparedPayment = $state(null);
@@ -35,12 +45,13 @@
     const maxAttempts = 30; // 15 seconds max
 
     while (!isConnected() && attempts < maxAttempts) {
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
       attempts++;
     }
 
     if (!isConnected()) {
-      error = "Wallet is still initializing. Please wait a moment and try again.";
+      error =
+        "Wallet is still initializing. Please wait a moment and try again.";
       initializing = false;
       return false;
     }
@@ -54,17 +65,17 @@
       loading = true;
       error = "";
 
-      console.log('[SendLightning] Attempting to parse:', payreq);
+      console.log("[SendLightning] Attempting to parse:", payreq);
 
       // Parse the payment request using browser SDK
       const result = await parseInput(payreq);
       parsed = result;
 
-      console.log('[SendLightning] Parsed result:', parsed);
-      console.log('[SendLightning] Parsed type:', parsed?.type);
+      console.log("[SendLightning] Parsed result:", parsed);
+      console.log("[SendLightning] Parsed type:", parsed?.type);
 
       // Handle based on type
-      if (parsed?.type === 'invoice' || parsed?.invoice) {
+      if (parsed?.type === "invoice" || parsed?.invoice) {
         // Handle regular Lightning invoice
         isLightningAddress = false;
 
@@ -77,13 +88,13 @@
         const prepareRequest = {
           destination: parsed.invoice.bolt11,
           amount: {
-            type: 'bitcoin',
-            receiverAmountSat: Math.floor(parsed.invoice.amountMsat / 1000)
-          }
+            type: "bitcoin",
+            receiverAmountSat: Math.floor(parsed.invoice.amountMsat / 1000),
+          },
         };
 
         preparedPayment = await prepareSendPayment(prepareRequest);
-      } else if (parsed?.type === 'lnUrlPay' || parsed?.lnUrlPay) {
+      } else if (parsed?.type === "lnUrlPay" || parsed?.lnUrlPay) {
         // Handle Lightning Address / LNURL-Pay
         isLightningAddress = true;
 
@@ -100,15 +111,26 @@
         const networkMinSat = Number(limitsResponse.send.minSat);
         const networkMaxSat = Number(limitsResponse.send.maxSat);
 
-        minSendable = Math.min(Math.max(networkMinSat, lnurlMinSat), networkMaxSat);
-        maxSendable = Math.max(networkMinSat, Math.min(networkMaxSat, lnurlMaxSat));
+        minSendable = Math.min(
+          Math.max(networkMinSat, lnurlMinSat),
+          networkMaxSat,
+        );
+        maxSendable = Math.max(
+          networkMinSat,
+          Math.min(networkMaxSat, lnurlMaxSat),
+        );
 
         // Set default amount to minimum
         amountSat = minSendable;
 
-        console.log('[SendLightning] LNURL-Pay detected, amount range:', minSendable, '-', maxSendable);
-        console.log('[SendLightning] LNURL data:', lnUrlData);
-      } else if (parsed?.type === 'bolt12Offer' || parsed?.offer) {
+        console.log(
+          "[SendLightning] LNURL-Pay detected, amount range:",
+          minSendable,
+          "-",
+          maxSendable,
+        );
+        console.log("[SendLightning] LNURL data:", lnUrlData);
+      } else if (parsed?.type === "bolt12Offer" || parsed?.offer) {
         // Handle BOLT12 Offer (Lightning addresses registered with Breez return this)
         isLightningAddress = true;
 
@@ -125,9 +147,14 @@
         // Set default amount to a reasonable value
         amountSat = Math.max(1000, networkMinSat);
 
-        console.log('[SendLightning] BOLT12 offer detected (Lightning address), amount range:', minSendable, '-', maxSendable);
+        console.log(
+          "[SendLightning] BOLT12 offer detected (Lightning address), amount range:",
+          minSendable,
+          "-",
+          maxSendable,
+        );
       } else {
-        error = `Unsupported payment type: ${parsed?.type || 'unknown'}`;
+        error = `Unsupported payment type: ${parsed?.type || "unknown"}`;
       }
     } catch (e) {
       console.error("[SendLightning] Failed to parse payment:", e);
@@ -137,11 +164,18 @@
       if (e.message?.includes("Unrecognized input type")) {
         error = `This lightning address could not be recognized. It may not be registered or active. Please verify the address and try again.`;
       } else if (e.message?.includes("SDK not initialized")) {
-        error = "Wallet is still connecting. Please wait a moment and try again.";
-      } else if (e.message?.includes("rate limit") || e.message?.includes("429") || e.message?.includes("Too Many Requests")) {
-        error = "Network is experiencing high traffic. Please wait a moment and try again.";
+        error =
+          "Wallet is still connecting. Please wait a moment and try again.";
+      } else if (
+        e.message?.includes("rate limit") ||
+        e.message?.includes("429") ||
+        e.message?.includes("Too Many Requests")
+      ) {
+        error =
+          "Network is experiencing high traffic. Please wait a moment and try again.";
       } else if (e.message?.includes("unreachable")) {
-        error = "Network error occurred. This is often temporary - please try again in a moment.";
+        error =
+          "Network error occurred. This is often temporary - please try again in a moment.";
       } else {
         error = e.message || "Failed to parse payment request";
       }
@@ -164,42 +198,51 @@
         return;
       }
 
-      if (parsed.type === 'lnUrlPay' || parsed.lnUrlPay) {
+      if (parsed.type === "lnUrlPay" || parsed.lnUrlPay) {
         // Prepare LNURL payment
         const lnUrlData = parsed.data || parsed.lnUrlPay?.data;
         const prepareRequest = {
           data: lnUrlData,
           amount: {
-            type: 'bitcoin',
-            receiverAmountSat: BigInt(amountSat)
+            type: "bitcoin",
+            receiverAmountSat: BigInt(amountSat),
           },
           comment: comment || undefined,
-          validateSuccessActionUrl: false
+          validateSuccessActionUrl: false,
         };
 
         preparedPayment = await prepareLnurlPay(prepareRequest);
-        console.log('[SendLightning] LNURL payment prepared:', preparedPayment);
-      } else if (parsed.type === 'bolt12Offer' || parsed.offer) {
+        console.log("[SendLightning] LNURL payment prepared:", preparedPayment);
+      } else if (parsed.type === "bolt12Offer" || parsed.offer) {
         // Prepare BOLT12 payment
         const prepareRequest = {
           destination: parsed.offer.offer,
           amount: {
-            type: 'bitcoin',
-            receiverAmountSat: amountSat
-          }
+            type: "bitcoin",
+            receiverAmountSat: amountSat,
+          },
         };
 
         preparedPayment = await prepareSendPayment(prepareRequest);
-        console.log('[SendLightning] BOLT12 payment prepared:', preparedPayment);
+        console.log(
+          "[SendLightning] BOLT12 payment prepared:",
+          preparedPayment,
+        );
       }
     } catch (e) {
       console.error("Failed to prepare payment:", e);
 
       // Provide helpful error messages
-      if (e.message?.includes("rate limit") || e.message?.includes("429") || e.message?.includes("Too Many Requests")) {
-        error = "Network is experiencing high traffic. Please wait a moment and try again.";
+      if (
+        e.message?.includes("rate limit") ||
+        e.message?.includes("429") ||
+        e.message?.includes("Too Many Requests")
+      ) {
+        error =
+          "Network is experiencing high traffic. Please wait a moment and try again.";
       } else if (e.message?.includes("unreachable")) {
-        error = "Network error occurred. This is often temporary - please try again in a moment.";
+        error =
+          "Network error occurred. This is often temporary - please try again in a moment.";
       } else {
         error = e.message || "Failed to prepare payment";
       }
@@ -217,37 +260,53 @@
     try {
       loading = true;
       error = "";
+      paymentStartTime = Date.now();
+      pendingTimeoutWarning = false;
+      // Start timeout check for pending payment
+      setTimeout(
+        () => {
+          if (
+            loading &&
+            paymentStartTime &&
+            Date.now() - paymentStartTime > 5 * 60 * 1000
+          ) {
+            pendingTimeoutWarning = true;
+          }
+        },
+        5 * 60 * 1000,
+      );
 
       let result;
 
-      if (parsed?.type === 'lnUrlPay' || parsed?.lnUrlPay) {
+      if (parsed?.type === "lnUrlPay" || parsed?.lnUrlPay) {
         // Execute LNURL payment
         const lnurlPayRequest = {
-          prepareResponse: preparedPayment
+          prepareResponse: preparedPayment,
         };
         result = await lnurlPay(lnurlPayRequest);
-        console.log('[SendLightning] LNURL payment result:', result);
+        console.log("[SendLightning] LNURL payment result:", result);
 
         // Navigate to success page
         if (result?.payment?.txId) {
           await goto(`/payment/${result.payment.txId}`);
         } else {
-          await goto('/payments');
+          await goto("/payments");
         }
       } else {
         // Execute regular Lightning payment or BOLT12 payment
         const sendRequest = {
-          prepareResponse: preparedPayment
+          prepareResponse: preparedPayment,
         };
         result = await sendPayment(sendRequest);
-        console.log('[SendLightning] Payment result:', result);
+        console.log("[SendLightning] Payment result:", result);
 
         // Navigate to success page using txId or paymentHash
-        const paymentId = result.payment.txId || result.payment.details?.paymentHash;
+        const paymentId =
+          result.payment.txId || result.payment.details?.paymentHash;
         if (paymentId) {
           await goto(`/payment/${paymentId}`);
         } else {
-          await goto('/payments');
+          await goto("/payments");
         }
       }
     } catch (e) {
@@ -269,6 +328,14 @@
       <span>{error}</span>
     </div>
   {/if}
+  {#if pendingTimeoutWarning}
+    <div class="alert alert-error">
+      <span
+        >Warning: Payment has been pending for more than 5 minutes. You may
+        retry or cancel.</span
+      >
+    </div>
+  {/if}
 
   {#if initializing}
     <div class="flex flex-col items-center gap-4 py-12">
@@ -285,10 +352,14 @@
       {#if parsed}
         <div>
           <h1 class="text-2xl font-bold mb-2">
-            {isLightningAddress ? 'Send to Lightning Address' : `${$t("payments.send")} Lightning Payment`}
+            {isLightningAddress
+              ? "Send to Lightning Address"
+              : `${$t("payments.send")} Lightning Payment`}
           </h1>
           <p class="text-white/60">
-            {isLightningAddress ? 'Enter amount and confirm' : 'Confirm payment details'}
+            {isLightningAddress
+              ? "Enter amount and confirm"
+              : "Confirm payment details"}
           </p>
         </div>
       {:else if error}
@@ -301,67 +372,82 @@
       {#if parsed}
         <div class="glass rounded-2xl p-6 space-y-4">
           {#if isLightningAddress}
-          <!-- Lightning Address Payment -->
-          <div class="text-left">
-            <p class="text-sm text-white/60 mb-1">Lightning Address</p>
-            <p class="break-all font-mono text-sm">{payreq}</p>
-          </div>
-
-          <div class="text-left">
-            <Numpad bind:amount={amountSat} {rate} {currency} skipBalanceCheck={true} />
-            <p class="text-xs text-white/40 mt-2 text-center">
-              Min: {formatSats(minSendable)} | Max: {formatSats(maxSendable)}
-            </p>
-          </div>
-
-          {#if parsed.lnUrlPay?.data?.commentAllowed > 0}
+            <!-- Lightning Address Payment -->
             <div class="text-left">
-              <label class="text-sm text-white/60 mb-2 block">Comment (optional)</label>
-              <input
-                type="text"
-                bind:value={comment}
-                maxlength={parsed.lnUrlPay.data.commentAllowed}
-                class="input w-full"
-                placeholder="Add a message..."
-                disabled={loading}
+              <p class="text-sm text-white/60 mb-1">Lightning Address</p>
+              <p class="break-all font-mono text-sm">{payreq}</p>
+            </div>
+
+            <div class="text-left">
+              <Numpad
+                bind:amount={amountSat}
+                {rate}
+                {currency}
+                skipBalanceCheck={true}
               />
+              <p class="text-xs text-white/40 mt-2 text-center">
+                Min: {formatSats(minSendable)} | Max: {formatSats(maxSendable)}
+              </p>
             </div>
-          {/if}
 
-          {#if preparedPayment?.feesSat !== undefined}
-            <div class="pt-2 border-t border-white/10">
-              <p class="text-sm text-white/60 mb-1">Network Fee</p>
-              <p class="font-mono">⚡ {formatSats(Number(preparedPayment.feesSat))} sats</p>
-            </div>
-          {/if}
-        {:else}
-          <!-- Regular Invoice Payment -->
-          {#if parsed.invoice?.amountMsat}
-            <div>
-              <p class="text-sm text-white/60 mb-1">Amount</p>
-              <p class="text-3xl font-bold">⚡ {formatSats(Math.floor(parsed.invoice.amountMsat / 1000))}</p>
-              <p class="text-sm text-white/60">sats</p>
-            </div>
-          {/if}
+            {#if parsed.lnUrlPay?.data?.commentAllowed > 0}
+              <div class="text-left">
+                <label class="text-sm text-white/60 mb-2 block"
+                  >Comment (optional)</label
+                >
+                <input
+                  type="text"
+                  bind:value={comment}
+                  maxlength={parsed.lnUrlPay.data.commentAllowed}
+                  class="input w-full"
+                  placeholder="Add a message..."
+                  disabled={loading}
+                />
+              </div>
+            {/if}
 
-          {#if parsed.invoice?.description}
-            <div class="text-left">
-              <p class="text-sm text-white/60 mb-1">Description</p>
-              <p class="break-words">{parsed.invoice.description}</p>
-            </div>
-          {/if}
+            {#if preparedPayment?.feesSat !== undefined}
+              <div class="pt-2 border-t border-white/10">
+                <p class="text-sm text-white/60 mb-1">Network Fee</p>
+                <p class="font-mono">
+                  ⚡ {formatSats(Number(preparedPayment.feesSat))} sats
+                </p>
+              </div>
+            {/if}
+          {:else}
+            <!-- Regular Invoice Payment -->
+            {#if parsed.invoice?.amountMsat}
+              <div>
+                <p class="text-sm text-white/60 mb-1">Amount</p>
+                <p class="text-3xl font-bold">
+                  ⚡ {formatSats(Math.floor(parsed.invoice.amountMsat / 1000))}
+                </p>
+                <p class="text-sm text-white/60">sats</p>
+              </div>
+            {/if}
 
-          {#if preparedPayment?.feesSat}
-            <div>
-              <p class="text-sm text-white/60 mb-1">Network Fee</p>
-              <p class="font-mono">⚡ {formatSats(preparedPayment.feesSat)} sats</p>
-            </div>
+            {#if parsed.invoice?.description}
+              <div class="text-left">
+                <p class="text-sm text-white/60 mb-1">Description</p>
+                <p class="break-words">{parsed.invoice.description}</p>
+              </div>
+            {/if}
+
+            {#if preparedPayment?.feesSat}
+              <div>
+                <p class="text-sm text-white/60 mb-1">Network Fee</p>
+                <p class="font-mono">
+                  ⚡ {formatSats(preparedPayment.feesSat)} sats
+                </p>
+              </div>
+            {/if}
           {/if}
-        {/if}
 
           <div class="pt-4 border-t border-white/10">
             <p class="text-sm text-white/60 mb-1">Your Balance</p>
-            <p class="text-xl font-bold">⚡ {formatSats($walletBalance)} sats</p>
+            <p class="text-xl font-bold">
+              ⚡ {formatSats($walletBalance)} sats
+            </p>
           </div>
         </div>
       {/if}
@@ -384,12 +470,15 @@
           <button
             class="btn btn-primary w-full"
             onclick={prepareLightningAddressPayment}
-            disabled={loading || !amountSat || amountSat < minSendable || amountSat > maxSendable}
+            disabled={loading ||
+              !amountSat ||
+              amountSat < minSendable ||
+              amountSat > maxSendable}
           >
             {#if loading}
               <Spinner />
             {:else}
-              {error ? 'Retry' : 'Prepare Payment'}
+              {error ? "Retry" : "Prepare Payment"}
             {/if}
           </button>
         {:else if parsed}

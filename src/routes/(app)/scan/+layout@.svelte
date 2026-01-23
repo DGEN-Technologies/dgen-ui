@@ -1,6 +1,6 @@
 <script lang="ts">
   import { proMode } from "$lib/store";
-  
+
   interface Props {
     children?: import("svelte").Snippet;
   }

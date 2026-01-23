@@ -16,10 +16,7 @@
   let icon = $derived(show ? "ph:eye-bold" : "ph:eye-slash-bold");
 </script>
 
-<label
-  for={id}
-  class="input flex items-center justify-center gap-2 w-full"
->
+<label for={id} class="input flex items-center justify-center gap-2 w-full">
   {#if show}
     <input
       {id}

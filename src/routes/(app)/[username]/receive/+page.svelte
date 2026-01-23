@@ -13,6 +13,7 @@
     s,
     sats,
   } from "$lib/utils";
+  import { getEffectiveOnchainReceiveMinSat } from "$lib/bitcoinLimits";
   import { tick, onMount, onDestroy } from "svelte";
   import { browser } from "$app/environment";
   import { last, showQr, amountPrompt } from "$lib/store";
@@ -36,7 +37,11 @@
     fetchLightningLimits,
     setupLightningAddress,
   } from "$lib/walletService";
-  import { lnAddressStore, hasValidAddress, isLoading as isLnAddressLoading } from "$lib/stores/lightningAddress";
+  import {
+    lnAddressStore,
+    hasValidAddress,
+    isLoading as isLnAddressLoading,
+  } from "$lib/stores/lightningAddress";
   import { walletStore, transactions } from "$lib/stores/wallet";
   import { paymentReceived } from "$lib/stores/paymentEvents";
   import { PUBLIC_DGEN_URL } from "$env/static/public";
@@ -95,6 +100,7 @@
   // Payment received animation state
   let showingSuccess = $state(false);
   let receivedPayment = $state(null);
+  let onchainMinSat = $derived(getEffectiveOnchainReceiveMinSat(onchainLimits));
 
   // Derived state for Lightning Address
   let lightningAddress = $derived($lnAddressStore.lnAddress);
@@ -107,48 +113,60 @@
     lnAddressStore.setLoading();
 
     try {
-      const { isConnected, formatUsername, registerLightningAddress, recoverLightningAddress } = await import('$lib/walletService');
+      const {
+        isConnected,
+        formatUsername,
+        registerLightningAddress,
+        recoverLightningAddress,
+      } = await import("$lib/walletService");
 
       // Wait for SDK to be ready
       let attempts = 0;
       while (!isConnected() && attempts < 40) {
-        await new Promise(resolve => setTimeout(resolve, 250));
+        await new Promise((resolve) => setTimeout(resolve, 250));
         attempts++;
       }
 
       if (!isConnected()) {
-        console.log('[Lightning Address] SDK failed to initialize, cannot auto-register');
+        console.log(
+          "[Lightning Address] SDK failed to initialize, cannot auto-register",
+        );
         lnAddressStore.reset();
         autoRegisteringAddress = false;
         return;
       }
 
-      console.log('[Lightning Address] SDK ready, proceeding with auto-registration');
+      console.log(
+        "[Lightning Address] SDK ready, proceeding with auto-registration",
+      );
 
       // Use current origin (HTTPS) and route through backend proxy
       // This ensures Breez SDK validation passes (requires HTTPS)
       const currentOrigin = browser ? window.location.origin : PUBLIC_DGEN_URL;
-      const webhookUrl = new URL('/api/backend/api/v1/notify', currentOrigin);
-      webhookUrl.searchParams.set('user', user.id);
+      const webhookUrl = new URL("/api/backend/api/v1/notify", currentOrigin);
+      webhookUrl.searchParams.set("user", user.id);
 
       // Try recovery first - this checks if current seed already has a registered address
-      console.log('[Lightning Address] Attempting recovery first...');
+      console.log("[Lightning Address] Attempting recovery first...");
       const recovered = await recoverLightningAddress(webhookUrl.toString());
 
       if (recovered && recovered.lightningAddress) {
-        console.log('[Lightning Address] Recovered existing address:', recovered.lightningAddress);
+        console.log(
+          "[Lightning Address] Recovered existing address:",
+          recovered.lightningAddress,
+        );
 
         lnAddressStore.setSuccess(
           recovered.lnurl,
-          recovered.lightningAddress || '',
-          recovered.bip353Address
+          recovered.lightningAddress || "",
+          recovered.bip353Address,
         );
 
         // Save to user profile (update database if it changed)
-        await post('/user', {
+        await post("/user", {
           lightningAddress: recovered.lightningAddress,
           lnurl: recovered.lnurl,
-          bip353Address: recovered.bip353Address
+          bip353Address: recovered.bip353Address,
         });
 
         user.lightningAddress = recovered.lightningAddress;
@@ -164,11 +182,14 @@
       // No existing address for this seed
       // Clear stale database address if one exists (from previous seed)
       if (user.lightningAddress) {
-        console.log('[Lightning Address] Clearing stale database address:', user.lightningAddress);
-        await post('/user', {
+        console.log(
+          "[Lightning Address] Clearing stale database address:",
+          user.lightningAddress,
+        );
+        await post("/user", {
           lightningAddress: null,
           lnurl: null,
-          bip353Address: null
+          bip353Address: null,
         });
         user.lightningAddress = null;
         user.lnurl = null;
@@ -176,36 +197,49 @@
       }
 
       // Register new address with retry logic
-      console.log('[Lightning Address] No existing address found, registering new one...');
+      console.log(
+        "[Lightning Address] No existing address found, registering new one...",
+      );
 
       // Use formatted username from user account
       const baseUsername = formatUsername(user.username);
-      console.log('[Lightning Address] Auto-registering with username:', baseUsername);
+      console.log(
+        "[Lightning Address] Auto-registering with username:",
+        baseUsername,
+      );
 
       // registerLightningAddress now includes automatic retry with discriminators
       const result = await registerLightningAddress(
         baseUsername,
-        webhookUrl.toString()
+        webhookUrl.toString(),
       );
 
-      console.log('[Lightning Address] Auto-registration successful:', result.lightningAddress);
+      console.log(
+        "[Lightning Address] Auto-registration successful:",
+        result.lightningAddress,
+      );
 
       // Log if username was modified with discriminator
       if (result.usernameModified) {
-        console.log('[Lightning Address] Username was modified from', result.requestedUsername, 'to', result.actualUsername);
+        console.log(
+          "[Lightning Address] Username was modified from",
+          result.requestedUsername,
+          "to",
+          result.actualUsername,
+        );
       }
 
       lnAddressStore.setSuccess(
         result.lnurl,
-        result.lightningAddress || '',
-        result.bip353Address
+        result.lightningAddress || "",
+        result.bip353Address,
       );
 
       // Save to user profile
-      await post('/user', {
+      await post("/user", {
         lightningAddress: result.lightningAddress,
         lnurl: result.lnurl,
-        bip353Address: result.bip353Address
+        bip353Address: result.bip353Address,
       });
 
       user.lightningAddress = result.lightningAddress;
@@ -214,9 +248,8 @@
 
       // Invalidate to refresh all user data across the app
       invalidate("app:user");
-
     } catch (e) {
-      console.error('[Lightning Address] Auto-registration failed:', e);
+      console.error("[Lightning Address] Auto-registration failed:", e);
       lnAddressStore.setError(e instanceof Error ? e : new Error(String(e)));
     } finally {
       autoRegisteringAddress = false;
@@ -229,11 +262,14 @@
   // Subscribe to payment events
   $effect(() => {
     if ($paymentReceived && browser) {
-      const paymentId = $paymentReceived.payment?.id || $paymentReceived.payment?.txId || $paymentReceived.timestamp;
+      const paymentId =
+        $paymentReceived.payment?.id ||
+        $paymentReceived.payment?.txId ||
+        $paymentReceived.timestamp;
 
       // Only show if we haven't shown this payment before
       if (!shownPaymentIds.has(paymentId)) {
-        console.log('[Receive] Payment received event:', $paymentReceived);
+        console.log("[Receive] Payment received event:", $paymentReceived);
         shownPaymentIds.add(paymentId);
         receivedPayment = $paymentReceived;
         showingSuccess = true;
@@ -267,7 +303,7 @@
 
       try {
         // Import and check if SDK is connected
-        const { isConnected } = await import('$lib/walletService');
+        const { isConnected } = await import("$lib/walletService");
         walletInitialized = isConnected();
 
         // Fetch payment limits if wallet initialized
@@ -276,7 +312,7 @@
           try {
             [onchainLimits, lightningLimits] = await Promise.all([
               fetchOnchainLimits(),
-              fetchLightningLimits()
+              fetchLightningLimits(),
             ]);
           } catch (e) {
             console.error("Failed to fetch payment limits:", e);
@@ -284,7 +320,9 @@
             fetchingLimits = false;
           }
         } else {
-          console.log("SDK not connected yet, will become available when ready");
+          console.log(
+            "SDK not connected yet, will become available when ready",
+          );
         }
       } catch (e) {
         console.log("Wallet SDK initializing in background:", e);
@@ -295,7 +333,7 @@
     // Periodically check if SDK becomes ready
     const checkInterval = setInterval(async () => {
       if (!walletInitialized) {
-        const { isConnected } = await import('$lib/walletService');
+        const { isConnected } = await import("$lib/walletService");
         if (isConnected()) {
           walletInitialized = true;
           console.log("SDK connected - wallet ready for use");
@@ -304,7 +342,7 @@
           try {
             [onchainLimits, lightningLimits] = await Promise.all([
               fetchOnchainLimits(),
-              fetchLightningLimits()
+              fetchLightningLimits(),
             ]);
           } catch (e) {
             console.error("Failed to fetch payment limits:", e);
@@ -339,10 +377,10 @@
     if ([types.liquid, types.bitcoin, types.lightning].includes(invoiceType)) {
       if (!walletInitialized) {
         // Wait for SDK to initialize (max 10 seconds)
-        const { isConnected } = await import('$lib/walletService');
+        const { isConnected } = await import("$lib/walletService");
         let attempts = 0;
         while (!isConnected() && attempts < 40) {
-          await new Promise(resolve => setTimeout(resolve, 250));
+          await new Promise((resolve) => setTimeout(resolve, 250));
           attempts++;
         }
 
@@ -367,27 +405,36 @@
         }
 
         const prepareRequest = {
-          paymentMethod: 'lightning',  // Use 'lightning' like wasm-example-app
+          paymentMethod: "lightning", // Use 'lightning' like wasm-example-app
           amount: {
-            type: 'bitcoin',
-            payerAmountSat: amount
-          }
+            type: "bitcoin",
+            payerAmountSat: amount,
+          },
         };
 
         const prepareResponse = await prepareReceivePayment(prepareRequest);
 
         const receiveRequest = {
           prepareResponse,
-          description: invoiceMemo || ""
+          description: invoiceMemo || "",
         };
 
         // Add timeout to prevent infinite hanging
         const receivePromise = receivePayment(receiveRequest);
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Invoice generation timed out after 30 seconds")), 30000)
+          setTimeout(
+            () =>
+              reject(
+                new Error("Invoice generation timed out after 30 seconds"),
+              ),
+            30000,
+          ),
         );
 
-        const receiveResponse = await Promise.race([receivePromise, timeoutPromise]);
+        const receiveResponse = await Promise.race([
+          receivePromise,
+          timeoutPromise,
+        ]);
 
         invoiceText = receiveResponse.destination;
         id = receiveResponse.destination; // Use destination as ID
@@ -396,23 +443,26 @@
       // Bitcoin on-chain address generation
       else if (invoiceType === types.bitcoin) {
         const prepareRequest = {
-          paymentMethod: 'bitcoinAddress',
-          amount: amount > 0 ? {
-            type: 'bitcoin',
-            payerAmountSat: amount
-          } : undefined
+          paymentMethod: "bitcoinAddress",
+          amount:
+            amount > 0
+              ? {
+                  type: "bitcoin",
+                  payerAmountSat: amount,
+                }
+              : undefined,
         };
-        
+
         const prepareResponse = await prepareReceivePayment(prepareRequest);
-        
+
         const receiveRequest = {
           prepareResponse,
-          description: invoiceMemo || ""
+          description: invoiceMemo || "",
         };
-        
+
         const receiveResponse = await receivePayment(receiveRequest);
         invoiceText = receiveResponse.destination; // BIP21 URI
-        
+
         // Extract just the address from BIP21 URI for display
         const addressMatch = invoiceText.match(/^bitcoin:([^?]+)/);
         hash = addressMatch ? addressMatch[1] : invoiceText;
@@ -427,30 +477,34 @@
         // Step 1: Prepare receive payment (calculate fees, validate)
         let prepareRequest;
 
-        if (selectedAsset === 'usdt') {
+        if (selectedAsset === "usdt") {
           // Receiving USDT
           // For Liquid assets, payerAmount is OPTIONAL
           // If not specified, it creates an amountless BIP21 URI
-          const usdtAssetId = 'ce091c998b83c78bb71a632313ba3760f1763d9cfcffae02258ffa9865a37bd2';
+          const usdtAssetId =
+            "ce091c998b83c78bb71a632313ba3760f1763d9cfcffae02258ffa9865a37bd2";
 
           prepareRequest = {
-            paymentMethod: 'liquidAddress',
+            paymentMethod: "liquidAddress",
             amount: {
-              type: 'asset',
+              type: "asset",
               assetId: usdtAssetId,
-              ...(amount && amount > 0 && { payerAmount: amount })
-            }
+              ...(amount && amount > 0 && { payerAmount: amount }),
+            },
           };
         } else {
           // Receiving LBTC (default)
           // For LBTC, payerAmountSat is OPTIONAL
           // If not specified, it creates an address that can receive any amount
           prepareRequest = {
-            paymentMethod: 'liquidAddress',
-            amount: amount && amount > 0 ? {
-              type: 'bitcoin',  // For LBTC
-              payerAmountSat: amount
-            } : undefined  // Don't pass amount object at all - generates plain address
+            paymentMethod: "liquidAddress",
+            amount:
+              amount && amount > 0
+                ? {
+                    type: "bitcoin", // For LBTC
+                    payerAmountSat: amount,
+                  }
+                : undefined, // Don't pass amount object at all - generates plain address
           };
         }
 
@@ -459,12 +513,15 @@
         // Validate that amount is greater than broadcast fees (only if amount was specified)
         if (amount && amount > 0 && prepareResponse.feesSat > 0) {
           // For USDT, convert amount back to sats for comparison
-          const amountInSats = selectedAsset === 'usdt'
-            ? amount  // amount is already in smallest unit (like sats)
-            : amount;
+          const amountInSats =
+            selectedAsset === "usdt"
+              ? amount // amount is already in smallest unit (like sats)
+              : amount;
 
           if (amountInSats <= prepareResponse.feesSat) {
-            fail(`Amount must be greater than broadcast fees (${sat(prepareResponse.feesSat)})`);
+            fail(
+              `Amount must be greater than broadcast fees (${sat(prepareResponse.feesSat)})`,
+            );
             return;
           }
         }
@@ -473,7 +530,7 @@
         const receiveRequest = {
           prepareResponse,
           description: invoiceMemo || "",
-          useDescriptionHash: false
+          useDescriptionHash: false,
         };
 
         const receiveResponse = await receivePayment(receiveRequest);
@@ -502,11 +559,12 @@
         if (invoiceType === types.bolt12) {
           invoiceText = result.text || "";
           hash = "";
-        } else if ([types.bitcoin, types.liquid, types.usdt].includes(invoiceType)) {
+        } else if (
+          [types.bitcoin, types.liquid, types.usdt].includes(invoiceType)
+        ) {
           hash = result.hash || "";
           invoiceText = result.text || "";
         }
-
       }
 
       // Reset updating flag BEFORE UI updates to prevent race conditions
@@ -531,8 +589,13 @@
 
       // Provide user-friendly error messages for common issues
       const errorMsg = e.message || String(e);
-      if (errorMsg.includes("Could not contact servers") || errorMsg.includes("TimedOut") || errorMsg.includes("network")) {
-        lastError = "Network error - Breez servers are unreachable. Please try again.";
+      if (
+        errorMsg.includes("Could not contact servers") ||
+        errorMsg.includes("TimedOut") ||
+        errorMsg.includes("network")
+      ) {
+        lastError =
+          "Network error - Breez servers are unreachable. Please try again.";
         fail(lastError);
       } else {
         lastError = errorMsg;
@@ -614,8 +677,13 @@
     }
 
     // Check minimum for Bitcoin on-chain (28k sats minimum)
-    if (invoiceType === types.bitcoin && newAmount < 28000) {
-      fail("Minimum: 0.00028 BTC (28,000 sats)");
+    if (
+      invoiceType === types.bitcoin &&
+      Number.isFinite(onchainMinSat) &&
+      newAmount < onchainMinSat
+    ) {
+      const minBtc = (onchainMinSat / sats).toFixed(8);
+      fail(`Minimum: ${minBtc} BTC (${sat(onchainMinSat)} sats)`);
       // Don't close dialog - keep user on numberpad until valid amount
       return;
     }
@@ -670,7 +738,9 @@
         : `lightning:${invoiceText}`,
   );
   let txt = $derived(
-    [types.bitcoin, types.liquid, types.usdt].includes(invoiceType) ? hash : invoiceText,
+    [types.bitcoin, types.liquid, types.usdt].includes(invoiceType)
+      ? hash
+      : invoiceText,
   );
 
   onMount(() => {
@@ -713,12 +783,14 @@
 <div class="min-h-screen relative">
   <!-- Payment Success Overlay -->
   {#if showingSuccess && receivedPayment}
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-lg">
+    <div
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-lg"
+    >
       <Success
         amount={receivedPayment.payment?.amountSat || 0}
         {rate}
         tip={0}
-        currency={user.currency || 'USD'}
+        currency={user.currency || "USD"}
         {locale}
         title={$t("invoice.paymentSuccessful") || "Payment Received!"}
       />
@@ -726,7 +798,10 @@
   {/if}
 
   <!-- Content Container -->
-  <div class="invoice container mx-auto max-w-xl px-4 py-4 sm:py-6 relative z-10" class:pb-32={showMoreOptions}>
+  <div
+    class="invoice container mx-auto max-w-xl px-4 py-4 sm:py-6 relative z-10"
+    class:pb-32={showMoreOptions}
+  >
     <!-- Title with epic glow effect -->
     <div class="text-center mb-4 sm:mb-6 animate-fadeInUp">
       <div class="relative inline-block">
@@ -745,7 +820,9 @@
               showLightningAddress = false;
             }}
           >
-            <span class="text-lg md:text-2xl font-semibold">More deposit options</span>
+            <span class="text-lg md:text-2xl font-semibold"
+              >More deposit options</span
+            >
             <iconify-icon icon="ph:caret-down-bold" width="16"></iconify-icon>
           </button>
         </div>
@@ -755,28 +832,40 @@
           <!-- Liquid Button -->
           <button
             class="premium-card border-2 transition-all duration-300 hover:scale-105 flex items-center gap-2 px-4 py-3"
-            class:border-blue-400={invoiceType === types.liquid && !showLightningAddress}
-            class:bg-blue-400={invoiceType === types.liquid && !showLightningAddress}
-            class:bg-opacity-20={invoiceType === types.liquid && !showLightningAddress}
-            class:shadow-lg={invoiceType === types.liquid && !showLightningAddress}
-            class:shadow-blue-400={invoiceType === types.liquid && !showLightningAddress}
-            class:border-white={invoiceType !== types.liquid || showLightningAddress}
-            class:border-opacity-20={invoiceType !== types.liquid || showLightningAddress}
-            class:hover:border-blue-400={invoiceType !== types.liquid || showLightningAddress}
-            class:hover:border-opacity-60={invoiceType !== types.liquid || showLightningAddress}
+            class:border-blue-400={invoiceType === types.liquid &&
+              !showLightningAddress}
+            class:bg-blue-400={invoiceType === types.liquid &&
+              !showLightningAddress}
+            class:bg-opacity-20={invoiceType === types.liquid &&
+              !showLightningAddress}
+            class:shadow-lg={invoiceType === types.liquid &&
+              !showLightningAddress}
+            class:shadow-blue-400={invoiceType === types.liquid &&
+              !showLightningAddress}
+            class:border-white={invoiceType !== types.liquid ||
+              showLightningAddress}
+            class:border-opacity-20={invoiceType !== types.liquid ||
+              showLightningAddress}
+            class:hover:border-blue-400={invoiceType !== types.liquid ||
+              showLightningAddress}
+            class:hover:border-opacity-60={invoiceType !== types.liquid ||
+              showLightningAddress}
             onclick={() => {
               // Switch to Liquid - just set type, don't auto-generate
               showLightningAddress = false;
               invoiceType = types.liquid;
               // Clear invoice data to show asset picker
-              invoiceText = '';
-              hash = '';
+              invoiceText = "";
+              hash = "";
               id = undefined;
             }}
             style="transform: scale(0.7);"
           >
-            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center">
-              <iconify-icon icon="ph:drop-fill" class="text-white" width="18"></iconify-icon>
+            <div
+              class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center"
+            >
+              <iconify-icon icon="ph:drop-fill" class="text-white" width="18"
+              ></iconify-icon>
             </div>
             <span class="font-bold text-white text-sm">Liquid</span>
           </button>
@@ -784,15 +873,24 @@
           <!-- Bitcoin Button -->
           <button
             class="premium-card border-2 transition-all duration-300 hover:scale-105 flex items-center gap-2 px-4 py-3"
-            class:border-orange-400={invoiceType === types.bitcoin && !showLightningAddress}
-            class:bg-orange-400={invoiceType === types.bitcoin && !showLightningAddress}
-            class:bg-opacity-20={invoiceType === types.bitcoin && !showLightningAddress}
-            class:shadow-lg={invoiceType === types.bitcoin && !showLightningAddress}
-            class:shadow-orange-400={invoiceType === types.bitcoin && !showLightningAddress}
-            class:border-white={invoiceType !== types.bitcoin || showLightningAddress}
-            class:border-opacity-20={invoiceType !== types.bitcoin || showLightningAddress}
-            class:hover:border-orange-400={invoiceType !== types.bitcoin || showLightningAddress}
-            class:hover:border-opacity-60={invoiceType !== types.bitcoin || showLightningAddress}
+            class:border-orange-400={invoiceType === types.bitcoin &&
+              !showLightningAddress}
+            class:bg-orange-400={invoiceType === types.bitcoin &&
+              !showLightningAddress}
+            class:bg-opacity-20={invoiceType === types.bitcoin &&
+              !showLightningAddress}
+            class:shadow-lg={invoiceType === types.bitcoin &&
+              !showLightningAddress}
+            class:shadow-orange-400={invoiceType === types.bitcoin &&
+              !showLightningAddress}
+            class:border-white={invoiceType !== types.bitcoin ||
+              showLightningAddress}
+            class:border-opacity-20={invoiceType !== types.bitcoin ||
+              showLightningAddress}
+            class:hover:border-orange-400={invoiceType !== types.bitcoin ||
+              showLightningAddress}
+            class:hover:border-opacity-60={invoiceType !== types.bitcoin ||
+              showLightningAddress}
             onclick={() => {
               // Switch to Bitcoin
               showLightningAddress = false;
@@ -802,7 +900,9 @@
             }}
             style="transform: scale(0.7);"
           >
-            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
+            <div
+              class="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center"
+            >
               <img src="/images/bitcoin.svg" class="w-5 h-5" alt="Bitcoin" />
             </div>
             <span class="font-bold text-white text-sm">Bitcoin</span>
@@ -825,14 +925,17 @@
               showLightningAddress = true;
               invoiceType = "lnurl";
               // Clear any existing invoice data
-              invoiceText = '';
-              hash = '';
+              invoiceText = "";
+              hash = "";
               id = undefined;
             }}
             style="transform: scale(0.7);"
           >
-            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-yellow-300 to-amber-500 flex items-center justify-center">
-              <iconify-icon icon="ph:at-bold" class="text-white" width="18"></iconify-icon>
+            <div
+              class="w-8 h-8 rounded-lg bg-gradient-to-br from-yellow-300 to-amber-500 flex items-center justify-center"
+            >
+              <iconify-icon icon="ph:at-bold" class="text-white" width="18"
+              ></iconify-icon>
             </div>
             <span class="font-bold text-white text-sm">LN Address</span>
           </button>
@@ -849,7 +952,9 @@
               showMoreOptionsExpanded = true;
             }}
           >
-            <span class="text-lg md:text-2xl font-semibold">More deposit options</span>
+            <span class="text-lg md:text-2xl font-semibold"
+              >More deposit options</span
+            >
             <iconify-icon icon="ph:caret-down-bold" width="16"></iconify-icon>
           </button>
         </div>
@@ -857,222 +962,287 @@
 
       <!-- Payment Method Selection (Lightning Address, Bitcoin, Liquid) - EXPANDED view -->
       {#if showMoreOptionsExpanded && !showLightningAddress}
-      <div class="space-y-4 mt-5">
-        <!-- Payment Method Cards -->
-        <div class="grid grid-cols-1 gap-3 px-2">
-          <!-- Liquid Network -->
-          <button
-            class="glass rounded-2xl p-4 transition-all duration-300 border-2 text-left group hover:scale-[1.02]"
-            class:border-blue-400={invoiceType === types.liquid}
-            class:bg-blue-400={invoiceType === types.liquid}
-            class:bg-opacity-10={invoiceType === types.liquid}
-            class:shadow-lg={invoiceType === types.liquid}
-            class:shadow-blue-400={invoiceType === types.liquid}
-            class:shadow-opacity-20={invoiceType === types.liquid}
-            class:border-white={invoiceType !== types.liquid}
-            class:border-opacity-20={invoiceType !== types.liquid}
-            class:hover:border-blue-400={invoiceType !== types.liquid}
-            class:hover:border-opacity-60={invoiceType !== types.liquid}
-            onclick={() => {
-              // Collapse to compact buttons and generate Liquid invoice
-              showMoreOptionsExpanded = false;
-              showLightningAddress = false;
-              newAmount = undefined;
-              amount = undefined;
-              setType(types.liquid);
-            }}
-          >
-            <div class="flex items-start gap-4">
-              <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform shadow-lg">
-                <iconify-icon icon="ph:drop-fill" class="text-white" width="24"></iconify-icon>
-              </div>
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2 mb-1">
-                  <h3 class="font-bold text-white text-lg">Liquid Network</h3>
-                  <span class="badge badge-sm bg-blue-400/20 text-blue-400 border-blue-400/30 whitespace-nowrap">L-BTC • USDT</span>
-                </div>
-                <p class="text-sm text-white/70 leading-relaxed">Fast. Receive Bitcoin or USDT stablecoins.</p>
-                <div class="flex items-center gap-3 mt-2 text-xs">
-                  <span class="text-blue-400 flex items-center gap-1">
-                    <iconify-icon icon="ph:eye-slash-bold" width="14"></iconify-icon>
-                    Private
-                  </span>
-                  <span class="text-cyan-400 flex items-center gap-1">
-                    <iconify-icon icon="ph:clock-bold" width="14"></iconify-icon>
-                    ~2 min
-                  </span>
-                </div>
-              </div>
-              {#if invoiceType === types.liquid}
-                <iconify-icon icon="ph:check-circle-fill" class="text-blue-400 flex-shrink-0" width="24"></iconify-icon>
-              {/if}
-            </div>
-          </button>
-
-          <!-- Bitcoin On-Chain -->
-          <button
-            class="glass rounded-2xl p-4 transition-all duration-300 border-2 text-left group hover:scale-[1.02]"
-            class:border-orange-400={invoiceType === types.bitcoin}
-            class:bg-orange-400={invoiceType === types.bitcoin}
-            class:bg-opacity-10={invoiceType === types.bitcoin}
-            class:shadow-lg={invoiceType === types.bitcoin}
-            class:shadow-orange-400={invoiceType === types.bitcoin}
-            class:shadow-opacity-20={invoiceType === types.bitcoin}
-            class:border-white={invoiceType !== types.bitcoin}
-            class:border-opacity-20={invoiceType !== types.bitcoin}
-            class:hover:border-orange-400={invoiceType !== types.bitcoin}
-            class:hover:border-opacity-60={invoiceType !== types.bitcoin}
-            onclick={() => {
-              // Collapse to compact buttons and generate Bitcoin invoice
-              showMoreOptionsExpanded = false;
-              showLightningAddress = false;
-              newAmount = undefined;
-              amount = undefined;
-              setType(types.bitcoin);
-            }}
-          >
-            <div class="flex items-start gap-4">
-              <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform shadow-lg">
-                <img src="/images/bitcoin.svg" class="w-7 h-7" alt="Bitcoin" />
-              </div>
-              <div class="flex-1 min-w-0">
-                <div class="flex items-start sm:items-center justify-between sm:justify-start gap-2 mb-1">
-                  <h3 class="font-bold text-white text-lg">
-                    Bitcoin<br class="sm:hidden" /> <span class="text-sm sm:inline">(on-chain)</span>
-                  </h3>
-                  <span class="badge badge-sm bg-orange-400/20 text-orange-400 border-orange-400/30 flex-shrink-0">Taproot</span>
-                </div>
-                <p class="text-sm text-white/70 leading-relaxed">Secure main blockchain. Best for larger amounts.</p>
-                <div class="flex items-center gap-3 mt-2 text-xs">
-                  <span class="text-orange-400 flex items-center gap-1">
-                    <iconify-icon icon="ph:shield-checkered-bold" width="14"></iconify-icon>
-                    Most secure
-                  </span>
-                  <span class="text-white/50 flex items-center gap-1">
-                    <iconify-icon icon="ph:hourglass-bold" width="14"></iconify-icon>
-                    ~10-60+ min
-                  </span>
-                </div>
-              </div>
-              {#if invoiceType === types.bitcoin}
-                <iconify-icon icon="ph:check-circle-fill" class="text-orange-400 flex-shrink-0" width="24"></iconify-icon>
-              {/if}
-            </div>
-          </button>
-
-          <!-- Lightning Address -->
-          <button
-            class="glass rounded-2xl p-4 transition-all duration-300 border-2 text-left group hover:scale-[1.02]"
-            class:border-yellow-400={invoiceType === "lnurl"}
-            class:bg-yellow-400={invoiceType === "lnurl"}
-            class:bg-opacity-10={invoiceType === "lnurl"}
-            class:shadow-lg={invoiceType === "lnurl"}
-            class:shadow-yellow-400={invoiceType === "lnurl"}
-            class:shadow-opacity-20={invoiceType === "lnurl"}
-            class:border-white={invoiceType !== "lnurl"}
-            class:border-opacity-20={invoiceType !== "lnurl"}
-            class:hover:border-yellow-400={invoiceType !== "lnurl"}
-            class:hover:border-opacity-60={invoiceType !== "lnurl"}
-            onclick={() => {
-              // Show Lightning Address view
-              showMoreOptionsExpanded = false;
-              showLightningAddress = true;
-              invoiceType = "lnurl"; // Track selection for collapsed view
-            }}
-          >
-            <div class="flex items-start gap-4">
-              <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-300 to-amber-500 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform shadow-lg">
-                <iconify-icon icon="ph:at-bold" class="text-white" width="24"></iconify-icon>
-              </div>
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2 mb-1">
-                  <h3 class="font-bold text-white text-lg">Lightning Address</h3>
-                  <span class="badge badge-sm bg-yellow-400/20 text-yellow-400 border-yellow-400/30">Static</span>
-                </div>
-                <p class="text-sm text-white/70 leading-relaxed">Lightning only. Requires you to be online to receive.</p>
-                <div class="flex items-center gap-3 mt-2 text-xs">
-                  <span class="text-yellow-400 flex items-center gap-1">
-                    <iconify-icon icon="ph:infinity-bold" width="14"></iconify-icon>
-                    Reusable
-                  </span>
-                </div>
-              </div>
-              {#if invoiceType === "lnurl"}
-                <iconify-icon icon="ph:check-circle-fill" class="text-yellow-400 flex-shrink-0" width="24"></iconify-icon>
-              {/if}
-            </div>
-          </button>
-        </div>
-
-        <!-- Asset selection for Liquid - Show after Liquid is selected -->
-        {#if invoiceType === types.liquid && !invoiceText}
-          <div class="px-2">
-            <div class="glass rounded-xl p-4 border border-blue-400 border-opacity-30 bg-blue-400 bg-opacity-5">
-              <p class="text-sm font-semibold text-white text-opacity-90 mb-3">Select asset to receive:</p>
-              <div class="grid grid-cols-2 gap-3">
-                <button
-                  class="rounded-xl p-3 transition-all duration-300 border-2 text-center group hover:scale-105"
-                  class:border-orange-500={selectedAsset === 'lbtc'}
-                  class:bg-orange-500={selectedAsset === 'lbtc'}
-                  class:bg-opacity-20={selectedAsset === 'lbtc'}
-                  class:border-white={selectedAsset !== 'lbtc'}
-                  class:border-opacity-20={selectedAsset !== 'lbtc'}
-                  class:hover:border-orange-400={selectedAsset !== 'lbtc'}
-                  class:hover:border-opacity-60={selectedAsset !== 'lbtc'}
-                  onclick={async () => {
-                    // Collapse to compact buttons
-                    showMoreOptionsExpanded = false;
-                    showLightningAddress = false;
-                    selectedAsset = 'lbtc';
-                    newAmount = undefined;
-                    amount = undefined;
-                    // LBTC amount is OPTIONAL - generate address immediately without amount
-                    await update();
-                  }}
+        <div class="space-y-4 mt-5">
+          <!-- Payment Method Cards -->
+          <div class="grid grid-cols-1 gap-3 px-2">
+            <!-- Liquid Network -->
+            <button
+              class="glass rounded-2xl p-4 transition-all duration-300 border-2 text-left group hover:scale-[1.02]"
+              class:border-blue-400={invoiceType === types.liquid}
+              class:bg-blue-400={invoiceType === types.liquid}
+              class:bg-opacity-10={invoiceType === types.liquid}
+              class:shadow-lg={invoiceType === types.liquid}
+              class:shadow-blue-400={invoiceType === types.liquid}
+              class:shadow-opacity-20={invoiceType === types.liquid}
+              class:border-white={invoiceType !== types.liquid}
+              class:border-opacity-20={invoiceType !== types.liquid}
+              class:hover:border-blue-400={invoiceType !== types.liquid}
+              class:hover:border-opacity-60={invoiceType !== types.liquid}
+              onclick={() => {
+                // Collapse to compact buttons and generate Liquid invoice
+                showMoreOptionsExpanded = false;
+                showLightningAddress = false;
+                newAmount = undefined;
+                amount = undefined;
+                setType(types.liquid);
+              }}
+            >
+              <div class="flex items-start gap-4">
+                <div
+                  class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform shadow-lg"
                 >
-                  <div class="flex flex-col items-center gap-2">
-                    <iconify-icon icon="cryptocurrency:btc" width="32" class="text-orange-400"></iconify-icon>
-                    <div>
-                      <div class="font-bold text-white">Bitcoin</div>
-                      <div class="text-xs text-white/60">L-BTC</div>
-                    </div>
+                  <iconify-icon
+                    icon="ph:drop-fill"
+                    class="text-white"
+                    width="24"
+                  ></iconify-icon>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 mb-1">
+                    <h3 class="font-bold text-white text-lg">Liquid Network</h3>
+                    <span
+                      class="badge badge-sm bg-blue-400/20 text-blue-400 border-blue-400/30 whitespace-nowrap"
+                      >L-BTC • USDT</span
+                    >
                   </div>
-                </button>
-                <button
-                  class="rounded-xl p-3 transition-all duration-300 border-2 text-center group hover:scale-105"
-                  class:border-green-500={selectedAsset === 'usdt'}
-                  class:bg-green-500={selectedAsset === 'usdt'}
-                  class:bg-opacity-20={selectedAsset === 'usdt'}
-                  class:border-white={selectedAsset !== 'usdt'}
-                  class:border-opacity-20={selectedAsset !== 'usdt'}
-                  class:hover:border-green-400={selectedAsset !== 'usdt'}
-                  class:hover:border-opacity-60={selectedAsset !== 'usdt'}
-                  onclick={async () => {
-                    // Collapse to compact buttons
-                    showMoreOptionsExpanded = false;
-                    showLightningAddress = false;
-                    selectedAsset = 'usdt';
-                    newAmount = undefined;
-                    amount = undefined;
-                    // USDT amount is OPTIONAL - generate address immediately without amount
-                    await update();
-                  }}
-                >
-                  <div class="flex flex-col items-center gap-2">
-                    <iconify-icon icon="cryptocurrency:usdt" width="32" class="text-green-400"></iconify-icon>
-                    <div>
-                      <div class="font-bold text-white">Tether</div>
-                      <div class="text-xs text-white/60">USDt</div>
-                    </div>
+                  <p class="text-sm text-white/70 leading-relaxed">
+                    Fast. Receive Bitcoin or USDT stablecoins.
+                  </p>
+                  <div class="flex items-center gap-3 mt-2 text-xs">
+                    <span class="text-blue-400 flex items-center gap-1">
+                      <iconify-icon icon="ph:eye-slash-bold" width="14"
+                      ></iconify-icon>
+                      Private
+                    </span>
+                    <span class="text-cyan-400 flex items-center gap-1">
+                      <iconify-icon icon="ph:clock-bold" width="14"
+                      ></iconify-icon>
+                      ~2 min
+                    </span>
                   </div>
-                </button>
+                </div>
+                {#if invoiceType === types.liquid}
+                  <iconify-icon
+                    icon="ph:check-circle-fill"
+                    class="text-blue-400 flex-shrink-0"
+                    width="24"
+                  ></iconify-icon>
+                {/if}
               </div>
-            </div>
+            </button>
+
+            <!-- Bitcoin On-Chain -->
+            <button
+              class="glass rounded-2xl p-4 transition-all duration-300 border-2 text-left group hover:scale-[1.02]"
+              class:border-orange-400={invoiceType === types.bitcoin}
+              class:bg-orange-400={invoiceType === types.bitcoin}
+              class:bg-opacity-10={invoiceType === types.bitcoin}
+              class:shadow-lg={invoiceType === types.bitcoin}
+              class:shadow-orange-400={invoiceType === types.bitcoin}
+              class:shadow-opacity-20={invoiceType === types.bitcoin}
+              class:border-white={invoiceType !== types.bitcoin}
+              class:border-opacity-20={invoiceType !== types.bitcoin}
+              class:hover:border-orange-400={invoiceType !== types.bitcoin}
+              class:hover:border-opacity-60={invoiceType !== types.bitcoin}
+              onclick={() => {
+                // Collapse to compact buttons and generate Bitcoin invoice
+                showMoreOptionsExpanded = false;
+                showLightningAddress = false;
+                newAmount = undefined;
+                amount = undefined;
+                setType(types.bitcoin);
+              }}
+            >
+              <div class="flex items-start gap-4">
+                <div
+                  class="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform shadow-lg"
+                >
+                  <img
+                    src="/images/bitcoin.svg"
+                    class="w-7 h-7"
+                    alt="Bitcoin"
+                  />
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div
+                    class="flex items-start sm:items-center justify-between sm:justify-start gap-2 mb-1"
+                  >
+                    <h3 class="font-bold text-white text-lg">
+                      Bitcoin<br class="sm:hidden" />
+                      <span class="text-sm sm:inline">(on-chain)</span>
+                    </h3>
+                    <span
+                      class="badge badge-sm bg-orange-400/20 text-orange-400 border-orange-400/30 flex-shrink-0"
+                      >Taproot</span
+                    >
+                  </div>
+                  <p class="text-sm text-white/70 leading-relaxed">
+                    Secure main blockchain. Best for larger amounts.
+                  </p>
+                  <div class="flex items-center gap-3 mt-2 text-xs">
+                    <span class="text-orange-400 flex items-center gap-1">
+                      <iconify-icon icon="ph:shield-checkered-bold" width="14"
+                      ></iconify-icon>
+                      Most secure
+                    </span>
+                    <span class="text-white/50 flex items-center gap-1">
+                      <iconify-icon icon="ph:hourglass-bold" width="14"
+                      ></iconify-icon>
+                      ~10-60+ min
+                    </span>
+                  </div>
+                </div>
+                {#if invoiceType === types.bitcoin}
+                  <iconify-icon
+                    icon="ph:check-circle-fill"
+                    class="text-orange-400 flex-shrink-0"
+                    width="24"
+                  ></iconify-icon>
+                {/if}
+              </div>
+            </button>
+
+            <!-- Lightning Address -->
+            <button
+              class="glass rounded-2xl p-4 transition-all duration-300 border-2 text-left group hover:scale-[1.02]"
+              class:border-yellow-400={invoiceType === "lnurl"}
+              class:bg-yellow-400={invoiceType === "lnurl"}
+              class:bg-opacity-10={invoiceType === "lnurl"}
+              class:shadow-lg={invoiceType === "lnurl"}
+              class:shadow-yellow-400={invoiceType === "lnurl"}
+              class:shadow-opacity-20={invoiceType === "lnurl"}
+              class:border-white={invoiceType !== "lnurl"}
+              class:border-opacity-20={invoiceType !== "lnurl"}
+              class:hover:border-yellow-400={invoiceType !== "lnurl"}
+              class:hover:border-opacity-60={invoiceType !== "lnurl"}
+              onclick={() => {
+                // Show Lightning Address view
+                showMoreOptionsExpanded = false;
+                showLightningAddress = true;
+                invoiceType = "lnurl"; // Track selection for collapsed view
+              }}
+            >
+              <div class="flex items-start gap-4">
+                <div
+                  class="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-300 to-amber-500 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform shadow-lg"
+                >
+                  <iconify-icon icon="ph:at-bold" class="text-white" width="24"
+                  ></iconify-icon>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 mb-1">
+                    <h3 class="font-bold text-white text-lg">
+                      Lightning Address
+                    </h3>
+                    <span
+                      class="badge badge-sm bg-yellow-400/20 text-yellow-400 border-yellow-400/30"
+                      >Static</span
+                    >
+                  </div>
+                  <p class="text-sm text-white/70 leading-relaxed">
+                    Lightning only. Requires you to be online to receive.
+                  </p>
+                  <div class="flex items-center gap-3 mt-2 text-xs">
+                    <span class="text-yellow-400 flex items-center gap-1">
+                      <iconify-icon icon="ph:infinity-bold" width="14"
+                      ></iconify-icon>
+                      Reusable
+                    </span>
+                  </div>
+                </div>
+                {#if invoiceType === "lnurl"}
+                  <iconify-icon
+                    icon="ph:check-circle-fill"
+                    class="text-yellow-400 flex-shrink-0"
+                    width="24"
+                  ></iconify-icon>
+                {/if}
+              </div>
+            </button>
           </div>
-        {/if}
-      </div>
-      {/if}
 
+          <!-- Asset selection for Liquid - Show after Liquid is selected -->
+          {#if invoiceType === types.liquid && !invoiceText}
+            <div class="px-2">
+              <div
+                class="glass rounded-xl p-4 border border-blue-400 border-opacity-30 bg-blue-400 bg-opacity-5"
+              >
+                <p
+                  class="text-sm font-semibold text-white text-opacity-90 mb-3"
+                >
+                  Select asset to receive:
+                </p>
+                <div class="grid grid-cols-2 gap-3">
+                  <button
+                    class="rounded-xl p-3 transition-all duration-300 border-2 text-center group hover:scale-105"
+                    class:border-orange-500={selectedAsset === "lbtc"}
+                    class:bg-orange-500={selectedAsset === "lbtc"}
+                    class:bg-opacity-20={selectedAsset === "lbtc"}
+                    class:border-white={selectedAsset !== "lbtc"}
+                    class:border-opacity-20={selectedAsset !== "lbtc"}
+                    class:hover:border-orange-400={selectedAsset !== "lbtc"}
+                    class:hover:border-opacity-60={selectedAsset !== "lbtc"}
+                    onclick={async () => {
+                      // Collapse to compact buttons
+                      showMoreOptionsExpanded = false;
+                      showLightningAddress = false;
+                      selectedAsset = "lbtc";
+                      newAmount = undefined;
+                      amount = undefined;
+                      // LBTC amount is OPTIONAL - generate address immediately without amount
+                      await update();
+                    }}
+                  >
+                    <div class="flex flex-col items-center gap-2">
+                      <iconify-icon
+                        icon="cryptocurrency:btc"
+                        width="32"
+                        class="text-orange-400"
+                      ></iconify-icon>
+                      <div>
+                        <div class="font-bold text-white">Bitcoin</div>
+                        <div class="text-xs text-white/60">L-BTC</div>
+                      </div>
+                    </div>
+                  </button>
+                  <button
+                    class="rounded-xl p-3 transition-all duration-300 border-2 text-center group hover:scale-105"
+                    class:border-green-500={selectedAsset === "usdt"}
+                    class:bg-green-500={selectedAsset === "usdt"}
+                    class:bg-opacity-20={selectedAsset === "usdt"}
+                    class:border-white={selectedAsset !== "usdt"}
+                    class:border-opacity-20={selectedAsset !== "usdt"}
+                    class:hover:border-green-400={selectedAsset !== "usdt"}
+                    class:hover:border-opacity-60={selectedAsset !== "usdt"}
+                    onclick={async () => {
+                      // Collapse to compact buttons
+                      showMoreOptionsExpanded = false;
+                      showLightningAddress = false;
+                      selectedAsset = "usdt";
+                      newAmount = undefined;
+                      amount = undefined;
+                      // USDT amount is OPTIONAL - generate address immediately without amount
+                      await update();
+                    }}
+                  >
+                    <div class="flex flex-col items-center gap-2">
+                      <iconify-icon
+                        icon="cryptocurrency:usdt"
+                        width="32"
+                        class="text-green-400"
+                      ></iconify-icon>
+                      <div>
+                        <div class="font-bold text-white">Tether</div>
+                        <div class="text-xs text-white/60">USDt</div>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          {/if}
+        </div>
+      {/if}
     </div>
 
     <!-- Main content card with glassmorphism -->
@@ -1085,24 +1255,41 @@
           {#if autoRegisteringAddress}
             <div class="text-center py-12">
               <div class="flex justify-center mb-4">
-                <div class="w-16 h-16 rounded-full bg-dgen-aqua/20 flex items-center justify-center">
-                  <span class="loading loading-spinner loading-lg text-dgen-aqua"></span>
+                <div
+                  class="w-16 h-16 rounded-full bg-dgen-aqua/20 flex items-center justify-center"
+                >
+                  <span
+                    class="loading loading-spinner loading-lg text-dgen-aqua"
+                  ></span>
                 </div>
               </div>
-              <p class="text-lg text-white/80 font-medium">Setting up your Lightning Address</p>
-              <p class="text-sm text-white/50 mt-2">This will only take a moment...</p>
+              <p class="text-lg text-white/80 font-medium">
+                Setting up your Lightning Address
+              </p>
+              <p class="text-sm text-white/50 mt-2">
+                This will only take a moment...
+              </p>
             </div>
           {:else if !hasLightningAddress && registrationError}
             <!-- Registration Failed - Show nice error UI -->
             <div class="text-center py-8 px-4">
               <div class="flex justify-center mb-4">
-                <div class="w-16 h-16 rounded-full bg-orange-500/20 flex items-center justify-center">
-                  <iconify-icon icon="ph:warning-bold" class="text-orange-400" width="32"></iconify-icon>
+                <div
+                  class="w-16 h-16 rounded-full bg-orange-500/20 flex items-center justify-center"
+                >
+                  <iconify-icon
+                    icon="ph:warning-bold"
+                    class="text-orange-400"
+                    width="32"
+                  ></iconify-icon>
                 </div>
               </div>
-              <p class="text-lg text-white/90 font-semibold mb-2">Lightning Address Setup Issue</p>
+              <p class="text-lg text-white/90 font-semibold mb-2">
+                Lightning Address Setup Issue
+              </p>
               <p class="text-sm text-white/60 mb-6 max-w-sm mx-auto">
-                We couldn't set up your Lightning Address automatically. This might be due to network connectivity.
+                We couldn't set up your Lightning Address automatically. This
+                might be due to network connectivity.
               </p>
 
               <button
@@ -1112,7 +1299,11 @@
                   autoRegisterLightningAddress();
                 }}
               >
-                <iconify-icon icon="ph:arrows-clockwise-bold" width="20" class="group-hover:rotate-180 transition-transform duration-500"></iconify-icon>
+                <iconify-icon
+                  icon="ph:arrows-clockwise-bold"
+                  width="20"
+                  class="group-hover:rotate-180 transition-transform duration-500"
+                ></iconify-icon>
                 <span class="font-semibold">Try Again</span>
               </button>
 
@@ -1123,28 +1314,46 @@
           {:else if lightningAddress}
             <!-- Lightning Address Label -->
             <div class="text-center mb-2">
-              <p class="text-sm text-white/60 uppercase tracking-wide font-semibold">Lightning Address</p>
+              <p
+                class="text-sm text-white/60 uppercase tracking-wide font-semibold"
+              >
+                Lightning Address
+              </p>
             </div>
 
             <!-- QR Code - Larger and more prominent -->
             <div class="flex justify-center">
-              <div class="bg-white p-4 rounded-2xl shadow-2xl shadow-dgen-aqua/20">
+              <div
+                class="bg-white p-4 rounded-2xl shadow-2xl shadow-dgen-aqua/20"
+              >
                 <Qr text={lightningAddress} width={280} />
               </div>
             </div>
 
             <!-- Warning: Lightning Only -->
             <div class="mx-4 mt-4">
-              <div class="alert bg-yellow-500/10 border-2 border-yellow-500/30 rounded-xl">
+              <div
+                class="alert bg-yellow-500/10 border-2 border-yellow-500/30 rounded-xl"
+              >
                 <div class="flex gap-3 items-start">
-                  <iconify-icon icon="ph:warning-bold" class="text-yellow-400 flex-shrink-0" width="20"></iconify-icon>
+                  <iconify-icon
+                    icon="ph:warning-bold"
+                    class="text-yellow-400 flex-shrink-0"
+                    width="20"
+                  ></iconify-icon>
                   <div class="text-sm text-white/80 space-y-1">
                     <div>
-                      <span class="font-semibold text-yellow-400">Lightning payments only.</span>
-                      <span class="text-white/70">For other options (Bitcoin, Liquid, USDT), use the back button below.</span>
+                      <span class="font-semibold text-yellow-400"
+                        >Lightning payments only.</span
+                      >
+                      <span class="text-white/70"
+                        >For other options (Bitcoin, Liquid, USDT), use the back
+                        button below.</span
+                      >
                     </div>
                     <div class="text-white/60 text-xs pt-1">
-                      If your wallet doesn't support Lightning addresses, go back to get a BOLT11 invoice instead.
+                      If your wallet doesn't support Lightning addresses, go
+                      back to get a BOLT11 invoice instead.
                     </div>
                   </div>
                 </div>
@@ -1159,10 +1368,14 @@
                   copy(lightningAddress);
                 }}
               >
-                <div class="font-mono text-xl sm:text-2xl text-white break-all mb-2 group-hover:text-dgen-aqua transition-colors">
+                <div
+                  class="font-mono text-xl sm:text-2xl text-white break-all mb-2 group-hover:text-dgen-aqua transition-colors"
+                >
                   {lightningAddress}
                 </div>
-                <div class="text-xs text-white/50 group-hover:text-white/70 transition-colors flex items-center justify-center gap-1">
+                <div
+                  class="text-xs text-white/50 group-hover:text-white/70 transition-colors flex items-center justify-center gap-1"
+                >
                   <iconify-icon icon="ph:copy-bold" width="14"></iconify-icon>
                   Tap to copy
                 </div>
@@ -1177,7 +1390,11 @@
                   copy(lightningAddress);
                 }}
               >
-                <iconify-icon icon="ph:share-network-bold" width="20" class="group-hover:scale-110 transition-transform"></iconify-icon>
+                <iconify-icon
+                  icon="ph:share-network-bold"
+                  width="20"
+                  class="group-hover:scale-110 transition-transform"
+                ></iconify-icon>
                 <span class="font-semibold">Share Address</span>
               </button>
             </div>
@@ -1186,9 +1403,10 @@
             <div class="text-center pt-4 pb-12">
               <button
                 class="text-base text-white hover:text-white/90 transition-colors flex items-center justify-center gap-1 mx-auto font-semibold"
-                onclick={() => showEditModal = true}
+                onclick={() => (showEditModal = true)}
               >
-                <iconify-icon icon="ph:pencil-simple-bold" width="18"></iconify-icon>
+                <iconify-icon icon="ph:pencil-simple-bold" width="18"
+                ></iconify-icon>
                 Customize username
               </button>
             </div>
@@ -1197,13 +1415,22 @@
             <!-- This shouldn't normally happen but provides graceful fallback -->
             <div class="text-center py-8 px-4">
               <div class="flex justify-center mb-4">
-                <div class="w-16 h-16 rounded-full bg-purple-500/20 flex items-center justify-center">
-                  <iconify-icon icon="ph:question-bold" class="text-purple-400" width="32"></iconify-icon>
+                <div
+                  class="w-16 h-16 rounded-full bg-purple-500/20 flex items-center justify-center"
+                >
+                  <iconify-icon
+                    icon="ph:question-bold"
+                    class="text-purple-400"
+                    width="32"
+                  ></iconify-icon>
                 </div>
               </div>
-              <p class="text-lg text-white/90 font-semibold mb-2">Setting up...</p>
+              <p class="text-lg text-white/90 font-semibold mb-2">
+                Setting up...
+              </p>
               <p class="text-sm text-white/60 mb-6 max-w-sm mx-auto">
-                Your Lightning Address is being configured. Click below to receive payments now.
+                Your Lightning Address is being configured. Click below to
+                receive payments now.
               </p>
             </div>
           {/if}
@@ -1211,22 +1438,26 @@
       {:else if showMoreOptions && invoiceType === types.liquid && !invoiceText}
         <!-- Liquid Asset Picker (shown below compact buttons) -->
         <div class="px-4 py-6">
-          <div class="glass rounded-xl p-4 border border-blue-400 border-opacity-30 bg-blue-400 bg-opacity-5">
-            <p class="text-sm font-semibold text-white text-opacity-90 mb-3">Select asset to receive:</p>
+          <div
+            class="glass rounded-xl p-4 border border-blue-400 border-opacity-30 bg-blue-400 bg-opacity-5"
+          >
+            <p class="text-sm font-semibold text-white text-opacity-90 mb-3">
+              Select asset to receive:
+            </p>
             <div class="grid grid-cols-2 gap-3">
               <button
                 class="rounded-xl p-3 transition-all duration-300 border-2 text-center group hover:scale-105"
-                class:border-orange-500={selectedAsset === 'lbtc'}
-                class:bg-orange-500={selectedAsset === 'lbtc'}
-                class:bg-opacity-20={selectedAsset === 'lbtc'}
-                class:border-white={selectedAsset !== 'lbtc'}
-                class:border-opacity-20={selectedAsset !== 'lbtc'}
-                class:hover:border-orange-400={selectedAsset !== 'lbtc'}
-                class:hover:border-opacity-60={selectedAsset !== 'lbtc'}
+                class:border-orange-500={selectedAsset === "lbtc"}
+                class:bg-orange-500={selectedAsset === "lbtc"}
+                class:bg-opacity-20={selectedAsset === "lbtc"}
+                class:border-white={selectedAsset !== "lbtc"}
+                class:border-opacity-20={selectedAsset !== "lbtc"}
+                class:hover:border-orange-400={selectedAsset !== "lbtc"}
+                class:hover:border-opacity-60={selectedAsset !== "lbtc"}
                 onclick={async () => {
                   // Stay in collapsed state
                   showLightningAddress = false;
-                  selectedAsset = 'lbtc';
+                  selectedAsset = "lbtc";
                   newAmount = undefined;
                   amount = undefined;
                   // LBTC amount is OPTIONAL - generate address immediately without amount
@@ -1234,7 +1465,11 @@
                 }}
               >
                 <div class="flex flex-col items-center gap-2">
-                  <iconify-icon icon="cryptocurrency:btc" width="32" class="text-orange-400"></iconify-icon>
+                  <iconify-icon
+                    icon="cryptocurrency:btc"
+                    width="32"
+                    class="text-orange-400"
+                  ></iconify-icon>
                   <div>
                     <div class="font-bold text-white">Bitcoin</div>
                     <div class="text-xs text-white/60">L-BTC</div>
@@ -1243,17 +1478,17 @@
               </button>
               <button
                 class="rounded-xl p-3 transition-all duration-300 border-2 text-center group hover:scale-105"
-                class:border-green-500={selectedAsset === 'usdt'}
-                class:bg-green-500={selectedAsset === 'usdt'}
-                class:bg-opacity-20={selectedAsset === 'usdt'}
-                class:border-white={selectedAsset !== 'usdt'}
-                class:border-opacity-20={selectedAsset !== 'usdt'}
-                class:hover:border-green-400={selectedAsset !== 'usdt'}
-                class:hover:border-opacity-60={selectedAsset !== 'usdt'}
+                class:border-green-500={selectedAsset === "usdt"}
+                class:bg-green-500={selectedAsset === "usdt"}
+                class:bg-opacity-20={selectedAsset === "usdt"}
+                class:border-white={selectedAsset !== "usdt"}
+                class:border-opacity-20={selectedAsset !== "usdt"}
+                class:hover:border-green-400={selectedAsset !== "usdt"}
+                class:hover:border-opacity-60={selectedAsset !== "usdt"}
                 onclick={async () => {
                   // Stay in collapsed state
                   showLightningAddress = false;
-                  selectedAsset = 'usdt';
+                  selectedAsset = "usdt";
                   newAmount = undefined;
                   amount = undefined;
                   // USDT amount is OPTIONAL - generate address immediately without amount
@@ -1261,7 +1496,11 @@
                 }}
               >
                 <div class="flex flex-col items-center gap-2">
-                  <iconify-icon icon="cryptocurrency:usdt" width="32" class="text-green-400"></iconify-icon>
+                  <iconify-icon
+                    icon="cryptocurrency:usdt"
+                    width="32"
+                    class="text-green-400"
+                  ></iconify-icon>
                   <div>
                     <div class="font-bold text-white">Tether</div>
                     <div class="text-xs text-white/60">USDt</div>
@@ -1311,58 +1550,59 @@
         />
       {:else}
         <!-- Lightning Invoice BOLT11 View (DEFAULT) -->
-      <InvoiceData
-        {locale}
-        {link}
-        {qr}
-        {txt}
-        {invoice}
-        {amount}
-        {amountFiat}
-        {currency}
-        {tip}
-        {rate}
-        showQr={$showQr}
-        t={$t}
-        {updating}
-        {lastError}
-        {update}
-        {onchainLimits}
-        {lightningLimits}
-      />
+        <InvoiceData
+          {locale}
+          {link}
+          {qr}
+          {txt}
+          {invoice}
+          {amount}
+          {amountFiat}
+          {currency}
+          {tip}
+          {rate}
+          showQr={$showQr}
+          t={$t}
+          {updating}
+          {lastError}
+          {update}
+          {onchainLimits}
+          {lightningLimits}
+        />
 
-      <InvoiceActions
-        bind:newAmount
-        {setAmount}
-        {toggleType}
-        {setType}
-        {toggleAmount}
-        {toggleMemo}
-        {user}
-        {invoice}
-        {copy}
-        {link}
-        type={invoiceType}
-        bind:showQr={$showQr}
-        {txt}
-        t={$t}
-      />
+        <InvoiceActions
+          bind:newAmount
+          {setAmount}
+          {toggleType}
+          {setType}
+          {toggleAmount}
+          {toggleMemo}
+          {user}
+          {invoice}
+          {copy}
+          {link}
+          type={invoiceType}
+          bind:showQr={$showQr}
+          {txt}
+          t={$t}
+          showSetAmount={false}
+        />
 
-      <!-- Transaction History button - only show for default Lightning view -->
-      {#if !showMoreOptions}
-        <div class="text-center pt-6 pb-2">
-          <button
-            class="text-base text-white hover:text-white/90 transition-colors flex items-center justify-center gap-2 mx-auto font-semibold"
-            onclick={() => goto('/payments')}
-          >
-            <iconify-icon icon="ph:clock-counter-clockwise-bold" width="18"></iconify-icon>
-            Transaction History
-          </button>
-        </div>
-      {/if}
+        <!-- Transaction History button - only show for default Lightning view -->
+        {#if !showMoreOptions}
+          <div class="text-center pt-6 pb-2">
+            <button
+              class="text-base text-white hover:text-white/90 transition-colors flex items-center justify-center gap-2 mx-auto font-semibold"
+              onclick={() => goto("/payments")}
+            >
+              <iconify-icon icon="ph:clock-counter-clockwise-bold" width="18"
+              ></iconify-icon>
+              Transaction History
+            </button>
+          </div>
+        {/if}
       {/if}
     </div>
-
   </div>
 </div>
 
@@ -1376,8 +1616,8 @@
   {setAmount}
   {toggleAmount}
   t={$t}
-  invoiceType={invoiceType}
-  selectedAsset={selectedAsset}
+  {invoiceType}
+  {selectedAsset}
   {onchainLimits}
   {lightningLimits}
 />
@@ -1399,30 +1639,42 @@
 
 <!-- Edit Username Modal -->
 {#if showEditModal}
-  <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onclick={() => showEditModal = false}>
-    <div class="glass rounded-t-3xl sm:rounded-3xl w-full sm:max-w-md border-2 border-white/20 animate-slideUp" onclick={(e) => e.stopPropagation()}>
+  <div
+    class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+    onclick={() => (showEditModal = false)}
+  >
+    <div
+      class="glass rounded-t-3xl sm:rounded-3xl w-full sm:max-w-md border-2 border-white/20 animate-slideUp"
+      onclick={(e) => e.stopPropagation()}
+    >
       <div class="p-6 space-y-6">
         <div class="flex items-center justify-between">
           <h3 class="text-xl font-bold">Customize Username</h3>
-          <button class="btn btn-sm btn-circle glass" onclick={() => showEditModal = false}>
+          <button
+            class="btn btn-sm btn-circle glass"
+            onclick={() => (showEditModal = false)}
+          >
             <iconify-icon icon="ph:x-bold" width="20"></iconify-icon>
           </button>
         </div>
 
         <div class="space-y-4">
           <p class="text-sm text-white/70">
-            You can customize your Lightning Address username. Your current address is:
+            You can customize your Lightning Address username. Your current
+            address is:
           </p>
 
           <div class="glass rounded-lg p-3 border border-white/20 text-center">
-            <div class="font-mono text-sm text-white/80 break-all">{lightningAddress}</div>
+            <div class="font-mono text-sm text-white/80 break-all">
+              {lightningAddress}
+            </div>
           </div>
 
           <button
             class="btn btn-primary w-full"
             onclick={() => {
               showEditModal = false;
-              goto('/settings/lightning-address');
+              goto("/settings/lightning-address");
             }}
           >
             <iconify-icon icon="ph:pencil-bold" width="20"></iconify-icon>
@@ -1436,7 +1688,9 @@
 
 <!-- Back button when in "More deposit options" (expanded or compact) -->
 {#if showMoreOptions}
-  <div class="fixed bottom-6 left-0 right-0 z-10 flex justify-center pointer-events-none px-4">
+  <div
+    class="fixed bottom-6 left-0 right-0 z-10 flex justify-center pointer-events-none px-4"
+  >
     <button
       class="glass border-2 border-white/60 hover:border-white/90 hover:bg-white/30 shadow-2xl hover:shadow-white/20 rounded-full px-8 py-3 font-bold text-lg transition-all pointer-events-auto flex items-center gap-3"
       style="box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);"
@@ -1445,8 +1699,8 @@
         if (showLightningAddress || invoiceText) {
           showLightningAddress = false;
           showMoreOptionsExpanded = true;
-          invoiceText = '';
-          hash = '';
+          invoiceText = "";
+          hash = "";
           id = undefined;
           amount = undefined;
           newAmount = undefined;
@@ -1460,6 +1714,19 @@
           settingAmountFromOptions = false;
         }
       }}
+    >
+      <iconify-icon icon="ph:arrow-left-bold" width="24"></iconify-icon>
+      <span>Back</span>
+    </button>
+  </div>
+{:else}
+  <div
+    class="fixed bottom-6 left-0 right-0 z-10 flex justify-center pointer-events-none px-4"
+  >
+    <button
+      class="glass border-2 border-white/60 hover:border-white/90 hover:bg-white/30 shadow-2xl hover:shadow-white/20 rounded-full px-8 py-3 font-bold text-lg transition-all pointer-events-auto flex items-center gap-3"
+      style="box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);"
+      onclick={() => window.history.back()}
     >
       <iconify-icon icon="ph:arrow-left-bold" width="24"></iconify-icon>
       <span>Back</span>

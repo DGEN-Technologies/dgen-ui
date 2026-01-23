@@ -7,6 +7,7 @@
   import { rate } from "$lib/store";
   import { loc, fail, s, focus } from "$lib/utils";
   import { walletBalance } from "$lib/stores/wallet";
+  import { goto } from "$app/navigation";
 
   let { data } = $props();
 
@@ -16,6 +17,12 @@
   address = address.trim();
   let { currency, username } = user;
   let locale = loc(user);
+
+  /**
+   * Minimum sats for on-chain Bitcoin send.
+   * Below this threshold, network fees make the transaction uneconomical.
+   */
+  const MIN_ONCHAIN_SATS = 28000;
 
   let amount = $state(0);
   let a = $state(0);
@@ -39,7 +46,7 @@
     <button
       type="button"
       class="btn btn-ghost btn-sm gap-2"
-      onclick={() => window.history.back()}
+      onclick={() => goto("/send")}
     >
       <iconify-icon icon="ph:arrow-left-bold" width="20"></iconify-icon>
       Back
@@ -59,6 +66,7 @@
     bind:rate={$rate}
     {locale}
     skipBalanceCheck={true}
+    minAmount={MIN_ONCHAIN_SATS}
   />
 
   <div class="flex justify-center gap-2">
@@ -69,13 +77,16 @@
       onkeydown={setMax}>Max ⚡️{s($walletBalance)}</button
     >
 
-    <form action={`/send/bitcoin/${encodeURIComponent(address)}/${amount}/`} class="contents">
+    <form
+      action={`/send/bitcoin/${encodeURIComponent(address)}/${amount}/`}
+      class="contents"
+    >
       <button
         use:focus
         bind:this={submit}
         type="submit"
         class="btn !w-auto grow btn-accent"
-        disabled={!amount || amount <= 0}
+        disabled={!a || a <= 0}
       >
         {$t("payments.next")}
       </button>
