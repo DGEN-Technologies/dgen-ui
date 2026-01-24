@@ -15,6 +15,7 @@
   let syncProgress = $state(0);
 
   async function restoreWallet() {
+    if (typeof window === "undefined") return;
     const mnemonic = mnemonicInput.trim();
     const words = mnemonic.split(/\s+/);
 

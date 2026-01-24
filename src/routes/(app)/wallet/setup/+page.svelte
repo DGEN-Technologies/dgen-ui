@@ -1,8 +1,6 @@
 <script>
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
-  import { getSavedMnemonic, getWalletPassword } from "$lib/walletService";
-
   let { data } = $props();
   let { user } = $derived(data || {});
 

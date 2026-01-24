@@ -626,6 +626,76 @@ function getStatusIcon(status: string): string {
   }
 }
 
+// Balance reconciliation helpers
+
+/**
+ * Get the effective balance delta for a payment.
+ * Only completed transactions contribute to the actual balance.
+ */
+export function getEffectiveDelta(payment: EnhancedPayment): number {
+  const status = payment.status;
+
+  // Only completed transactions contribute to balance
+  if (status === "complete" || status === "success") {
+    return payment.paymentType === "receive"
+      ? payment.amountSat
+      : -payment.amountSat;
+  }
+
+  // All other statuses (pending, refund lifecycle, failed) = 0
+  return 0;
+}
+
+export interface PaymentTotals {
+  totalReceivedSat: number;
+  totalSentSat: number;
+  pendingReceiveSat: number;
+  pendingSendSat: number;
+  netDeltaSat: number;
+}
+
+/**
+ * Calculate payment totals with proper status filtering.
+ * Only completed payments count towards totals.
+ * Refund lifecycle events and pending payments are excluded.
+ */
+export function calculatePaymentTotals(
+  payments: EnhancedPayment[],
+): PaymentTotals {
+  const USDT_ASSET_ID =
+    "ce091c998b83c78bb71a632313ba3760f1763d9cfcffae02258ffa9865a37bd2";
+  let totalReceivedSat = 0;
+  let totalSentSat = 0;
+  let pendingReceiveSat = 0;
+  let pendingSendSat = 0;
+
+  for (const p of payments) {
+    // Skip USDT payments for BTC totals
+    if (p.details?.assetId === USDT_ASSET_ID) continue;
+
+    const isComplete = p.status === "complete" || p.status === "success";
+    const isPending = ["pending", "waitingConfirmation", "waitingFeeAcceptance"].includes(
+      p.status as string,
+    );
+
+    if (p.paymentType === "receive") {
+      if (isComplete) totalReceivedSat += p.amountSat;
+      else if (isPending) pendingReceiveSat += p.amountSat;
+    } else if (p.paymentType === "send") {
+      if (isComplete) totalSentSat += p.amountSat;
+      else if (isPending) pendingSendSat += p.amountSat;
+    }
+  }
+
+  return {
+    totalReceivedSat,
+    totalSentSat,
+    pendingReceiveSat,
+    pendingSendSat,
+    netDeltaSat: totalReceivedSat - totalSentSat,
+  };
+}
+
 // Export singleton store
 export const transactionStore = createTransactionStore();
 

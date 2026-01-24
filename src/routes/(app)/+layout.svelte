@@ -87,7 +87,7 @@
   };
 
   const initializeBrowserWallet = async () => {
-    if (!user || !browserCompatible) return;
+    if (!browser || !user || !browserCompatible) return;
 
     const userId = user.id || user.username;
 

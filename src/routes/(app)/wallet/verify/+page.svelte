@@ -103,6 +103,7 @@
   }
 
   async function completeWalletSetup() {
+    if (typeof window === "undefined") return;
     isVerifying = true;
     showPasswordPrompt = false;
 

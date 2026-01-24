@@ -163,6 +163,7 @@
   let verifying = $derived(pin?.length > 5);
 
   let restoreWallet = async () => {
+    if (typeof window === "undefined") return;
     if (!restoreMnemonic.trim()) {
       fail("Please enter your 12-word seed phrase");
       return;
@@ -311,6 +312,7 @@
 
   // Check wallet status on mount
   async function revealSeedPhrase() {
+    if (typeof window === "undefined") return;
     // First confirmation: Privacy warning
     if (!confirmRevealSeed) {
       confirmRevealSeed = true;
@@ -423,6 +425,7 @@
   }
 
   async function generateNewSeed() {
+    if (typeof window === "undefined") return;
     if (generatingNewSeed) return;
 
     try {

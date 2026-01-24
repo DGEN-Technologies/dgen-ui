@@ -7,7 +7,7 @@ const BACKEND_URL = env.PUBLIC_DGEN_URL || "http://localhost:3119";
 export async function POST({ params, request, cookies }) {
   try {
     const { type } = params;
-    const allowedTypes = new Set(["avatar", "banner", "item"]);
+    const allowedTypes = new Set(["avatar", "banner", "item", "picture"]);
     if (!allowedTypes.has(type)) {
       throw error(400, "Invalid upload type");
     }

@@ -11,6 +11,7 @@
     currentTransactionPage,
     isLoadingTransactions,
     initTransactionEventHandling,
+    calculatePaymentTotals,
   } from "$lib/transactionService";
   import Avatar from "$comp/Avatar.svelte";
   import { unitPreference } from "$lib/store";
@@ -511,6 +512,10 @@
       })
       .map(formatPayment) || [],
   );
+  // Calculate totals using status-aware helper (excludes refunds, pending, failed)
+  let paymentTotals = $derived(
+    calculatePaymentTotals(pageData?.transactions || []),
+  );
   let totalPages = $derived(pageData?.totalPages || 0);
   let isLoading = $derived($isLoadingTransactions);
 </script>
@@ -713,26 +718,14 @@
                 >
                   {#if unit === currency}
                     {f(
-                      (payments
-                        .filter((p) => p.displayAmount > 0 && !p.isUsdt)
-                        .reduce((sum, p) => sum + p.displayAmount, 0) /
-                        sats) *
-                        rate,
+                      (paymentTotals.totalReceivedSat / sats) * rate,
                       currency,
                       locale,
                     )}
                   {:else if unit === "btc"}
-                    {btc(
-                      payments
-                        .filter((p) => p.displayAmount > 0 && !p.isUsdt)
-                        .reduce((sum, p) => sum + p.displayAmount, 0),
-                    )} BTC
+                    {btc(paymentTotals.totalReceivedSat)} BTC
                   {:else}
-                    {s(
-                      payments
-                        .filter((p) => p.displayAmount > 0 && !p.isUsdt)
-                        .reduce((sum, p) => sum + p.displayAmount, 0),
-                    )} sats
+                    {s(paymentTotals.totalReceivedSat)} sats
                   {/if}
                 </div>
               </div>
@@ -755,32 +748,14 @@
                 >
                   {#if unit === currency}
                     {f(
-                      (Math.abs(
-                        payments
-                          .filter((p) => p.displayAmount < 0 && !p.isUsdt)
-                          .reduce((sum, p) => sum + p.displayAmount, 0),
-                      ) /
-                        sats) *
-                        rate,
+                      (paymentTotals.totalSentSat / sats) * rate,
                       currency,
                       locale,
                     )}
                   {:else if unit === "btc"}
-                    {btc(
-                      Math.abs(
-                        payments
-                          .filter((p) => p.displayAmount < 0 && !p.isUsdt)
-                          .reduce((sum, p) => sum + p.displayAmount, 0),
-                      ),
-                    )} BTC
+                    {btc(paymentTotals.totalSentSat)} BTC
                   {:else}
-                    {s(
-                      Math.abs(
-                        payments
-                          .filter((p) => p.displayAmount < 0 && !p.isUsdt)
-                          .reduce((sum, p) => sum + p.displayAmount, 0),
-                      ),
-                    )} sats
+                    {s(paymentTotals.totalSentSat)} sats
                   {/if}
                 </div>
               </div>
