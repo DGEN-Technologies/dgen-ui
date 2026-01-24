@@ -53,8 +53,10 @@
 
     if (result.type === "redirect") {
       let type = "nwc:success";
-      let msg = { relayUrl, lud16, walletPubkey, type };
-      if (browser && window.opener) window.opener.postMessage(msg, "*");
+      if (relayUrl && walletPubkey) {
+        let msg = { relayUrl, lud16, walletPubkey, type };
+        if (browser && window.opener) window.opener.postMessage(msg, "*");
+      }
     }
 
     applyAction(result);
