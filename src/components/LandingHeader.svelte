@@ -42,9 +42,9 @@
         >
         <ProModeToggle />
         <a
-          href="https://app.dgentech.io"
+          href="https://card.dgentech.io"
           class="hover:text-primary transition-colors duration-200"
-          >Mastercard</a
+          >Credit Card</a
         >
       {/if}
       {#if user}
