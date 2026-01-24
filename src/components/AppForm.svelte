@@ -12,10 +12,7 @@
   import { copy, focus, fail, post } from "$lib/utils";
   import { t } from "$lib/translations";
   import { enhance } from "$app/forms";
-  import {
-    PUBLIC_DGEN_PUBKEY as walletPubkey,
-    PUBLIC_DGEN_RELAY as relayUrl,
-  } from "$env/static/public";
+  import { env as publicEnv } from "$env/dynamic/public";
 
   let {
     rate,
@@ -29,6 +26,8 @@
     notify,
   } = $props();
   let { currency } = $derived(user);
+  const walletPubkey = publicEnv.PUBLIC_DGEN_PUBKEY;
+  const relayUrl = publicEnv.PUBLIC_DGEN_RELAY;
 
   onMount(() => {
     if (!pubkey) secret || generate();
@@ -54,8 +53,10 @@
 
     if (result.type === "redirect") {
       let type = "nwc:success";
-      let msg = { relayUrl, lud16, walletPubkey, type };
-      if (browser && window.opener) window.opener.postMessage(msg, "*");
+      if (relayUrl && walletPubkey) {
+        let msg = { relayUrl, lud16, walletPubkey, type };
+        if (browser && window.opener) window.opener.postMessage(msg, "*");
+      }
     }
 
     applyAction(result);
