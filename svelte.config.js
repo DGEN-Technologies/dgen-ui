@@ -29,7 +29,6 @@ const config = {
           "https://*.up.railway.app",
           "wss://*.railway.app",
           "wss://*.up.railway.app",
-          "ws://localhost:*",
           "https://localhost:*",
           "https://mempool.space",
           "https://liquid.network",

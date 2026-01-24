@@ -1,5 +1,4 @@
 <script>
-  import { PUBLIC_DGEN_URL } from "$env/static/public";
   import { env as publicEnv } from "$env/dynamic/public";
   import { banner, theme, newPayment } from "$lib/store";
   import { goto } from "$app/navigation";

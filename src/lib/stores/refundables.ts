@@ -41,8 +41,8 @@ const refresh = async (options: { rescan?: boolean } = {}): Promise<void> => {
 
     set({ items: sortedRefundables, loading: false, error: null });
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    set({ ...initialState, error: message });
+    console.error("[RefundablesStore] Failed to refresh:", error);
+    set({ ...initialState, error: "Failed to load refundables" });
   }
 };
 

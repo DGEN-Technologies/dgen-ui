@@ -28,6 +28,30 @@
   let { currency } = $derived(user);
   const walletPubkey = publicEnv.PUBLIC_DGEN_PUBKEY;
   const relayUrl = publicEnv.PUBLIC_DGEN_RELAY;
+  const allowedOrigins = $derived.by(() => {
+    const origins = new Set();
+    const addOrigin = (value) => {
+      if (!value) return;
+      const trimmed = String(value).trim();
+      if (!trimmed) return;
+      try {
+        const parsed = new URL(trimmed);
+        origins.add(parsed.origin);
+        return;
+      } catch {}
+      for (const candidate of [`https://${trimmed}`, `http://${trimmed}`]) {
+        try {
+          origins.add(new URL(candidate).origin);
+        } catch {}
+      }
+    };
+    addOrigin(publicEnv.PUBLIC_DGEN_URL);
+    addOrigin(publicEnv.PUBLIC_DOMAIN);
+    if (browser) {
+      origins.add(window.location.origin);
+    }
+    return Array.from(origins);
+  });
 
   onMount(() => {
     if (!pubkey) secret || generate();
@@ -55,7 +79,23 @@
       let type = "nwc:success";
       if (relayUrl && walletPubkey) {
         let msg = { relayUrl, lud16, walletPubkey, type };
-        if (browser && window.opener) window.opener.postMessage(msg, "*");
+        if (browser && window.opener) {
+          let referrerOrigin = null;
+          try {
+            referrerOrigin = document.referrer
+              ? new URL(document.referrer).origin
+              : null;
+          } catch {}
+          const originCandidates = [referrerOrigin, ...allowedOrigins].filter(
+            Boolean,
+          );
+          const targetOrigin = originCandidates.find((origin) =>
+            allowedOrigins.includes(origin),
+          );
+          if (targetOrigin) {
+            window.opener.postMessage(msg, targetOrigin);
+          }
+        }
       }
     }
 

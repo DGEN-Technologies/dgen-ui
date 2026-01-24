@@ -49,7 +49,8 @@
         error = "Refundable swap not found.";
       }
     } catch (err) {
-      error = err?.message || "Failed to load refundable swap.";
+      console.error("[Refunds] Failed to load refundable swap:", err);
+      error = "Failed to load refundable swap.";
     } finally {
       loading = false;
     }

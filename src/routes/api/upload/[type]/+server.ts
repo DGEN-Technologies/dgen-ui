@@ -1,12 +1,16 @@
 import { error } from "@sveltejs/kit";
-import { PUBLIC_DGEN_URL } from "$env/static/public";
+import { env } from "$env/dynamic/public";
 
 // Proxy uploads to backend to avoid CORS issues in production
-const BACKEND_URL = PUBLIC_DGEN_URL || "http://localhost:3119";
+const BACKEND_URL = env.PUBLIC_DGEN_URL || "http://localhost:3119";
 
 export async function POST({ params, request, cookies }) {
   try {
     const { type } = params;
+    const allowedTypes = new Set(["avatar", "banner", "item", "picture"]);
+    if (!allowedTypes.has(type)) {
+      throw error(400, "Invalid upload type");
+    }
     const url = `${BACKEND_URL}/upload/${type}`;
 
     // Get the authorization header or token from cookies
@@ -31,7 +35,11 @@ export async function POST({ params, request, cookies }) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw error(response.status, errorText);
+      console.warn("[Upload Proxy] Backend error:", {
+        status: response.status,
+        body: errorText,
+      });
+      throw error(response.status, "Upload failed");
     }
 
     const result = await response.text();
@@ -44,9 +52,8 @@ export async function POST({ params, request, cookies }) {
       },
     });
   } catch (err: any) {
-    console.error(`Upload proxy error:`, err);
-    const message = err?.body?.message || err?.message || JSON.stringify(err);
-    throw error(500, `Upload failed: ${message}`);
+    console.error("[Upload Proxy] Request failed:", err);
+    throw error(500, "Upload failed");
   }
 }
 
