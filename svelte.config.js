@@ -1,6 +1,16 @@
 import adapter from "@sveltejs/adapter-netlify";
 import { vitePreprocess } from "@sveltejs/vite-plugin-svelte";
 
+const isProd = process.env.NODE_ENV === "production";
+const styleSrc = ["self", "https://fonts.googleapis.com"];
+if (!isProd) {
+  styleSrc.push("unsafe-inline");
+}
+const imgSrc = ["self", "data:", "https:"];
+if (!isProd) {
+  imgSrc.push("http://localhost:*");
+}
+
 const config = {
   preprocess: vitePreprocess(),
   kit: {
@@ -20,8 +30,8 @@ const config = {
       directives: {
         "default-src": ["self"],
         "script-src": ["self", "wasm-unsafe-eval"], // wasm-unsafe-eval required for Breez SDK WebAssembly
-        "style-src": ["self", "unsafe-inline", "https://fonts.googleapis.com"], // Required for Svelte scoped styles and Google Fonts
-        "img-src": ["self", "data:", "https:", "http://localhost:*"],
+        "style-src": styleSrc, // Google Fonts; inline styles only in development
+        "img-src": imgSrc,
         "font-src": ["self", "data:", "https://fonts.gstatic.com"],
         "connect-src": [
           "self",
@@ -29,7 +39,6 @@ const config = {
           "https://*.up.railway.app",
           "wss://*.railway.app",
           "wss://*.up.railway.app",
-          "ws://localhost:*",
           "https://localhost:*",
           "https://mempool.space",
           "https://liquid.network",
