@@ -1585,7 +1585,7 @@
           bind:showQr={$showQr}
           {txt}
           t={$t}
-          showSetAmount={false}
+          showSetAmount={invoiceType === types.lightning}
         />
 
         <!-- Transaction History button - only show for default Lightning view -->
