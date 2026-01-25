@@ -10,6 +10,7 @@ import {
   markTxConfirmed,
   clearTrackedTxs,
 } from "../esplora/PollManager";
+import { isValidTxid } from "$lib/validation/esplora";
 
 // Define interfaces locally to avoid import issues
 interface GetInfoResponse {
@@ -40,9 +41,6 @@ interface SdkEvent {
   type: string;
   details?: any;
 }
-
-const isValidTxid = (value?: string): value is string =>
-  !!value && /^[a-fA-F0-9]{64}$/.test(value);
 
 const logInvalidTxid = (txId: string, details?: { type?: string }): void => {
   const txidLength = typeof txId === "string" ? txId.length : 0;

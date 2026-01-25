@@ -12,6 +12,12 @@
     "moduleResolution": "bundler",
     "noImplicitAny": false,
     "noUnusedLocals": true,
-    "noUnusedParameters": true
+    "noUnusedParameters": true,
+    "paths": {
+      "@dgen/esplora-types": [
+        "../packages/esplora-types/src/index.ts",
+        "./src/lib/esplora/types.ts"
+      ]
+    }
   }
 }

@@ -1,46 +1,18 @@
 import { browser } from "$app/environment";
 import { env } from "$env/dynamic/public";
-import { bech32, bech32m } from "bech32";
-import { sha256 } from "@noble/hashes/sha256";
-import { base58check } from "@scure/base";
+import { isValidAddress } from "@dgen/validation";
+import type { TxStatus, Utxo } from "@dgen/esplora-types";
+import {
+  validateNetwork,
+  validateTxid,
+  type Network,
+} from "$lib/validation/esplora";
 
-export type Network = "bitcoin" | "liquid" | "testnet" | "liquidtestnet";
+export type { Network };
 
-interface TxStatus {
-  confirmed: boolean;
-  block_height?: number;
-  block_hash?: string;
-  block_time?: number;
-}
-
-interface Utxo {
-  txid: string;
-  vout: number;
-  status: TxStatus;
-  value: number;
-}
-
-const TXID_REGEX = /^[a-fA-F0-9]{64}$/;
 const HEX_REGEX = /^[a-fA-F0-9]+$/;
 // Prevent oversized tx hex submissions; 2MB hex ~= 1MB raw tx.
 const MAX_TX_HEX_LENGTH = 2 * 1024 * 1024;
-const VALID_NETWORKS = new Set<Network>([
-  "bitcoin",
-  "liquid",
-  "testnet",
-  "liquidtestnet",
-]);
-const MAX_ADDRESS_LENGTH = 120;
-const base58Address = /^[1-9A-HJ-NP-Za-km-z]{25,90}$/;
-const bech32Address = /^(bc1|tb1|bcrt1|lq1|tlq1|ex1|tex1)[0-9a-z]{6,}$/i;
-const bech32Prefixes = new Set(["bc", "tb", "bcrt", "lq", "tlq", "ex", "tex"]);
-const base58Check = base58check(sha256);
-
-function validateTxid(txid: string): void {
-  if (!TXID_REGEX.test(txid)) {
-    throw new Error("Invalid txid format");
-  }
-}
 
 function validateTxHex(txHex: string): void {
   if (
@@ -51,45 +23,6 @@ function validateTxHex(txHex: string): void {
   ) {
     throw new Error("Invalid transaction hex: must be even-length hex string");
   }
-}
-
-function validateNetwork(network: string): asserts network is Network {
-  if (!VALID_NETWORKS.has(network as Network)) {
-    throw new Error("Invalid network");
-  }
-}
-
-function isValidBase58Address(address: string): boolean {
-  if (!base58Address.test(address)) return false;
-  try {
-    base58Check.decode(address);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function isValidBech32Address(address: string): boolean {
-  if (!bech32Address.test(address)) return false;
-  const normalized = address.toLowerCase();
-  const prefix = normalized.split("1")[0];
-  if (!bech32Prefixes.has(prefix)) return false;
-  try {
-    bech32.decode(normalized, 1023);
-    return true;
-  } catch {}
-  try {
-    bech32m.decode(normalized, 1023);
-    return true;
-  } catch {}
-  return false;
-}
-
-function isValidAddress(address: string): boolean {
-  if (!address) return false;
-  if (address.length < 14 || address.length > MAX_ADDRESS_LENGTH) return false;
-  if (!/^[a-zA-Z0-9]+$/.test(address)) return false;
-  return isValidBase58Address(address) || isValidBech32Address(address);
 }
 
 function validateAddress(address: string): void {

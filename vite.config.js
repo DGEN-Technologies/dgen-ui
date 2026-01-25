@@ -5,6 +5,7 @@ import topLevelAwait from "vite-plugin-top-level-await";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 
 import path from "path";
+import fs from "fs";
 
 /** @type {import('vite').UserConfig} */
 const config = {
@@ -19,6 +20,16 @@ const config = {
   resolve: {
     alias: {
       $comp: path.resolve("src/components"),
+      "@dgen/validation": fs.existsSync(
+        path.resolve("../packages/validation/src/index.ts"),
+      )
+        ? path.resolve("../packages/validation/src/index.ts")
+        : path.resolve("src/lib/validation/address.ts"),
+      "@dgen/esplora-types": fs.existsSync(
+        path.resolve("../packages/esplora-types/src/index.ts"),
+      )
+        ? path.resolve("../packages/esplora-types/src/index.ts")
+        : path.resolve("src/lib/esplora/types.ts"),
     },
   },
   preview: {
@@ -28,6 +39,9 @@ const config = {
     host: process.env.HOST || "0.0.0.0",
     port: parseInt(process.env.PORT) || 5173,
     https: process.env.HTTPS === "true" ? true : false,
+    fs: {
+      allow: [path.resolve("../packages")],
+    },
     headers: {
       "Cross-Origin-Embedder-Policy": "require-corp",
       "Cross-Origin-Opener-Policy": "same-origin",

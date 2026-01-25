@@ -9,7 +9,6 @@
     "@capacitor/ios": "^7.4.4",
     "@cashu/cashu-ts": "^3.0.0",
     "@iconify/iconify": "^3.1.1",
-    "@scure/base": "^2.0.0",
     "@scure/bip39": "^2.0.1",
     "@scure/btc-signer": "^2.0.1",
     "@sveltejs/adapter-node": "^5.4.0",
@@ -20,7 +19,6 @@
     "@zerodevx/svelte-toast": "^0.9.6",
     "autoprefixer": "^10.4.21",
     "barcode-detector": "^3.0.6",
-    "bech32": "^2.0.0",
     "bip21": "^3.0.0",
     "bitcoin-address-validation": "^3.0.0",
     "buffer": "^6.0.3",
@@ -80,7 +78,10 @@
     "cookie": "^1.0.2"
   },
   "dependencies": {
+    "@noble/hashes": "^1.8.0",
+    "@scure/base": "^2.0.0",
     "@breeztech/breez-sdk-liquid": "^0.11.7",
+    "bech32": "^2.0.0",
     "@capacitor/status-bar": "^7.0.3",
     "@sveltejs/adapter-netlify": "^5.2.4",
     "bip39": "^3.1.0",
@@ -93,5 +94,9 @@
     "idb": "^8.0.3",
     "marked": "^17.0.1",
     "qrcode": "^1.5.4"
+  },
+  "optionalDependencies": {
+    "@dgen/esplora-types": "file:../packages/esplora-types",
+    "@dgen/validation": "file:../packages/validation"
   }
 }

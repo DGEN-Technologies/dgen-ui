@@ -1,15 +1,9 @@
 import { error } from "@sveltejs/kit";
 import { createHash } from "crypto";
 import { env } from "$env/dynamic/public";
+import { VALID_NETWORKS } from "$lib/validation/esplora";
 
 const DEFAULT_BACKEND_URL = "http://localhost:3119";
-const VALID_NETWORKS = new Set([
-  "bitcoin",
-  "liquid",
-  "testnet",
-  "liquidtestnet",
-]);
-
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX = 60;
 const MAX_RATE_LIMIT_KEYS = 5000;

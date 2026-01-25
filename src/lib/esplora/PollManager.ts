@@ -1,6 +1,7 @@
 import { browser } from "$app/environment";
 import { writable, get, type Subscriber } from "svelte/store";
-import { getTipHeight, getTxStatus, type Network } from "./EsploraClient";
+import { type Network } from "$lib/validation/esplora";
+import { getTipHeight, getTxStatus } from "./EsploraClient";
 
 // Polling cadence based on transaction state (balance freshness vs load).
 export const POLL_INTERVALS = {
