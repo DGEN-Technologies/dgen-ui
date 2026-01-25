@@ -93,13 +93,13 @@ const getRateLimitKey = (
   clientAddress: string | undefined,
   request: Request,
   cookies: { get: (name: string) => string | undefined },
-): string => {
+): string | null => {
   if (clientAddress) return `ip:${clientAddress}`;
   const auth = request.headers.get("authorization");
   if (auth) return `auth:${hashToken(auth)}`;
   const token = cookies.get("token");
   if (token) return `cookie:${hashToken(token)}`;
-  return "ip:unknown";
+  return null;
 };
 
 const stripSensitiveRequestHeaders = (headers: Headers): Headers => {
@@ -168,6 +168,20 @@ async function handleRequest(
       throw error(400, "Invalid esplora path");
     }
     const rateKey = getRateLimitKey(clientAddress, request, cookies);
+    if (!rateKey) {
+      return new Response(
+        JSON.stringify({
+          code: "ESPLORA_CLIENT_ID_REQUIRED",
+          message: "Client identifier required",
+        }),
+        {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      );
+    }
     const rateLimit = checkRateLimit(rateKey);
     if (!rateLimit.allowed) {
       return new Response(

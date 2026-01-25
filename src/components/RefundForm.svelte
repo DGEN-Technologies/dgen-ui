@@ -84,9 +84,9 @@
   const feeOptions = $derived.by(() => {
     if (!fees) return [];
     return [
-      { label: $t("payments.feeSlow") || "Slow", rate: fees.economyFee },
-      { label: $t("payments.feeNormal") || "Normal", rate: normalFee },
-      { label: $t("payments.feeFast") || "Fast", rate: fees.fastestFee },
+      { label: safeT("payments.feeSlow", "Slow"), rate: fees.economyFee },
+      { label: safeT("payments.feeNormal", "Normal"), rate: normalFee },
+      { label: safeT("payments.feeFast", "Fast"), rate: fees.fastestFee },
     ].filter((option) => Number.isFinite(option.rate));
   });
 
@@ -422,14 +422,14 @@
 
           <div>
             <div class="text-sm text-secondary">
-              {$t("payments.refundTo") || "Refund to"}
+              {safeT("payments.refundTo", "Refund to")}
             </div>
             <div class="font-mono text-sm break-all">{refundAddress}</div>
           </div>
 
           <div>
             <div class="text-sm text-secondary">
-              {$t("payments.amount") || "Amount"}
+              {safeT("payments.amount", "Amount")}
             </div>
             <div class="text-xl font-bold">
               {absoluteAmount.toLocaleString()} sats
@@ -438,7 +438,7 @@
 
           <div>
             <div class="text-sm text-secondary">
-              {$t("payments.networkFee") || "Network Fee"}
+              {safeT("payments.networkFee", "Network Fee")}
             </div>
             {#if estimatedFee()}
               <div>{estimatedFee()} sats ({feeRate} sat/vbyte)</div>
@@ -449,7 +449,7 @@
 
           <div>
             <div class="text-sm text-secondary">
-              {$t("payments.youWillReceive") || "You will receive"}
+              {safeT("payments.youWillReceive", "You will receive")}
             </div>
             <div class="text-xl font-bold">
               {#if estimatedFee()}
@@ -497,7 +497,7 @@
               onclick={() => (showConfirm = false)}
               disabled={loading}
             >
-              {$t("common.back") || "Back"}
+              {safeT("common.back", "Back")}
             </button>
             <button
               class="btn btn-primary"
@@ -510,7 +510,7 @@
               {#if loading}
                 <span class="loading loading-spinner"></span>
               {/if}
-              {$t("payments.confirmRefund") || "Confirm Refund"}
+              {safeT("payments.confirmRefund", "Confirm Refund")}
             </button>
           {/if}
         </div>

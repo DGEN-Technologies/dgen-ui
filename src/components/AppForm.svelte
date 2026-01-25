@@ -47,9 +47,6 @@
     };
     addOrigin(publicEnv.PUBLIC_DGEN_URL);
     addOrigin(publicEnv.PUBLIC_DOMAIN);
-    if (browser) {
-      origins.add(window.location.origin);
-    }
     return Array.from(origins);
   });
 
@@ -86,14 +83,8 @@
               ? new URL(document.referrer).origin
               : null;
           } catch {}
-          const originCandidates = [referrerOrigin, ...allowedOrigins].filter(
-            Boolean,
-          );
-          const targetOrigin = originCandidates.find((origin) =>
-            allowedOrigins.includes(origin),
-          );
-          if (targetOrigin) {
-            window.opener.postMessage(msg, targetOrigin);
+          if (referrerOrigin && allowedOrigins.includes(referrerOrigin)) {
+            window.opener.postMessage(msg, referrerOrigin);
           }
         }
       }
