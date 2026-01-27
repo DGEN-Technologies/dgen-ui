@@ -10,6 +10,7 @@
   import Footer from "$comp/Footer.svelte";
 
   import { locale, t } from "$lib/translations";
+  import { browser } from "$app/environment";
   import { onDestroy, onMount, tick } from "svelte";
   import { proMode } from "$lib/store";
 
@@ -19,8 +20,24 @@
   let howItWorks = $state();
   let roadmap = $state();
   let about = $state();
+  let reduceFx = $state(false);
 
   onMount(() => {
+    if (browser) {
+      const override = sessionStorage.getItem("proModeOverride");
+      const userSet = localStorage.getItem("proModeUserSet") === "true";
+      if (!userSet && override !== "off") {
+        proMode.set(true);
+      }
+      const ua = navigator.userAgent || "";
+      const platform = navigator.userAgentData?.platform || "";
+      const isAndroid = /Android/i.test(ua) || /Android/i.test(platform);
+      const prefersReduced = window.matchMedia?.(
+        "(prefers-reduced-motion: reduce)",
+      )?.matches;
+      reduceFx = Boolean(isAndroid || prefersReduced);
+    }
+
     // Bind section elements after components are mounted
     setTimeout(() => {
       howItWorks = document.getElementById("howItWorks");
@@ -35,21 +52,23 @@
 <div class="relative landing-page-content">
   <!-- Lightning Bolts (Pro Mode Only) - Landing Page -->
   {#if $proMode}
-    <div class="lightning-container-landing">
-      {#each Array.from({ length: 6 }) as _, i}
-        <div
-          class="lightning-bolt"
-          style="left: {10 + i * 15}%; animation-delay: {i * 3 +
-            Math.random() * 2}s; animation-duration: {2 + Math.random()}s"
-        >
-          <iconify-icon
-            icon="ph:lightning-fill"
-            width="24"
-            class="text-cyan-400"
-          ></iconify-icon>
-        </div>
-      {/each}
-    </div>
+    {#if !reduceFx}
+      <div class="lightning-container-landing">
+        {#each Array.from({ length: 6 }) as _, i}
+          <div
+            class="lightning-bolt"
+            style="left: {10 + i * 15}%; animation-delay: {i * 3 +
+              Math.random() * 2}s; animation-duration: {2 + Math.random()}s"
+          >
+            <iconify-icon
+              icon="ph:lightning-fill"
+              width="24"
+              class="text-cyan-400"
+            ></iconify-icon>
+          </div>
+        {/each}
+      </div>
+    {/if}
   {/if}
 
   <!-- Hero Section with turquoise cloud background -->
@@ -177,6 +196,17 @@
     margin: 0 !important;
     padding: 0 !important;
     flex-shrink: 0 !important;
+  }
+
+  :global(.landing-page-content),
+  :global(.landing-page-content *) {
+    color: #fff !important;
+  }
+
+  :global(.landing-page-content .gradient-text) {
+    color: #fff !important;
+    -webkit-text-fill-color: #fff !important;
+    background: none !important;
   }
 
   /* Extra negative margin on transitions for complete seamlessness */

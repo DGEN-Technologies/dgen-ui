@@ -136,8 +136,8 @@
 {/if}
 
 <!-- Chat Widget - loads after initial render -->
-{#if showChatWidget}
-  <ChatWidget apiBase={publicEnv.PUBLIC_WIDGET_API_BASE || ""} {userId} />
+{#if showChatWidget && publicEnv.PUBLIC_WIDGET_API_BASE}
+  <ChatWidget apiBase={publicEnv.PUBLIC_WIDGET_API_BASE} {userId} />
 {/if}
 
 <style global>

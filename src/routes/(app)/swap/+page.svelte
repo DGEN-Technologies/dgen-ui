@@ -25,7 +25,7 @@
     onclick={() => {
       showSwapInfo = true;
     }}
-    class="mx-auto mb-4 px-3 py-2 w-fit items-center rounded-md text-xs sm:text-sm font-bold text-center bg-gradient-to-r bg-yellow-400/70 border border-yellow-400/50 shadow-lg shadow-yellow-400/50"
+    class="mx-auto mb-4 px-3 py-2 w-fit items-center rounded-md text-xs sm:text-sm font-bold text-center text-black bg-gradient-to-r bg-yellow-400/70 border border-yellow-400/50 shadow-lg shadow-yellow-400/50"
   >
     READ THIS Before Using This Swap / Buy Feature
   </button>
@@ -40,7 +40,9 @@
              border border-white/20 p-5 text-sm text-white"
         transition:scale
       >
-        <h3 class="font-bold text-dgen-aqua mb-3">Before Using Swap / Buy</h3>
+        <h3 class="font-bold text-dgen-aqua mb-3">
+          Read before using this feature
+        </h3>
         <div class="overflow-y-auto h-60 sm:h-96">
           <p class="mb-3">
             This is a crypto exchange aggregator allowing you to trade over
@@ -59,10 +61,13 @@
             </li>
           </ul>
 
-          <p class="mb-3">
-            Tip: Prepare in advance—select the assets you want to swap, then
-            have your wallet addresses ready to copy/paste.
-          </p>
+          <div class="mb-3">
+            <div class="font-semibold" style="font-size: 1.5em;">Tip:</div>
+            <p class="mt-1">
+              Prepare in advance—select the assets you want to swap, then have
+              your wallet addresses ready to copy/paste.
+            </p>
+          </div>
           <p class="mb-3">
             Example: If you want to swap BTC for USDT (on Ethereum):
           </p>
@@ -70,12 +75,14 @@
             Get your BTC sending/refund addresses and USDT (ERC-20) receiving
             address before starting.
           </p>
-          <p class="mb-3">
+          <p class="mb-3 text-yellow-400">
             SAVE YOUR EXCHANGE ID when it pops up, in the case of any issues
             happening with your swap.
           </p>
-          <p class="mb-3">DO NOT USE MIXERS/COINJOINERS with anything</p>
-          <p class="mb-3">
+          <p class="mb-3 text-yellow-400">
+            DO NOT USE MIXERS/COINJOINERS with anything
+          </p>
+          <p class="mb-3 text-yellow-400">
             Note: Off-Ramp feature is not available but it will be soon. The
             On-Ramp feature here is available.
           </p>

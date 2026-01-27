@@ -1,15 +1,28 @@
 <script>
+  import { browser } from "$app/environment";
   import { onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
 
   let mounted = $state(false);
+  let reduceFx = $state(false);
 
   onMount(() => {
     mounted = true;
+    if (browser) {
+      const ua = navigator.userAgent || "";
+      const platform = navigator.userAgentData?.platform || "";
+      const isAndroid = /Android/i.test(ua) || /Android/i.test(platform);
+      const prefersReduced = window.matchMedia?.(
+        "(prefers-reduced-motion: reduce)",
+      )?.matches;
+      if (isAndroid || prefersReduced) {
+        reduceFx = true;
+      }
+    }
   });
 </script>
 
-<div class="relative sm:min-h-screen">
+<div class="relative sm:min-h-screen" class:reduceFx>
   <!-- Animated background mesh with aurora effect -->
   <div class="absolute inset-0">
     <div class="absolute inset-0 aurora-bg opacity-5"></div>
@@ -100,7 +113,7 @@
       >
         <div class="text-center">
           <span class="gradient-text font-roboto-condensed">
-            THE FUTURE OF MONEY
+            FUTURE OF MONEY
           </span>
         </div>
       </div>
@@ -183,5 +196,21 @@
     66% {
       transform: translateY(10px) rotate(-1deg);
     }
+  }
+
+  :global(.reduceFx .aurora-bg),
+  :global(.reduceFx .blob),
+  :global(.reduceFx .cyber-grid),
+  :global(.reduceFx .particles),
+  :global(.reduceFx .floating),
+  :global(.reduceFx .animate-pulse) {
+    animation: none !important;
+    filter: none !important;
+    mix-blend-mode: normal !important;
+  }
+
+  :global(.reduceFx .blob),
+  :global(.reduceFx .aurora-bg) {
+    opacity: 0.1 !important;
   }
 </style>
