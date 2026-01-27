@@ -780,7 +780,7 @@
   });
 </script>
 
-<div class="min-h-screen relative">
+<div class="min-h-screen relative force-dark">
   <!-- Payment Success Overlay -->
   {#if showingSuccess && receivedPayment}
     <div
@@ -1733,3 +1733,17 @@
     </button>
   </div>
 {/if}
+
+<style>
+  :global(.force-dark),
+  :global(.force-dark *) {
+    color: #fff !important;
+  }
+
+  :global(.force-dark .gradient-text),
+  :global(.force-dark .text-transparent) {
+    color: #fff !important;
+    -webkit-text-fill-color: #fff !important;
+    background: none !important;
+  }
+</style>

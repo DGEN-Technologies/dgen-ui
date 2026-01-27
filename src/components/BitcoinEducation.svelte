@@ -159,7 +159,7 @@
 
       <!-- Resource Tabs -->
       <div
-        class="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mb-12 px-4"
+        class="flex flex-col justify-center gap-3 mb-12 px-4"
         in:fly={{ y: 20, duration: 600, delay: 200 }}
       >
         {#each Object.entries(resources) as [key, section]}

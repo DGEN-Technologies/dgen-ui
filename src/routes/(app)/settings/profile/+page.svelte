@@ -1,4 +1,5 @@
 <script>
+  import { browser } from "$app/environment";
   import { tick } from "svelte";
   import { avatar, banner as bannerStore, proMode } from "$lib/store";
   import { t } from "$lib/translations";
@@ -21,6 +22,13 @@
 
   let selectAvatar = () => avatarInput.click();
   let selectBanner = () => bannerInput.click();
+
+  const markProModeUserSet = (event) => {
+    if (!browser) return;
+    const next = event?.currentTarget?.checked;
+    localStorage.setItem("proModeUserSet", "true");
+    sessionStorage.setItem("proModeOverride", next ? "on" : "off");
+  };
 
   let copy = async (text) => {
     try {
@@ -327,7 +335,12 @@
         </p>
       </div>
       <label class="relative inline-flex items-center cursor-pointer">
-        <input type="checkbox" bind:checked={$proMode} class="sr-only peer" />
+        <input
+          type="checkbox"
+          bind:checked={$proMode}
+          class="sr-only peer"
+          onchange={markProModeUserSet}
+        />
         <div
           class="w-8 h-4 md:w-10 md:h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 md:after:h-4 md:after:w-4 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-cyan-500 peer-checked:to-teal-500"
         ></div>
