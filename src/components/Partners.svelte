@@ -90,7 +90,7 @@
               PrivKey
             </h3>
             <p class="text-xs sm:text-sm text-white/80 leading-relaxed">
-              Advanced Full-Stack Developers with over 35 years of experience.
+              Advanced Full-Stack Developers with over 35 years experience.
             </p>
           </div>
         </div>

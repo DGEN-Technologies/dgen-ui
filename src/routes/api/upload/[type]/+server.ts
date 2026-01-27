@@ -52,9 +52,6 @@ export async function POST({ params, request, cookies }) {
       },
     });
   } catch (err: any) {
-    if (err && typeof err === "object" && "status" in err) {
-      throw err;
-    }
     console.error("[Upload Proxy] Request failed:", err);
     throw error(500, "Upload failed");
   }

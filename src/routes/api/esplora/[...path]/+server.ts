@@ -244,9 +244,6 @@ async function handleRequest(
       headers: filterResponseHeaders(response.headers),
     });
   } catch (err) {
-    if (err && typeof err === "object" && "status" in err) {
-      throw err;
-    }
     console.error(`[Esplora Proxy] ${method} ${path} failed:`, err);
     throw error(502, "Esplora proxy request failed");
   }

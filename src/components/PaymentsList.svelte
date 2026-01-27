@@ -14,9 +14,8 @@
   } from "$lib/transactionService";
   import Avatar from "$comp/Avatar.svelte";
   import { unitPreference } from "$lib/store";
-  import { walletBalance } from "$lib/stores/wallet";
 
-  const EXCLUDED_PAYMENT_STATUSES = new Set([
+  const EXCLUDED_STATUSES = new Set([
     "failed",
     "refundable",
     "refundPending",
@@ -519,23 +518,11 @@
       })
       .map(formatPayment) || [],
   );
-  let totalReceivedSat = $derived(
-    payments
-      .filter(
-        (p) =>
-          p.displayAmount > 0 &&
-          !p.isUsdt &&
-          !EXCLUDED_PAYMENT_STATUSES.has(p.status),
-      )
-      .reduce((sum, p) => sum + p.displayAmount, 0),
-  );
-  let totalSentWithFeesSat = $derived(totalReceivedSat - $walletBalance);
-  let totalVolumeSat = $derived(totalReceivedSat + totalSentWithFeesSat);
   let totalPages = $derived(pageData?.totalPages || 0);
   let isLoading = $derived($isLoadingTransactions);
 </script>
 
-<div class="min-h-screen force-dark">
+<div class="min-h-screen">
   <div
     class="container mx-auto max-w-4xl px-2 sm:px-4 py-3 sm:py-6 space-y-3 sm:space-y-6"
   >
@@ -738,7 +725,7 @@
                           (p) =>
                             p.displayAmount > 0 &&
                             !p.isUsdt &&
-                            !EXCLUDED_PAYMENT_STATUSES.has(p.status),
+                            !EXCLUDED_STATUSES.has(p.status),
                         )
                         .reduce((sum, p) => sum + p.displayAmount, 0) /
                         sats) *
@@ -753,7 +740,7 @@
                           (p) =>
                             p.displayAmount > 0 &&
                             !p.isUsdt &&
-                            !EXCLUDED_PAYMENT_STATUSES.has(p.status),
+                            !EXCLUDED_STATUSES.has(p.status),
                         )
                         .reduce((sum, p) => sum + p.displayAmount, 0),
                     )} BTC
@@ -764,7 +751,7 @@
                           (p) =>
                             p.displayAmount > 0 &&
                             !p.isUsdt &&
-                            !EXCLUDED_PAYMENT_STATUSES.has(p.status),
+                            !EXCLUDED_STATUSES.has(p.status),
                         )
                         .reduce((sum, p) => sum + p.displayAmount, 0),
                     )} sats
@@ -798,15 +785,14 @@
                             (p) =>
                               p.displayAmount < 0 &&
                               !p.isUsdt &&
-                              !EXCLUDED_PAYMENT_STATUSES.has(p.status),
+                              !EXCLUDED_STATUSES.has(p.status),
                           )
                           .reduce((sum, p) => sum + p.displayAmount, 0),
                       ) +
                         payments
                           .filter(
                             (p) =>
-                              !p.isUsdt &&
-                              !EXCLUDED_PAYMENT_STATUSES.has(p.status),
+                              !p.isUsdt && !EXCLUDED_STATUSES.has(p.status),
                           )
                           .reduce((sum, p) => sum + (p.feesSat || 0), 0)) /
                         sats) *
@@ -822,15 +808,14 @@
                             (p) =>
                               p.displayAmount < 0 &&
                               !p.isUsdt &&
-                              !EXCLUDED_PAYMENT_STATUSES.has(p.status),
+                              !EXCLUDED_STATUSES.has(p.status),
                           )
                           .reduce((sum, p) => sum + p.displayAmount, 0),
                       ) +
                         payments
                           .filter(
                             (p) =>
-                              !p.isUsdt &&
-                              !EXCLUDED_PAYMENT_STATUSES.has(p.status),
+                              !p.isUsdt && !EXCLUDED_STATUSES.has(p.status),
                           )
                           .reduce((sum, p) => sum + (p.feesSat || 0), 0),
                     )} BTC
@@ -842,15 +827,14 @@
                             (p) =>
                               p.displayAmount < 0 &&
                               !p.isUsdt &&
-                              !EXCLUDED_PAYMENT_STATUSES.has(p.status),
+                              !EXCLUDED_STATUSES.has(p.status),
                           )
                           .reduce((sum, p) => sum + p.displayAmount, 0),
                       ) +
                         payments
                           .filter(
                             (p) =>
-                              !p.isUsdt &&
-                              !EXCLUDED_PAYMENT_STATUSES.has(p.status),
+                              !p.isUsdt && !EXCLUDED_STATUSES.has(p.status),
                           )
                           .reduce((sum, p) => sum + (p.feesSat || 0), 0),
                     )} sats
@@ -877,9 +861,7 @@
                     {f(
                       (payments
                         .filter(
-                          (p) =>
-                            !p.isUsdt &&
-                            !EXCLUDED_PAYMENT_STATUSES.has(p.status),
+                          (p) => !p.isUsdt && !EXCLUDED_STATUSES.has(p.status),
                         )
                         .reduce((sum, p) => sum + (p.feesSat || 0), 0) /
                         sats) *
@@ -891,9 +873,7 @@
                     {btc(
                       payments
                         .filter(
-                          (p) =>
-                            !p.isUsdt &&
-                            !EXCLUDED_PAYMENT_STATUSES.has(p.status),
+                          (p) => !p.isUsdt && !EXCLUDED_STATUSES.has(p.status),
                         )
                         .reduce((sum, p) => sum + (p.feesSat || 0), 0),
                     )} BTC
@@ -901,9 +881,7 @@
                     {s(
                       payments
                         .filter(
-                          (p) =>
-                            !p.isUsdt &&
-                            !EXCLUDED_PAYMENT_STATUSES.has(p.status),
+                          (p) => !p.isUsdt && !EXCLUDED_STATUSES.has(p.status),
                         )
                         .reduce((sum, p) => sum + (p.feesSat || 0), 0),
                     )} sats
@@ -1365,17 +1343,5 @@
 
   .animate-pulse {
     animation: pulse 2s infinite;
-  }
-
-  :global(.force-dark),
-  :global(.force-dark *) {
-    color: #fff !important;
-  }
-
-  :global(.force-dark .gradient-text),
-  :global(.force-dark .text-transparent) {
-    color: #fff !important;
-    -webkit-text-fill-color: #fff !important;
-    background: none !important;
   }
 </style>

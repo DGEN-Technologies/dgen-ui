@@ -10,8 +10,8 @@
   import Footer from "$comp/Footer.svelte";
 
   import { locale, t } from "$lib/translations";
-  import { browser } from "$app/environment";
   import { onDestroy, onMount, tick } from "svelte";
+  import { browser } from "$app/environment";
   import { proMode } from "$lib/store";
 
   let { data } = $props();
@@ -20,16 +20,8 @@
   let howItWorks = $state();
   let roadmap = $state();
   let about = $state();
-  let reduceFx = $state(false);
 
   onMount(() => {
-    if (browser) {
-      const prefersReduced = window.matchMedia?.(
-        "(prefers-reduced-motion: reduce)",
-      )?.matches;
-      reduceFx = Boolean(prefersReduced);
-    }
-
     if (browser && localStorage.getItem("proModeUserSet") !== "true") {
       $proMode = true;
     }
@@ -48,23 +40,21 @@
 <div class="relative landing-page-content">
   <!-- Lightning Bolts (Pro Mode Only) - Landing Page -->
   {#if $proMode}
-    {#if !reduceFx}
-      <div class="lightning-container-landing">
-        {#each Array.from({ length: 6 }) as _, i}
-          <div
-            class="lightning-bolt"
-            style="left: {10 + i * 15}%; animation-delay: {i * 3 +
-              Math.random() * 2}s; animation-duration: {2 + Math.random()}s"
-          >
-            <iconify-icon
-              icon="ph:lightning-fill"
-              width="24"
-              class="text-cyan-400"
-            ></iconify-icon>
-          </div>
-        {/each}
-      </div>
-    {/if}
+    <div class="lightning-container-landing">
+      {#each Array.from({ length: 6 }) as _, i}
+        <div
+          class="lightning-bolt"
+          style="left: {10 + i * 15}%; animation-delay: {i * 3 +
+            Math.random() * 2}s; animation-duration: {2 + Math.random()}s"
+        >
+          <iconify-icon
+            icon="ph:lightning-fill"
+            width="24"
+            class="text-cyan-400"
+          ></iconify-icon>
+        </div>
+      {/each}
+    </div>
   {/if}
 
   <!-- Hero Section with turquoise cloud background -->
@@ -192,17 +182,6 @@
     margin: 0 !important;
     padding: 0 !important;
     flex-shrink: 0 !important;
-  }
-
-  :global(.landing-page-content),
-  :global(.landing-page-content *) {
-    color: #fff !important;
-  }
-
-  :global(.landing-page-content .gradient-text) {
-    color: #fff !important;
-    -webkit-text-fill-color: #fff !important;
-    background: none !important;
   }
 
   /* Extra negative margin on transitions for complete seamlessness */

@@ -89,81 +89,10 @@
 
   // Wallet status flags - all removed, browser manages everything
 
-  const INSTALL_DISMISS_LIMIT = 2;
-  const INSTALL_HIDE_MS = 7 * 24 * 60 * 60 * 1000;
-
-  let showInstallButton = $state(false);
-  let installDismissals = $state(0);
-  let installHiddenUntil = $state(0);
-
-  const getInstallStorageKey = (suffix) => {
-    const base = user?.id || user?.username || "anon";
-    return `install-prompt-${suffix}-${base}`;
-  };
-
-  const syncInstallVisibility = () => {
-    if (!browser || !user) return;
-    const dismissedKey = getInstallStorageKey("dismissals");
-    const hiddenKey = getInstallStorageKey("hidden-until");
-    const installedKey = getInstallStorageKey("installed");
-    const storedDismissals = Number.parseInt(
-      localStorage.getItem(dismissedKey) || "0",
-      10,
-    );
-    const storedHiddenUntil = Number.parseInt(
-      localStorage.getItem(hiddenKey) || "0",
-      10,
-    );
-    const isInstalled = localStorage.getItem(installedKey) === "true";
-    installDismissals = Number.isNaN(storedDismissals) ? 0 : storedDismissals;
-    installHiddenUntil = Number.isNaN(storedHiddenUntil)
-      ? 0
-      : storedHiddenUntil;
-    showInstallButton =
-      !isInstalled &&
-      (installHiddenUntil === 0 || Date.now() > installHiddenUntil);
-  };
-
-  const recordInstallDismissal = () => {
-    if (!browser || !user) return;
-    const dismissedKey = getInstallStorageKey("dismissals");
-    const hiddenKey = getInstallStorageKey("hidden-until");
-    const nextDismissals = installDismissals + 1;
-    installDismissals = nextDismissals;
-    localStorage.setItem(dismissedKey, String(nextDismissals));
-    if (nextDismissals >= INSTALL_DISMISS_LIMIT) {
-      const hideUntil = Date.now() + INSTALL_HIDE_MS;
-      installHiddenUntil = hideUntil;
-      localStorage.setItem(hiddenKey, String(hideUntil));
-      showInstallButton = false;
-    }
-  };
-
-  const markInstallAccepted = () => {
-    if (!browser || !user) return;
-    const installedKey = getInstallStorageKey("installed");
-    localStorage.setItem(installedKey, "true");
-    showInstallButton = false;
-  };
-
   let install = async () => {
     if (!$installPrompt) return;
-    const promptEvent = $installPrompt;
+    await $installPrompt.prompt();
     $installPrompt = null;
-    try {
-      await promptEvent.prompt();
-      if ("userChoice" in promptEvent) {
-        const choice = await promptEvent.userChoice;
-        if (choice?.outcome === "accepted") {
-          markInstallAccepted();
-        } else {
-          recordInstallDismissal();
-        }
-      }
-    } catch (error) {
-      console.warn("[Install] prompt failed:", error);
-      recordInstallDismissal();
-    }
   };
 
   let isStandalone = $state(false);
@@ -176,15 +105,6 @@
       isStandalone =
         window.matchMedia("(display-mode: standalone)").matches ||
         window.navigator.standalone === true;
-
-      const handleInstalled = () => {
-        markInstallAccepted();
-        $installPrompt = null;
-      };
-      window.addEventListener("appinstalled", handleInstalled);
-      return () => {
-        window.removeEventListener("appinstalled", handleInstalled);
-      };
     }
   });
 
@@ -213,30 +133,14 @@
     hideInstallCta = true;
   };
 
-  const closeIOSInstructions = () => {
-    showIOSInstructions = false;
-    recordInstallDismissal();
-  };
-
-  const closeAndroidInstructions = () => {
-    showAndroidInstructions = false;
-    recordInstallDismissal();
-  };
-
   let pubkey = $state();
   $effect(() => {
     if (user) user.savings = 0;
   });
   let { host } = $derived($page.url);
-
-  $effect(() => {
-    if (browser && user) {
-      syncInstallVisibility();
-    }
-  });
 </script>
 
-<div class="relative min-h-screen force-dark">
+<div class="relative min-h-screen">
   <!-- Content Container -->
   <div
     class="w-full px-3 sm:px-6 lg:px-8 sm:pt-4 pb-4 sm:py-6 pb-40 sm:pb-44 relative z-10"
@@ -568,7 +472,7 @@
             width="24"
             class="text-blue-400 install-inline-icon"
           ></iconify-icon>
-          Add Shortcut to Homescreen
+          Install App
         </h3>
         <button
           onclick={() => (showInstallInstructions = false)}
