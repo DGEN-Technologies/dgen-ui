@@ -176,9 +176,13 @@
       });
       feeOptionResponses = { ...feeOptionResponses, [key]: response };
     } catch (error) {
+      console.error("[RefundForm] Fee estimate failed:", error);
       feeOptionErrors = {
         ...feeOptionErrors,
-        [key]: error?.message || "Failed to estimate fee",
+        [key]: safeT(
+          "payments.refundFeeEstimateFailed",
+          "Failed to estimate fee",
+        ),
       };
     } finally {
       feeOptionLoading = { ...feeOptionLoading, [key]: false };
@@ -218,8 +222,10 @@
 
     if (!refundAddress || !isAddressValid) {
       fail(
-        $t("payments.refundAddressRequired") ||
+        safeT(
+          "payments.refundAddressRequired",
           "Please enter a Bitcoin address",
+        ),
       );
       return;
     }
@@ -233,7 +239,8 @@
       });
       showConfirm = true;
     } catch (error) {
-      fail(error?.message || "Failed to prepare refund");
+      console.error("[RefundForm] Prepare refund failed:", error);
+      fail(safeT("payments.refundPrepareFailed", "Failed to prepare refund"));
     } finally {
       loading = false;
     }
@@ -256,7 +263,8 @@
       refundBroadcasted = true;
       refundTxId = result?.refundTxId || "";
     } catch (error) {
-      fail(error?.message || "Failed to process refund");
+      console.error("[RefundForm] Refund failed:", error);
+      fail(safeT("payments.refundProcessFailed", "Failed to process refund"));
     } finally {
       loading = false;
     }
