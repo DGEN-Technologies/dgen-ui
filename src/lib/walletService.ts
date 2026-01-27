@@ -30,7 +30,7 @@ const secureStorage = SecureStorage.getInstance();
  */
 export async function getWalletPassword(userId: string): Promise<string> {
   if (typeof window === "undefined") {
-    return `wallet-key-${userId}`;
+    throw new Error("Secure wallet storage unavailable on server");
   }
 
   const storageKey = `walletEncryptionKey_${userId}`;
@@ -49,11 +49,11 @@ export async function getWalletPassword(userId: string): Promise<string> {
 
     await saveToDB(db, storageKey, newKey);
 
-    sdkLogger.info(`Generated new wallet encryption key for user ${userId}`);
+    sdkLogger.info("Generated new wallet encryption key");
     return newKey;
   } catch (error) {
     sdkLogger.error("Failed to get/generate wallet password:", error);
-    return `wallet-key-${userId}`;
+    throw new Error("Secure wallet storage unavailable");
   }
 }
 
@@ -1036,9 +1036,12 @@ const registerLightningAddressSingle = async (
         throw new UsernameConflictError("Username is already taken");
       }
 
-      throw new Error(
-        `Breez registration failed: ${response.status} - ${errorText}`,
+      // Log full error for debugging, throw generic message
+      lightningAddressLogger.error(
+        `Breez registration failed: ${response.status}`,
+        errorText,
       );
+      throw new Error(`Breez registration failed: ${response.status}`);
     }
 
     const result = await response.json();
