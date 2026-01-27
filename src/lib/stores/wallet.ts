@@ -1,6 +1,15 @@
 import { writable, derived, get } from "svelte/store";
 import * as walletService from "../walletService";
 import { sessionManager } from "../security/sessionManager";
+import {
+  startPolling,
+  stopPolling,
+  onRefresh,
+  trackPendingTx,
+  trackConfirmingTx,
+  markTxConfirmed,
+  clearTrackedTxs,
+} from "../esplora/PollManager";
 
 // Define interfaces locally to avoid import issues
 interface GetInfoResponse {
@@ -32,6 +41,35 @@ interface SdkEvent {
   details?: any;
 }
 
+const isValidTxid = (value?: string): value is string =>
+  !!value && /^[a-fA-F0-9]{64}$/.test(value);
+
+const logInvalidTxid = (txId: string, details?: { type?: string }): void => {
+  const txidLength = typeof txId === "string" ? txId.length : 0;
+  const type = details?.type ?? "unknown";
+  if (details?.type === "lightning") {
+    console.info(
+      "[WalletStore] Ignoring non-txid identifier from lightning event",
+      { type, txidLength },
+    );
+    return;
+  }
+  console.warn("[WalletStore] Invalid txId detected", { type, txidLength });
+};
+
+const SAFE_ERROR_MESSAGES = new Set(["Password required to clear mnemonic"]);
+
+const getSafeErrorMessage = (error: unknown, fallback: string): string => {
+  if (error instanceof Error && SAFE_ERROR_MESSAGES.has(error.message)) {
+    return error.message;
+  }
+  return fallback;
+};
+
+const logWalletError = (context: string, error: unknown): void => {
+  console.error(`[WalletStore] ${context}:`, error);
+};
+
 interface Payment {
   id: string;
   paymentType: string;
@@ -50,6 +88,22 @@ interface WalletState {
   info: GetInfoResponse | null;
   error: string | null;
 }
+
+// Polling state (defined early so lock/reset can access)
+let eventListenerActive = false;
+let pollUnsubscribe: (() => void) | null = null;
+
+// Helper to clean up polling state (used by lock/reset)
+const cleanupPolling = (): void => {
+  if (pollUnsubscribe) {
+    pollUnsubscribe();
+    pollUnsubscribe = null;
+  }
+  stopPolling();
+  clearTrackedTxs();
+  eventListenerActive = false;
+  console.log("[WalletStore] Polling cleanup complete");
+};
 
 // Create reactive wallet state
 const createWalletState = (mnemonicStore?: any, passwordStore?: any) => {
@@ -106,10 +160,11 @@ const createWalletState = (mnemonicStore?: any, passwordStore?: any) => {
         // Start event listening
         await startEventListening();
       } catch (error) {
-        const errorMessage =
-          error instanceof Error
-            ? error.message
-            : "Failed to initialize wallet store";
+        const errorMessage = getSafeErrorMessage(
+          error,
+          "Failed to initialize wallet store",
+        );
+        logWalletError("Init failed", error);
         update((state) => ({
           ...state,
           isUnlocked: false,
@@ -136,9 +191,15 @@ const createWalletState = (mnemonicStore?: any, passwordStore?: any) => {
         if (passwordStore) {
           passwordStore.set(undefined);
         }
+
+        // Stop polling when wallet is locked
+        cleanupPolling();
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Failed to lock wallet";
+        const errorMessage = getSafeErrorMessage(
+          error,
+          "Failed to lock wallet",
+        );
+        logWalletError("Lock failed", error);
         update((state) => ({ ...state, error: errorMessage }));
         throw error;
       }
@@ -168,8 +229,11 @@ const createWalletState = (mnemonicStore?: any, passwordStore?: any) => {
         // Start event listening
         await startEventListening();
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Failed to unlock wallet";
+        const errorMessage = getSafeErrorMessage(
+          error,
+          "Failed to unlock wallet",
+        );
+        logWalletError("Unlock failed", error);
         update((state) => ({
           ...state,
           isUnlocked: false,
@@ -199,8 +263,11 @@ const createWalletState = (mnemonicStore?: any, passwordStore?: any) => {
         if (mnemonicStore) {
           mnemonicStore.set(null);
         }
-        const errorMessage =
-          error instanceof Error ? error.message : "Failed to save mnemonic";
+        const errorMessage = getSafeErrorMessage(
+          error,
+          "Failed to save mnemonic",
+        );
+        logWalletError("Save mnemonic failed", error);
         update((state) => ({ ...state, error: errorMessage }));
         throw error;
       }
@@ -229,8 +296,11 @@ const createWalletState = (mnemonicStore?: any, passwordStore?: any) => {
           mnemonicStore.set(null);
         }
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Failed to clear mnemonic";
+        const errorMessage = getSafeErrorMessage(
+          error,
+          "Failed to clear mnemonic",
+        );
+        logWalletError("Clear mnemonic failed", error);
         update((state) => ({ ...state, error: errorMessage }));
         throw error;
       }
@@ -249,8 +319,11 @@ const createWalletState = (mnemonicStore?: any, passwordStore?: any) => {
           return { ...state, info: newInfo, error: null };
         });
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Failed to refresh wallet";
+        const errorMessage = getSafeErrorMessage(
+          error,
+          "Failed to refresh wallet",
+        );
+        logWalletError("Refresh failed", error);
         update((state) => ({ ...state, error: errorMessage }));
         throw error;
       }
@@ -264,8 +337,11 @@ const createWalletState = (mnemonicStore?: any, passwordStore?: any) => {
         // Just refresh our local state
         await this.refresh();
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Failed to refresh wallet";
+        const errorMessage = getSafeErrorMessage(
+          error,
+          "Failed to refresh wallet",
+        );
+        logWalletError("Sync failed", error);
         update((state) => ({ ...state, error: errorMessage }));
         throw error;
       }
@@ -278,6 +354,9 @@ const createWalletState = (mnemonicStore?: any, passwordStore?: any) => {
 
     // Reset wallet store to initial state (for logout)
     reset(): void {
+      // Stop polling when wallet is reset
+      cleanupPolling();
+
       set({
         isUnlocked: false,
         isInitialized: false,
@@ -372,10 +451,6 @@ const createTransactionsStore = () => {
 
 export const transactions = createTransactionsStore();
 
-// Event handling
-let eventListenerActive = false;
-let pollingInterval: ReturnType<typeof setInterval> | null = null;
-
 const startEventListening = async (): Promise<void> => {
   if (eventListenerActive) return;
 
@@ -397,6 +472,12 @@ const startEventListening = async (): Promise<void> => {
               console.log(
                 "[WalletStore] Payment pending - lockup transaction broadcast",
               );
+              // Track pending tx for fast polling (Breez SDK uses Liquid network)
+              if (isValidTxid(event.details?.txId)) {
+                trackPendingTx(event.details.txId, "liquid");
+              } else if (event.details?.txId) {
+                logInvalidTxid(event.details.txId, event.details);
+              }
               walletStore.refresh();
               transactions.refresh();
               // Only notify if initial sync is complete (prevents showing stale pending payments)
@@ -421,6 +502,12 @@ const startEventListening = async (): Promise<void> => {
               console.log(
                 "[WalletStore] Payment waiting confirmation - claim tx broadcast",
               );
+              // Move from pending to confirming for normal polling (Breez SDK uses Liquid network)
+              if (isValidTxid(event.details?.txId)) {
+                trackConfirmingTx(event.details.txId, "liquid");
+              } else if (event.details?.txId) {
+                logInvalidTxid(event.details.txId, event.details);
+              }
               walletStore.refresh();
               transactions.refresh();
               // Only show notifications and navigate after initial sync is complete
@@ -459,6 +546,12 @@ const startEventListening = async (): Promise<void> => {
 
             // All methods: transaction is confirmed - payment complete!
             case "paymentSucceeded":
+              // Mark tx as confirmed - can slow down polling
+              if (isValidTxid(event.details?.txId)) {
+                markTxConfirmed(event.details.txId);
+              } else if (event.details?.txId) {
+                logInvalidTxid(event.details.txId, event.details);
+              }
               walletStore.refresh();
               transactions.refresh();
               // Only notify after initial sync is complete
@@ -479,6 +572,12 @@ const startEventListening = async (): Promise<void> => {
 
             // Payment failed (swap expired, fee not accepted, lockup tx failed)
             case "paymentFailed":
+              // Clear tracking for failed tx
+              if (isValidTxid(event.details?.txId)) {
+                markTxConfirmed(event.details.txId);
+              } else if (event.details?.txId) {
+                logInvalidTxid(event.details.txId, event.details);
+              }
               walletStore.refresh();
               transactions.refresh();
               break;
@@ -585,21 +684,24 @@ const startEventListening = async (): Promise<void> => {
     eventListenerActive = true;
     console.log("[WalletStore] Event listening started");
 
-    // Start polling fallback (60s interval like misty-breez)
-    if (!pollingInterval && typeof window !== "undefined") {
-      pollingInterval = setInterval(async () => {
+    // Register with PollManager for coordinated polling
+    if (!pollUnsubscribe && typeof window !== "undefined") {
+      pollUnsubscribe = onRefresh(async () => {
         try {
-          // Only refresh if page is visible and SDK is connected
-          if (!document.hidden && walletService.isConnected()) {
-            console.log("[WalletStore] Polling refresh (60s fallback)");
+          // Only refresh if SDK is connected
+          if (walletService.isConnected()) {
+            console.log("[WalletStore] PollManager refresh");
             await walletStore.refresh();
             await transactions.refresh();
           }
         } catch (error) {
-          console.error("[WalletStore] Polling refresh failed:", error);
+          console.error("[WalletStore] PollManager refresh failed:", error);
         }
-      }, 60000); // 60 seconds
-      console.log("[WalletStore] Polling started (60s interval)");
+      });
+
+      // Start the poll manager
+      startPolling();
+      console.log("[WalletStore] Registered with PollManager");
     }
   } catch (error) {
     console.error("[WalletStore] Failed to start event listening:", error);

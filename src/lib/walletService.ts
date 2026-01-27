@@ -30,7 +30,7 @@ const secureStorage = SecureStorage.getInstance();
  */
 export async function getWalletPassword(userId: string): Promise<string> {
   if (typeof window === "undefined") {
-    return `wallet-key-${userId}`;
+    throw new Error("Secure wallet storage unavailable on server");
   }
 
   const storageKey = `walletEncryptionKey_${userId}`;
@@ -49,11 +49,11 @@ export async function getWalletPassword(userId: string): Promise<string> {
 
     await saveToDB(db, storageKey, newKey);
 
-    sdkLogger.info(`Generated new wallet encryption key for user ${userId}`);
+    sdkLogger.info("Generated new wallet encryption key");
     return newKey;
   } catch (error) {
     sdkLogger.error("Failed to get/generate wallet password:", error);
-    return `wallet-key-${userId}`;
+    throw new Error("Secure wallet storage unavailable");
   }
 }
 
@@ -201,8 +201,38 @@ const connectSdk = async (mnemonic: string, retryCount = 0): Promise<void> => {
 
     // Configure custom blockchain explorers to avoid rate limits
     // You can override these with environment variables
-    const liquidExplorerUrl = import.meta.env.VITE_LIQUID_EXPLORER_URL;
-    const bitcoinExplorerUrl = import.meta.env.VITE_BITCOIN_EXPLORER_URL;
+    const resolveExplorerUrl = (rawUrl?: string): string | undefined => {
+      if (!rawUrl) return undefined;
+      if (typeof window === "undefined") return rawUrl;
+      try {
+        if (rawUrl.startsWith("/")) {
+          return new URL(rawUrl, window.location.origin).toString();
+        }
+        const parsed = new URL(rawUrl);
+        const isLocalhost =
+          parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1";
+        if (isLocalhost) {
+          return new URL(
+            `${parsed.pathname}${parsed.search}`,
+            window.location.origin,
+          ).toString();
+        }
+      } catch {
+        return rawUrl;
+      }
+      return rawUrl;
+    };
+
+    const liquidExplorerUrl =
+      resolveExplorerUrl(import.meta.env.VITE_LIQUID_EXPLORER_URL) ||
+      (typeof window !== "undefined"
+        ? new URL("/api/esplora/liquid", window.location.origin).toString()
+        : undefined);
+    const bitcoinExplorerUrl =
+      resolveExplorerUrl(import.meta.env.VITE_BITCOIN_EXPLORER_URL) ||
+      (typeof window !== "undefined"
+        ? new URL("/api/esplora/bitcoin", window.location.origin).toString()
+        : undefined);
 
     if (liquidExplorerUrl) {
       sdkLogger.info("Using custom Liquid explorer:", liquidExplorerUrl);
@@ -1036,9 +1066,12 @@ const registerLightningAddressSingle = async (
         throw new UsernameConflictError("Username is already taken");
       }
 
-      throw new Error(
-        `Breez registration failed: ${response.status} - ${errorText}`,
+      // Log full error for debugging, throw generic message
+      lightningAddressLogger.error(
+        `Breez registration failed: ${response.status}`,
+        errorText,
       );
+      throw new Error(`Breez registration failed: ${response.status}`);
     }
 
     const result = await response.json();

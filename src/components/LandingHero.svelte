@@ -100,7 +100,7 @@
       >
         <div class="text-center">
           <span class="gradient-text font-roboto-condensed">
-            THE FUTURE OF MONEY
+            FUTURE OF MONEY
           </span>
         </div>
       </div>

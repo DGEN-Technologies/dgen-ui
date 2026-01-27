@@ -11,6 +11,7 @@
 
   import { locale, t } from "$lib/translations";
   import { onDestroy, onMount, tick } from "svelte";
+  import { browser } from "$app/environment";
   import { proMode } from "$lib/store";
 
   let { data } = $props();
@@ -21,6 +22,10 @@
   let about = $state();
 
   onMount(() => {
+    if (browser && localStorage.getItem("proModeUserSet") !== "true") {
+      $proMode = true;
+    }
+
     // Bind section elements after components are mounted
     setTimeout(() => {
       howItWorks = document.getElementById("howItWorks");

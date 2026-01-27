@@ -43,8 +43,8 @@
         <ProModeToggle />
         <a
           href="https://card.dgentech.io"
-          class="hover:text-primary transition-colors duration-200"
-          >Credit Card</a
+          class="hover:text-white/80 transition-colors duration-200"
+          >DGEN Card</a
         >
       {/if}
       {#if user}

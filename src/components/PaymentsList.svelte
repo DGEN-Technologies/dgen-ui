@@ -15,6 +15,13 @@
   import Avatar from "$comp/Avatar.svelte";
   import { unitPreference } from "$lib/store";
 
+  const EXCLUDED_STATUSES = new Set([
+    "failed",
+    "refundable",
+    "refundPending",
+    "refunded",
+  ]);
+
   let { user, initialFilter = {} } = $props();
   let locale = $derived(user ? locales[user.language] : locales["en"]);
   let currency = $derived(user?.currency || "USD");
@@ -35,12 +42,6 @@
 
   // Loading states
   let isInitialLoad = $state(true);
-
-  // Virtual scrolling for performance
-  let visibleStart = $state(0);
-  let visibleEnd = $state(50);
-  let containerHeight = $state(0);
-  let scrollTop = $state(0);
 
   // Initialize on mount
   onMount(async () => {
@@ -110,22 +111,8 @@
 
     isInitialLoad = false;
 
-    // Set up auto-refresh every 30 seconds - silently in background
-    const refreshInterval = setInterval(async () => {
-      if (!document.hidden) {
-        try {
-          const { isConnected } = await import("$lib/walletService");
-          if (isConnected()) {
-            // Refresh silently without showing notification
-            await transactionStore.loadTransactions(true);
-          }
-        } catch (error) {
-          console.warn("[PaymentsList] Error during auto-refresh:", error);
-        }
-      }
-    }, 30000);
-
-    return () => clearInterval(refreshInterval);
+    // Note: Auto-refresh is now handled by PollManager in wallet.ts
+    // No need for component-level polling - reduces duplicate API calls
   });
 
   // Apply filters when they change
@@ -344,18 +331,13 @@
     };
   };
 
-  // Handle virtual scrolling
-  const handleScroll = (event) => {
-    const { scrollTop, scrollHeight, clientHeight } = event.target;
-    const scrollPercentage = scrollTop / (scrollHeight - clientHeight);
-
-    // Update visible range based on scroll position
-    const totalItems = $currentTransactionPage?.totalCount || 0;
-    const itemHeight = 80; // Approximate height of each item
-    const visibleItems = Math.ceil(clientHeight / itemHeight);
-
-    visibleStart = Math.floor(scrollPercentage * (totalItems - visibleItems));
-    visibleEnd = visibleStart + visibleItems + 5; // Buffer for smooth scrolling
+  const escapeCsvCell = (value) => {
+    if (value === null || value === undefined) return "";
+    const text = String(value);
+    const isNumeric = typeof value === "number";
+    const hardened =
+      !isNumeric && /^[\s]*[=+\-@]/.test(text) ? `'${text}` : text;
+    return hardened.replace(/"/g, '""');
   };
 
   // Export to CSV - Export ALL transactions, not just current page
@@ -492,8 +474,8 @@
         amount,
         fee,
         netAmount,
-        fiatAmount.toFixed(2),
-        (tx.details?.description || tx.description || "").replace(/"/g, '""'),
+        Number(fiatAmount.toFixed(2)),
+        tx.details?.description || tx.description || "",
         tx.details?.paymentHash || tx.paymentHash || "",
         tx.details?.preimage || "",
         tx.details?.destination || "",
@@ -502,7 +484,7 @@
     });
 
     const csv = [headers, ...rows]
-      .map((row) => row.map((cell) => `"${cell}"`).join(","))
+      .map((row) => row.map((cell) => `"${escapeCsvCell(cell)}"`).join(","))
       .join("\n");
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -739,7 +721,12 @@
                   {#if unit === currency}
                     {f(
                       (payments
-                        .filter((p) => p.displayAmount > 0 && !p.isUsdt)
+                        .filter(
+                          (p) =>
+                            p.displayAmount > 0 &&
+                            !p.isUsdt &&
+                            !EXCLUDED_STATUSES.has(p.status),
+                        )
                         .reduce((sum, p) => sum + p.displayAmount, 0) /
                         sats) *
                         rate,
@@ -749,13 +736,23 @@
                   {:else if unit === "btc"}
                     {btc(
                       payments
-                        .filter((p) => p.displayAmount > 0 && !p.isUsdt)
+                        .filter(
+                          (p) =>
+                            p.displayAmount > 0 &&
+                            !p.isUsdt &&
+                            !EXCLUDED_STATUSES.has(p.status),
+                        )
                         .reduce((sum, p) => sum + p.displayAmount, 0),
                     )} BTC
                   {:else}
                     {s(
                       payments
-                        .filter((p) => p.displayAmount > 0 && !p.isUsdt)
+                        .filter(
+                          (p) =>
+                            p.displayAmount > 0 &&
+                            !p.isUsdt &&
+                            !EXCLUDED_STATUSES.has(p.status),
+                        )
                         .reduce((sum, p) => sum + p.displayAmount, 0),
                     )} sats
                   {/if}
@@ -765,7 +762,7 @@
           </div>
         </div>
 
-        <!-- Total Sent -->
+        <!-- Total Sent (+fees) -->
         <div class="card bg-red-500/10 border border-red-500/30">
           <div class="card-body p-3 sm:p-4">
             <div class="flex items-center gap-2 sm:gap-3">
@@ -774,17 +771,30 @@
                 ></iconify-icon>
               </div>
               <div class="min-w-0">
-                <div class="text-xs sm:text-sm text-white/60">Total Sent</div>
+                <div class="text-xs sm:text-sm text-white/60">
+                  Total Sent (+fees)
+                </div>
                 <div
                   class="text-base sm:text-xl font-bold text-red-400 truncate"
                 >
                   {#if unit === currency}
                     {f(
-                      (Math.abs(
+                      ((Math.abs(
                         payments
-                          .filter((p) => p.displayAmount < 0 && !p.isUsdt)
+                          .filter(
+                            (p) =>
+                              p.displayAmount < 0 &&
+                              !p.isUsdt &&
+                              !EXCLUDED_STATUSES.has(p.status),
+                          )
                           .reduce((sum, p) => sum + p.displayAmount, 0),
-                      ) /
+                      ) +
+                        payments
+                          .filter(
+                            (p) =>
+                              !p.isUsdt && !EXCLUDED_STATUSES.has(p.status),
+                          )
+                          .reduce((sum, p) => sum + (p.feesSat || 0), 0)) /
                         sats) *
                         rate,
                       currency,
@@ -794,17 +804,39 @@
                     {btc(
                       Math.abs(
                         payments
-                          .filter((p) => p.displayAmount < 0 && !p.isUsdt)
+                          .filter(
+                            (p) =>
+                              p.displayAmount < 0 &&
+                              !p.isUsdt &&
+                              !EXCLUDED_STATUSES.has(p.status),
+                          )
                           .reduce((sum, p) => sum + p.displayAmount, 0),
-                      ),
+                      ) +
+                        payments
+                          .filter(
+                            (p) =>
+                              !p.isUsdt && !EXCLUDED_STATUSES.has(p.status),
+                          )
+                          .reduce((sum, p) => sum + (p.feesSat || 0), 0),
                     )} BTC
                   {:else}
                     {s(
                       Math.abs(
                         payments
-                          .filter((p) => p.displayAmount < 0 && !p.isUsdt)
+                          .filter(
+                            (p) =>
+                              p.displayAmount < 0 &&
+                              !p.isUsdt &&
+                              !EXCLUDED_STATUSES.has(p.status),
+                          )
                           .reduce((sum, p) => sum + p.displayAmount, 0),
-                      ),
+                      ) +
+                        payments
+                          .filter(
+                            (p) =>
+                              !p.isUsdt && !EXCLUDED_STATUSES.has(p.status),
+                          )
+                          .reduce((sum, p) => sum + (p.feesSat || 0), 0),
                     )} sats
                   {/if}
                 </div>
@@ -813,28 +845,52 @@
           </div>
         </div>
 
-        <button
-          class="card bg-purple-500/10 border border-purple-500/30 text-left hover:bg-purple-500/15 transition-colors"
-          onclick={() => goto("/refunds")}
-        >
+        <div class="card bg-purple-500/10 border border-purple-500/30">
           <div class="card-body p-3 sm:p-4">
             <div class="flex items-center gap-2 sm:gap-3">
               <div class="text-purple-400 flex-shrink-0">
-                <iconify-icon
-                  icon="ph:arrow-u-up-left"
-                  width="24"
-                  class="sm:w-8"
+                <iconify-icon icon="ph:chart-bar" width="24" class="sm:w-8"
                 ></iconify-icon>
               </div>
               <div class="min-w-0">
-                <div class="text-xs sm:text-sm text-white/60">Refunds</div>
-                <div class="text-base sm:text-xl font-bold text-purple-300">
-                  View
+                <div class="text-xs sm:text-sm text-white/60">Total Fees</div>
+                <div
+                  class="text-base sm:text-xl font-bold text-purple-300 truncate"
+                >
+                  {#if unit === currency}
+                    {f(
+                      (payments
+                        .filter(
+                          (p) => !p.isUsdt && !EXCLUDED_STATUSES.has(p.status),
+                        )
+                        .reduce((sum, p) => sum + (p.feesSat || 0), 0) /
+                        sats) *
+                        rate,
+                      currency,
+                      locale,
+                    )}
+                  {:else if unit === "btc"}
+                    {btc(
+                      payments
+                        .filter(
+                          (p) => !p.isUsdt && !EXCLUDED_STATUSES.has(p.status),
+                        )
+                        .reduce((sum, p) => sum + (p.feesSat || 0), 0),
+                    )} BTC
+                  {:else}
+                    {s(
+                      payments
+                        .filter(
+                          (p) => !p.isUsdt && !EXCLUDED_STATUSES.has(p.status),
+                        )
+                        .reduce((sum, p) => sum + (p.feesSat || 0), 0),
+                    )} sats
+                  {/if}
                 </div>
               </div>
             </div>
           </div>
-        </button>
+        </div>
       </div>
     {/if}
 
@@ -922,10 +978,9 @@
             </div>
           </div>
         {:else}
-          <!-- Transaction Items with Virtual Scrolling -->
+          <!-- Transaction Items -->
           <div
             class="divide-y divide-white/5 max-h-[600px] overflow-y-auto transaction-scroll"
-            onscroll={handleScroll}
           >
             {#each payments as payment, i}
               <div
