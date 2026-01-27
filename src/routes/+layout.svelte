@@ -1,7 +1,8 @@
 <script lang="ts">
   import { run } from "svelte/legacy";
   import { browser } from "$app/environment";
-  import { PUBLIC_DOMAIN, PUBLIC_WIDGET_API_BASE } from "$env/static/public";
+  import { env as publicEnv } from "$env/dynamic/public";
+  import { PUBLIC_DOMAIN } from "$env/static/public";
   import "../app-modern.css";
   import { loading, t } from "$lib/translations";
   import { onMount } from "svelte";
@@ -136,7 +137,7 @@
 
 <!-- Chat Widget - loads after initial render -->
 {#if showChatWidget}
-  <ChatWidget apiBase={PUBLIC_WIDGET_API_BASE} {userId} />
+  <ChatWidget apiBase={publicEnv.PUBLIC_WIDGET_API_BASE || ""} {userId} />
 {/if}
 
 <style global>
