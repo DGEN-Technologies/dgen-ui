@@ -94,6 +94,10 @@
           );
           if (targetOrigin) {
             window.opener.postMessage(msg, targetOrigin);
+          } else if (allowedOrigins.length) {
+            for (const origin of allowedOrigins) {
+              window.opener.postMessage(msg, origin);
+            }
           }
         }
       }
