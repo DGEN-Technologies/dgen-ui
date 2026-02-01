@@ -1,4 +1,5 @@
 <script>
+  import { browser } from "$app/environment";
   import { proMode } from "$lib/store";
   import { fade } from "svelte/transition";
 
@@ -15,7 +16,14 @@
   });
 
   const toggleProMode = () => {
-    proMode.update((v) => !v);
+    proMode.update((v) => {
+      const next = !v;
+      if (browser) {
+        sessionStorage.setItem("proModeOverride", next ? "on" : "off");
+        localStorage.setItem("proModeUserSet", "true");
+      }
+      return next;
+    });
   };
 </script>
 

@@ -25,7 +25,7 @@
     onclick={() => {
       showSwapInfo = true;
     }}
-    class="mx-auto mb-4 px-3 py-2 w-fit items-center rounded-md text-xs sm:text-sm font-bold text-center bg-gradient-to-r bg-yellow-400/70 border border-yellow-400/50 shadow-lg shadow-yellow-400/50"
+    class="mx-auto mb-4 px-3 py-2 w-fit items-center rounded-md text-xs sm:text-sm font-bold text-center text-black bg-gradient-to-r bg-yellow-400/70 border border-yellow-400/50 shadow-lg shadow-yellow-400/50"
   >
     READ THIS Before Using This Swap / Buy Feature
   </button>
