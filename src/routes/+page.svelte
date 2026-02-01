@@ -11,7 +11,6 @@
 
   import { locale, t } from "$lib/translations";
   import { onDestroy, onMount, tick } from "svelte";
-  import { browser } from "$app/environment";
   import { proMode } from "$lib/store";
 
   let { data } = $props();
