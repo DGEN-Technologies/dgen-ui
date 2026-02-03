@@ -23,6 +23,13 @@
     "refunded",
   ]);
 
+  const EXCLUDED_STATUSES = new Set([
+    "failed",
+    "refundable",
+    "refundPending",
+    "refunded",
+  ]);
+
   let { user, initialFilter = {} } = $props();
   let locale = $derived(user ? locales[user.language] : locales["en"]);
   let currency = $derived(user?.currency || "USD");
