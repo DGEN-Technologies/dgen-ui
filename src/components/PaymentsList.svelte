@@ -523,9 +523,7 @@
     payments
       .filter(
         (p) =>
-          p.displayAmount > 0 &&
-          !p.isUsdt &&
-          !EXCLUDED_STATUSES.has(p.status),
+          p.displayAmount > 0 && !p.isUsdt && !EXCLUDED_STATUSES.has(p.status),
       )
       .reduce((sum, p) => sum + p.displayAmount, 0),
   );
