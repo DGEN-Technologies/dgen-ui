@@ -16,7 +16,7 @@
   import { unitPreference } from "$lib/store";
   import { walletBalance } from "$lib/stores/wallet";
 
-  const EXCLUDED_STATUSES = new Set([
+  const EXCLUDED_PAYMENT_STATUSES = new Set([
     "failed",
     "refundable",
     "refundPending",
@@ -523,7 +523,7 @@
     payments
       .filter(
         (p) =>
-          p.displayAmount > 0 && !p.isUsdt && !EXCLUDED_STATUSES.has(p.status),
+          p.displayAmount > 0 && !p.isUsdt && !EXCLUDED_PAYMENT_STATUSES.has(p.status),
       )
       .reduce((sum, p) => sum + p.displayAmount, 0),
   );
@@ -736,7 +736,7 @@
                           (p) =>
                             p.displayAmount > 0 &&
                             !p.isUsdt &&
-                            !EXCLUDED_STATUSES.has(p.status),
+                            !EXCLUDED_PAYMENT_STATUSES.has(p.status),
                         )
                         .reduce((sum, p) => sum + p.displayAmount, 0) /
                         sats) *
@@ -751,7 +751,7 @@
                           (p) =>
                             p.displayAmount > 0 &&
                             !p.isUsdt &&
-                            !EXCLUDED_STATUSES.has(p.status),
+                            !EXCLUDED_PAYMENT_STATUSES.has(p.status),
                         )
                         .reduce((sum, p) => sum + p.displayAmount, 0),
                     )} BTC
@@ -762,7 +762,7 @@
                           (p) =>
                             p.displayAmount > 0 &&
                             !p.isUsdt &&
-                            !EXCLUDED_STATUSES.has(p.status),
+                            !EXCLUDED_PAYMENT_STATUSES.has(p.status),
                         )
                         .reduce((sum, p) => sum + p.displayAmount, 0),
                     )} sats
@@ -796,14 +796,14 @@
                             (p) =>
                               p.displayAmount < 0 &&
                               !p.isUsdt &&
-                              !EXCLUDED_STATUSES.has(p.status),
+                              !EXCLUDED_PAYMENT_STATUSES.has(p.status),
                           )
                           .reduce((sum, p) => sum + p.displayAmount, 0),
                       ) +
                         payments
                           .filter(
                             (p) =>
-                              !p.isUsdt && !EXCLUDED_STATUSES.has(p.status),
+                              !p.isUsdt && !EXCLUDED_PAYMENT_STATUSES.has(p.status),
                           )
                           .reduce((sum, p) => sum + (p.feesSat || 0), 0)) /
                         sats) *
@@ -819,14 +819,14 @@
                             (p) =>
                               p.displayAmount < 0 &&
                               !p.isUsdt &&
-                              !EXCLUDED_STATUSES.has(p.status),
+                              !EXCLUDED_PAYMENT_STATUSES.has(p.status),
                           )
                           .reduce((sum, p) => sum + p.displayAmount, 0),
                       ) +
                         payments
                           .filter(
                             (p) =>
-                              !p.isUsdt && !EXCLUDED_STATUSES.has(p.status),
+                              !p.isUsdt && !EXCLUDED_PAYMENT_STATUSES.has(p.status),
                           )
                           .reduce((sum, p) => sum + (p.feesSat || 0), 0),
                     )} BTC
@@ -838,14 +838,14 @@
                             (p) =>
                               p.displayAmount < 0 &&
                               !p.isUsdt &&
-                              !EXCLUDED_STATUSES.has(p.status),
+                              !EXCLUDED_PAYMENT_STATUSES.has(p.status),
                           )
                           .reduce((sum, p) => sum + p.displayAmount, 0),
                       ) +
                         payments
                           .filter(
                             (p) =>
-                              !p.isUsdt && !EXCLUDED_STATUSES.has(p.status),
+                              !p.isUsdt && !EXCLUDED_PAYMENT_STATUSES.has(p.status),
                           )
                           .reduce((sum, p) => sum + (p.feesSat || 0), 0),
                     )} sats
@@ -872,7 +872,7 @@
                     {f(
                       (payments
                         .filter(
-                          (p) => !p.isUsdt && !EXCLUDED_STATUSES.has(p.status),
+                          (p) => !p.isUsdt && !EXCLUDED_PAYMENT_STATUSES.has(p.status),
                         )
                         .reduce((sum, p) => sum + (p.feesSat || 0), 0) /
                         sats) *
@@ -884,7 +884,7 @@
                     {btc(
                       payments
                         .filter(
-                          (p) => !p.isUsdt && !EXCLUDED_STATUSES.has(p.status),
+                          (p) => !p.isUsdt && !EXCLUDED_PAYMENT_STATUSES.has(p.status),
                         )
                         .reduce((sum, p) => sum + (p.feesSat || 0), 0),
                     )} BTC
@@ -892,7 +892,7 @@
                     {s(
                       payments
                         .filter(
-                          (p) => !p.isUsdt && !EXCLUDED_STATUSES.has(p.status),
+                          (p) => !p.isUsdt && !EXCLUDED_PAYMENT_STATUSES.has(p.status),
                         )
                         .reduce((sum, p) => sum + (p.feesSat || 0), 0),
                     )} sats
