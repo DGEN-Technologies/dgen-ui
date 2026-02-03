@@ -80,7 +80,7 @@
     };
     document.addEventListener("visibilitychange", handleVisibility);
     return () => {
-      if (typeof removeBeforeNavigate === "function") removeBeforeNavigate();
+      removeBeforeNavigate();
       document.removeEventListener("visibilitychange", handleVisibility);
     };
   });

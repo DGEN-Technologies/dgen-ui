@@ -23,8 +23,19 @@
   let reduceFx = $state(false);
 
   onMount(() => {
-    if (browser && localStorage.getItem("proModeUserSet") !== "true") {
-      $proMode = true;
+    if (browser) {
+      const override = sessionStorage.getItem("proModeOverride");
+      const userSet = localStorage.getItem("proModeUserSet") === "true";
+      if (!userSet && override !== "off") {
+        proMode.set(true);
+      }
+      const ua = navigator.userAgent || "";
+      const platform = navigator.userAgentData?.platform || "";
+      const isAndroid = /Android/i.test(ua) || /Android/i.test(platform);
+      const prefersReduced = window.matchMedia?.(
+        "(prefers-reduced-motion: reduce)",
+      )?.matches;
+      reduceFx = Boolean(isAndroid || prefersReduced);
     }
 
     // Bind section elements after components are mounted
