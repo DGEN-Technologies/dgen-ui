@@ -41,7 +41,7 @@
         transition:scale
       >
         <h3 class="font-bold text-dgen-aqua mb-3">
-          Read Before Using This Feature
+          Read before using this feature
         </h3>
         <div class="overflow-y-auto h-60 sm:h-96">
           <p class="mb-3">
@@ -62,7 +62,7 @@
           </ul>
 
           <div class="mb-3">
-            <div class="font-semibold" style="font-size: 1.5em;">TIPS:</div>
+            <div class="font-semibold" style="font-size: 1.5em;">Tip:</div>
             <p class="mt-1">
               Prepare in advance—select the assets you want to swap, then have
               your wallet addresses ready to copy/paste.

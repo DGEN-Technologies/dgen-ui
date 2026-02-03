@@ -26,7 +26,7 @@
   // Convert relative URLs to full backend URLs for production compatibility
   let bg = $derived(bannerUrl ? `url(${getImageUrl(bannerUrl)})` : null);
   const DEFAULT_CARD_URL = "https://card.dgentech.io";
-  const isValidDGENCardUrl = (url) => {
+  const isValidCreditCardUrl = (url) => {
     try {
       const parsed = new URL(url);
       const allowedHosts = new Set(["card.dgentech.io", "dgentech.io"]);
@@ -35,9 +35,9 @@
       return false;
     }
   };
-  let DGENCardUrl = $derived.by(() => {
-    const configured = publicEnv.PUBLIC_DGENCARD_IS_LIVE_URL || "";
-    if (isValidDGENCardUrl(configured)) {
+  let creditCardUrl = $derived.by(() => {
+    const configured = publicEnv.PUBLIC_CREDITCARD_IS_LIVE_URL || "";
+    if (isValidCreditCardUrl(configured)) {
       return configured;
     }
     return DEFAULT_CARD_URL;
@@ -119,11 +119,11 @@
         </a>
       {/if}
     </nav>
-    <!-- DGEN Card -->
-    {#if DGENCardUrl}
+    <!-- DGEN Credit Card -->
+    {#if creditCardUrl}
       <div class="mr-2 sm:mr-5 flex justify-end">
         <a
-          href={DGENCardUrl}
+          href={creditCardUrl}
           target="_blank"
           class="inline-flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 rounded-xl bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-2 border-blue-500/30"
         >
@@ -136,7 +136,7 @@
           </div>
           <div class="flex flex-col items-center">
             <span class="text-xs sm:text-sm font-semibold text-blue-300"
-              >DGEN Card is live</span
+              >DGEN Credit Card is live</span
             >
             <span class="text-[7px] sm:text-xs font-semibold text-blue-300"
               >(click here to see it)</span

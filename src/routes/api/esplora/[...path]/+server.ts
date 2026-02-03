@@ -1,4 +1,5 @@
 import { error } from "@sveltejs/kit";
+import { createHash } from "crypto";
 import { env } from "$env/dynamic/public";
 
 const DEFAULT_BACKEND_URL = "http://localhost:3119";
@@ -10,7 +11,7 @@ const VALID_NETWORKS = new Set([
 ]);
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
-const RATE_LIMIT_MAX = process.env.NODE_ENV === "development" ? 12000 : 600;
+const RATE_LIMIT_MAX = 60;
 const MAX_RATE_LIMIT_KEYS = 5000;
 const rateLimitBuckets = new Map<
   string,
@@ -91,16 +92,8 @@ const checkRateLimit = (
   return { allowed: true, retryAfter: 0 };
 };
 
-// Non-crypto hash to avoid bundler crypto polyfills in dev SSR.
-// Good enough to avoid storing raw tokens in memory.
-const hashToken = (value: string): string => {
-  let hash = 2166136261;
-  for (let i = 0; i < value.length; i += 1) {
-    hash ^= value.charCodeAt(i);
-    hash = (hash * 16777619) >>> 0;
-  }
-  return hash.toString(16);
-};
+const hashToken = (value: string): string =>
+  createHash("sha256").update(value).digest("hex");
 
 const getRateLimitKey = (
   clientAddress: string | undefined,
@@ -244,9 +237,6 @@ async function handleRequest(
       headers: filterResponseHeaders(response.headers),
     });
   } catch (err) {
-    if (err && typeof err === "object" && "status" in err) {
-      throw err;
-    }
     console.error(`[Esplora Proxy] ${method} ${path} failed:`, err);
     throw error(502, "Esplora proxy request failed");
   }

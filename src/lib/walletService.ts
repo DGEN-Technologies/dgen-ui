@@ -201,38 +201,8 @@ const connectSdk = async (mnemonic: string, retryCount = 0): Promise<void> => {
 
     // Configure custom blockchain explorers to avoid rate limits
     // You can override these with environment variables
-    const resolveExplorerUrl = (rawUrl?: string): string | undefined => {
-      if (!rawUrl) return undefined;
-      if (typeof window === "undefined") return rawUrl;
-      try {
-        if (rawUrl.startsWith("/")) {
-          return new URL(rawUrl, window.location.origin).toString();
-        }
-        const parsed = new URL(rawUrl);
-        const isLocalhost =
-          parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1";
-        if (isLocalhost) {
-          return new URL(
-            `${parsed.pathname}${parsed.search}`,
-            window.location.origin,
-          ).toString();
-        }
-      } catch {
-        return rawUrl;
-      }
-      return rawUrl;
-    };
-
-    const liquidExplorerUrl =
-      resolveExplorerUrl(import.meta.env.VITE_LIQUID_EXPLORER_URL) ||
-      (typeof window !== "undefined"
-        ? new URL("/api/esplora/liquid", window.location.origin).toString()
-        : undefined);
-    const bitcoinExplorerUrl =
-      resolveExplorerUrl(import.meta.env.VITE_BITCOIN_EXPLORER_URL) ||
-      (typeof window !== "undefined"
-        ? new URL("/api/esplora/bitcoin", window.location.origin).toString()
-        : undefined);
+    const liquidExplorerUrl = import.meta.env.VITE_LIQUID_EXPLORER_URL;
+    const bitcoinExplorerUrl = import.meta.env.VITE_BITCOIN_EXPLORER_URL;
 
     if (liquidExplorerUrl) {
       sdkLogger.info("Using custom Liquid explorer:", liquidExplorerUrl);

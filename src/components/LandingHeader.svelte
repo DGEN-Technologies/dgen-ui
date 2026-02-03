@@ -44,7 +44,7 @@
         <a
           href="https://card.dgentech.io"
           class="hover:text-white/80 transition-colors duration-200"
-          >DGEN Card</a
+          >Credit Card</a
         >
       {/if}
       {#if user}
