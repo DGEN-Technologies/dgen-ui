@@ -14,6 +14,7 @@
   } from "$lib/transactionService";
   import Avatar from "$comp/Avatar.svelte";
   import { unitPreference } from "$lib/store";
+  import { walletBalance } from "$lib/stores/wallet";
 
   let { user, initialFilter = {} } = $props();
   let locale = $derived(user ? locales[user.language] : locales["en"]);
@@ -511,6 +512,18 @@
       })
       .map(formatPayment) || [],
   );
+  let totalReceivedSat = $derived(
+    payments
+      .filter(
+        (p) =>
+          p.displayAmount > 0 &&
+          !p.isUsdt &&
+          !EXCLUDED_STATUSES.has(p.status),
+      )
+      .reduce((sum, p) => sum + p.displayAmount, 0),
+  );
+  let totalSentWithFeesSat = $derived(totalReceivedSat - $walletBalance);
+  let totalVolumeSat = $derived(totalReceivedSat + totalSentWithFeesSat);
   let totalPages = $derived(pageData?.totalPages || 0);
   let isLoading = $derived($isLoadingTransactions);
 </script>
@@ -713,26 +726,14 @@
                 >
                   {#if unit === currency}
                     {f(
-                      (payments
-                        .filter((p) => p.displayAmount > 0 && !p.isUsdt)
-                        .reduce((sum, p) => sum + p.displayAmount, 0) /
-                        sats) *
-                        rate,
+                      (totalReceivedSat / sats) * rate,
                       currency,
                       locale,
                     )}
                   {:else if unit === "btc"}
-                    {btc(
-                      payments
-                        .filter((p) => p.displayAmount > 0 && !p.isUsdt)
-                        .reduce((sum, p) => sum + p.displayAmount, 0),
-                    )} BTC
+                    {btc(totalReceivedSat)} BTC
                   {:else}
-                    {s(
-                      payments
-                        .filter((p) => p.displayAmount > 0 && !p.isUsdt)
-                        .reduce((sum, p) => sum + p.displayAmount, 0),
-                    )} sats
+                    {s(totalReceivedSat)} sats
                   {/if}
                 </div>
               </div>
@@ -755,32 +756,14 @@
                 >
                   {#if unit === currency}
                     {f(
-                      (Math.abs(
-                        payments
-                          .filter((p) => p.displayAmount < 0 && !p.isUsdt)
-                          .reduce((sum, p) => sum + p.displayAmount, 0),
-                      ) /
-                        sats) *
-                        rate,
+                      (totalSentWithFeesSat / sats) * rate,
                       currency,
                       locale,
                     )}
                   {:else if unit === "btc"}
-                    {btc(
-                      Math.abs(
-                        payments
-                          .filter((p) => p.displayAmount < 0 && !p.isUsdt)
-                          .reduce((sum, p) => sum + p.displayAmount, 0),
-                      ),
-                    )} BTC
+                    {btc(totalSentWithFeesSat)} BTC
                   {:else}
-                    {s(
-                      Math.abs(
-                        payments
-                          .filter((p) => p.displayAmount < 0 && !p.isUsdt)
-                          .reduce((sum, p) => sum + p.displayAmount, 0),
-                      ),
-                    )} sats
+                    {s(totalSentWithFeesSat)} sats
                   {/if}
                 </div>
               </div>
@@ -802,9 +785,21 @@
                 ></iconify-icon>
               </div>
               <div class="min-w-0">
-                <div class="text-xs sm:text-sm text-white/60">Refunds</div>
-                <div class="text-base sm:text-xl font-bold text-purple-300">
-                  View
+                <div class="text-xs sm:text-sm text-white/60">Total Volume</div>
+                <div
+                  class="text-base sm:text-xl font-bold text-purple-300 truncate"
+                >
+                  {#if unit === currency}
+                    {f(
+                      (totalVolumeSat / sats) * rate,
+                      currency,
+                      locale,
+                    )}
+                  {:else if unit === "btc"}
+                    {btc(totalVolumeSat)} BTC
+                  {:else}
+                    {s(totalVolumeSat)} sats
+                  {/if}
                 </div>
               </div>
             </div>
