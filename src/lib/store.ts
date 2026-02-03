@@ -67,6 +67,32 @@ const persistLocalValue = (key, defaultValue: any = undefined) => {
   return s;
 };
 
+const persistLocalValueWhen = (
+  key,
+  defaultValue: any = undefined,
+  shouldPersist: () => boolean,
+) => {
+  const s = writable(
+    browser &&
+      localStorage.getItem(key) !== null &&
+      localStorage.getItem(key) !== "undefined"
+      ? JSON.parse(localStorage.getItem(key) || "")
+      : defaultValue,
+  );
+
+  s.subscribe((v) => {
+    try {
+      if (!browser) return;
+      if (!shouldPersist()) return;
+      localStorage.setItem(key, JSON.stringify(v));
+    } catch (e) {
+      console.log("problem setting key", v);
+      console.log(e);
+    }
+  });
+
+  return s;
+};
 export const account = writable();
 export const amountPrompt = persistLocal("amountPrompt", false);
 export const avatar = writable();
@@ -102,4 +128,8 @@ export const nfcEnabled = writable(false);
 export const showQr = persistLocal("showQr", true);
 export const save = writable();
 // PRO mode for animations - defaults to false for reduced animations
-export const proMode = persistLocalValue("proMode", false);
+export const proMode = persistLocalValueWhen(
+  "proMode",
+  false,
+  () => browser && localStorage.getItem("proModeUserSet") === "true",
+);
