@@ -95,12 +95,21 @@
     $installPrompt = null;
   };
 
+  // iOS and Android detection
+  let isIOS = $state(false);
+  let isAndroid = $state(false);
   let isStandalone = $state(false);
-  let showInstallInstructions = $state(false);
-  let hideInstallCta = $state(false);
+  let showIOSInstructions = $state(false);
+  let showAndroidInstructions = $state(false);
 
   onMount(() => {
     if (browser) {
+      // @ts-ignore - MSStream is IE-specific
+      isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      const ua = navigator.userAgent || "";
+      const platform =
+        navigator.userAgentData?.platform || navigator.platform || "";
+      isAndroid = /Android/i.test(ua) || /Android/i.test(platform);
       // @ts-ignore - standalone is iOS-specific
       isStandalone =
         window.matchMedia("(display-mode: standalone)").matches ||
@@ -108,29 +117,12 @@
     }
   });
 
-  onMount(() => {
-    if (!browser || !user) return;
-    const key = `install-cta-dismissed-${user.id || user.username}`;
-    hideInstallCta = localStorage.getItem(key) === "true";
-  });
-
-  const handleInstallClick = async () => {
-    if ($installPrompt) {
-      await install();
-      return;
-    }
-    showInstallInstructions = true;
+  let showIOSInstallGuide = () => {
+    showIOSInstructions = true;
   };
 
-  const dismissInstallCta = (event) => {
-    event?.stopPropagation?.();
-    if (!browser || !user) {
-      hideInstallCta = true;
-      return;
-    }
-    const key = `install-cta-dismissed-${user.id || user.username}`;
-    localStorage.setItem(key, "true");
-    hideInstallCta = true;
+  let showAndroidInstallGuide = () => {
+    showAndroidInstructions = true;
   };
 
   let pubkey = $state();
@@ -148,33 +140,24 @@
     <div class="max-w-4xl mx-auto space-y-6">
       {#if user?.id && user.id === subject.id}
         <!-- Install App Button - Top Position (Android or iOS) -->
-        {#if ($installPrompt || !isStandalone) && !hideInstallCta}
-          <div class="lg:hidden relative">
-            <button
-              class="w-full px-6 py-3 rounded-2xl font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center justify-center gap-2 animate-pulse-soft"
-              style="background: linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%); color: white;"
-              onclick={handleInstallClick}
-            >
-              <div
-                class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                style="background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);"
-              ></div>
-              <iconify-icon
-                noobserver
-                icon="ph:floppy-disk-bold"
-                width="28"
-                class="relative z-10 group-hover:rotate-12 transition-transform duration-300"
-              ></iconify-icon>
-              <span class="relative z-10 font-bold">{$t("user.install")}</span>
-            </button>
-            <button
-              class="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-black/60 text-white/80 flex items-center justify-center hover:bg-black/80 transition"
-              onclick={dismissInstallCta}
-              aria-label="Dismiss install prompt"
-            >
-              <iconify-icon icon="ph:x-bold" width="14"></iconify-icon>
-            </button>
-          </div>
+        {#if showInstallButton && !isStandalone && ($installPrompt || isIOS)}
+          <button
+            class="w-full max-w-md mx-auto px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-base rounded-2xl font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center justify-center gap-2 animate-pulse-soft"
+            style="background: linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%); color: white;"
+            onclick={$installPrompt ? install : showIOSInstallGuide}
+          >
+            <div
+              class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              style="background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);"
+            ></div>
+            <iconify-icon
+              noobserver
+              icon="ph:floppy-disk-bold"
+              width="24"
+              class="relative z-10 group-hover:rotate-12 transition-transform duration-300"
+            ></iconify-icon>
+            <span class="relative z-10 font-bold">{$t("user.install")}</span>
+          </button>
         {/if}
 
         <!-- Disclaimer -->
@@ -455,11 +438,11 @@
 <!-- Buy Bitcoin Modal - Rendered at page level -->
 <BuyBitcoin bind:show={showBuyBitcoin} />
 
-<!-- Install Instructions Modal -->
-{#if showInstallInstructions}
+<!-- iOS Install Instructions Modal -->
+{#if showIOSInstructions}
   <div
     class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-    onclick={() => (showInstallInstructions = false)}
+    onclick={closeIOSInstructions}
   >
     <div
       class="glass p-6 rounded-3xl border-2 border-blue-500/50 bg-gradient-to-br from-blue-500/20 to-purple-500/20 max-w-md w-full animate-scaleIn"
@@ -467,142 +450,89 @@
     >
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-xl font-bold text-white flex items-center gap-2">
-          <iconify-icon
-            icon="ph:info-bold"
-            width="24"
-            class="text-blue-400 install-inline-icon"
+          <iconify-icon icon="ph:info-bold" width="24" class="text-blue-400"
           ></iconify-icon>
           Install App
         </h3>
         <button
-          onclick={() => (showInstallInstructions = false)}
+          onclick={closeIOSInstructions}
           class="p-2 hover:bg-white/10 rounded-lg transition-all"
         >
-          <iconify-icon
-            icon="ph:x-bold"
-            width="24"
-            class="text-white/60 install-inline-icon"
+          <iconify-icon icon="ph:x-bold" width="24" class="text-white/60"
           ></iconify-icon>
         </button>
       </div>
 
-      <div class="space-y-6 text-white/80">
-        <div
-          class="rounded-2xl border border-yellow-500/40 bg-yellow-500/10 px-4 py-3 text-xs text-yellow-200"
-        >
-          If you don’t see an install prompt, use your browser menu to add the
-          app to your device.
-        </div>
+      <div class="space-y-4 text-white/80">
+        <p class="text-sm">
+          This is not needed to use the app, but if you want to add it as a
+          button to your home screen, do the following:
+        </p>
 
-        <div class="space-y-4">
-          <p class="text-sm font-semibold text-white">iPhone / iPad (Safari)</p>
-          <ol class="space-y-3 text-sm">
-            <li class="flex items-start gap-3">
-              <span
-                class="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold"
-                >1</span
-              >
-              <div>
-                <p class="font-medium text-white">Tap the Share button</p>
-                <p class="text-xs text-white/60">
-                  Look for
-                  <iconify-icon
-                    icon="ph:share"
-                    class="install-inline-icon"
-                    width="16"
-                  ></iconify-icon>
-                  in Safari's toolbar (bottom of screen)
-                </p>
-              </div>
-            </li>
-            <li class="flex items-start gap-3">
-              <span
-                class="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold"
-                >2</span
-              >
-              <div>
-                <p class="font-medium text-white">
-                  Scroll and tap "Add to Home Screen"
-                </p>
-                <p class="text-xs text-white/60">
-                  Look for
-                  <iconify-icon
-                    icon="ph:plus-square"
-                    class="install-inline-icon"
-                    width="16"
-                  ></iconify-icon>
-                  Add to Home Screen
-                </p>
-              </div>
-            </li>
-            <li class="flex items-start gap-3">
-              <span
-                class="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold"
-                >3</span
-              >
-              <div>
-                <p class="font-medium text-white">Tap "Add"</p>
-                <p class="text-xs text-white/60">
-                  The app will appear on your home screen
-                </p>
-              </div>
-            </li>
-          </ol>
-        </div>
-
-        <div class="space-y-4">
-          <p class="text-sm font-semibold text-white">Android (Chrome)</p>
-          <ol class="space-y-3 text-sm">
-            <li class="flex items-start gap-3">
-              <span
-                class="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold"
-                >1</span
-              >
-              <div>
-                <p class="font-medium text-white">Tap the Menu button</p>
-                <p class="text-xs text-white/60">
-                  Look for
-                  <iconify-icon
-                    icon="ph:dots-three-vertical"
-                    class="install-inline-icon"
-                    width="16"
-                  ></iconify-icon>
-                  in Chrome's toolbar (top-right corner)
-                </p>
-              </div>
-            </li>
-            <li class="flex items-start gap-3">
-              <span
-                class="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold"
-                >2</span
-              >
-              <div>
-                <p class="font-medium text-white">
-                  Tap "Add to Home screen" or "Install app"
-                </p>
-                <p class="text-xs text-white/60">
-                  This option appears in the menu list
-                </p>
-              </div>
-            </li>
-            <li class="flex items-start gap-3">
-              <span
-                class="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold"
-                >3</span
-              >
-              <div>
-                <p class="font-medium text-white">Tap "Install" or "Add"</p>
-                <p class="text-xs text-white/60">
-                  The app will appear on your home screen
-                </p>
-              </div>
-            </li>
-          </ol>
-        </div>
+        <ol class="space-y-2 text-sm">
+          <li>1 - Tap the menu button on your browser's taskbar.</li>
+          <li>2 - Then tap "Add to Home Screen" or "Install App"</li>
+          <li>
+            3 - The app should show up on your home screen beside your other
+            apps.
+          </li>
+        </ol>
 
         <button
-          onclick={() => (showInstallInstructions = false)}
-          class="w-full mt-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105"
+          onclick={closeIOSInstructions}
+          class="w-full mt-4 px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105"
+          style="background: linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%); color: white;"
+        >
+          Got it!
+        </button>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- Android Install Instructions Modal -->
+{#if showAndroidInstructions}
+  <div
+    class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+    onclick={closeAndroidInstructions}
+  >
+    <div
+      class="glass p-6 rounded-3xl border-2 border-blue-500/50 bg-gradient-to-br from-blue-500/20 to-purple-500/20 max-w-md w-full animate-scaleIn"
+      onclick={(e) => e.stopPropagation()}
+    >
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-bold text-white flex items-center gap-2">
+          <iconify-icon icon="ph:info-bold" width="24" class="text-blue-400"
+          ></iconify-icon>
+          Add Shortcut to Homescreen
+        </h3>
+        <button
+          onclick={closeAndroidInstructions}
+          class="p-2 hover:bg-white/10 rounded-lg transition-all"
+        >
+          <iconify-icon icon="ph:x-bold" width="24" class="text-white/60"
+          ></iconify-icon>
+        </button>
+      </div>
+
+      <div class="space-y-4 text-white/80">
+        <p class="text-sm">
+          This is not needed to use the app, but if you want to add it as a
+          button to your home screen, do the following:
+        </p>
+
+        <ol class="space-y-2 text-sm">
+          <li>1 - Tap the menu button on your browser's taskbar.</li>
+          <li>2 - Then tap "Add to Home Screen" or "Install App"</li>
+          <li>
+            3 - The app should show up on your home screen beside your other
+            apps.
+          </li>
+        </ol>
+
+        <button
+          onclick={closeAndroidInstructions}
+          class="w-full mt-4 px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105"
           style="background: linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%); color: white;"
         >
           Got it!
@@ -629,8 +559,15 @@
     animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 
-  :global(.install-inline-icon) {
-    display: inline-block;
-    vertical-align: text-bottom;
+  :global(.force-dark),
+  :global(.force-dark *) {
+    color: #fff !important;
+  }
+
+  :global(.force-dark .gradient-text),
+  :global(.force-dark .text-transparent) {
+    color: #fff !important;
+    -webkit-text-fill-color: #fff !important;
+    background: none !important;
   }
 </style>

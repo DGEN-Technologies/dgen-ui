@@ -50,27 +50,6 @@
   let isSwitchingUsers = $state(false); // Flag to hide stale data during user switch
   let isAcquiringLock = $state(false); // Track if we're currently trying to acquire lock
   let showTabLockBanner = $state(false); // Control banner visibility
-  let backgroundPaused = $state(false); // Pause background activity when hidden
-  let visibilityHandler = null;
-  let backgroundPauseTimer = null;
-  const BACKGROUND_PAUSE_DELAY_MS = 0.25 * 60 * 1000;
-
-  const disconnectSdkIfActive = async (reason) => {
-    try {
-      const walletService = await import("$lib/walletService");
-      if (walletService.isConnected()) {
-        console.warn(
-          `[Layout] Detected active SDK in secondary tab. Disconnecting. Reason: ${reason}`,
-        );
-        await walletService.disconnect();
-      }
-    } catch (error) {
-      console.error(
-        "[Layout] Failed to disconnect SDK in secondary tab:",
-        error,
-      );
-    }
-  };
 
   $effect(() => ($themeStore = theme));
   $effect(() => (theme = $themeStore));
@@ -78,7 +57,6 @@
   // Watch for user changes and trigger wallet re-initialization
   $effect(() => {
     if (!browser || !browserCompatible) return;
-    if (document.hidden || backgroundPaused) return;
 
     const userId = user?.id || user?.username;
     if (!userId) return;
@@ -110,7 +88,6 @@
 
   const initializeBrowserWallet = async () => {
     if (!user || !browserCompatible) return;
-    if (browser && (document.hidden || backgroundPaused)) return;
 
     const userId = user.id || user.username;
 
@@ -125,7 +102,6 @@
       const lockAcquired = await tabSync.tryAcquireWalletLock(3, 1000);
 
       if (!lockAcquired) {
-        await disconnectSdkIfActive("lock_not_acquired");
         isSecondaryTab = true;
         showTabLockBanner = true;
         walletInitialized = true; // Mark as initialized but don't init SDK
@@ -150,7 +126,6 @@
             // Another tab took over, we become secondary
             isSecondaryTab = true;
             showTabLockBanner = true;
-            await disconnectSdkIfActive("lock_acquired_by_other_tab");
           }
         });
 
@@ -547,42 +522,6 @@
     }
   });
 
-  const pauseBackground = async () => {
-    if (!browser || backgroundPaused) return;
-    backgroundPaused = true;
-
-    if (checkTimer) {
-      clearTimeout(checkTimer);
-      checkTimer = null;
-    }
-
-    if (isSecondaryTab) return;
-
-    if (tabSync.hasLock()) {
-      try {
-        const walletService = await import("$lib/walletService");
-        await walletService.disconnect();
-      } catch (error) {
-        console.warn("[Layout] Failed to pause wallet in background:", error);
-      } finally {
-        walletEventListenerId = null;
-        walletInitialized = false;
-        tabSync.releaseWalletLock();
-      }
-    }
-  };
-
-  const resumeBackground = async () => {
-    if (!browser || !backgroundPaused) return;
-    backgroundPaused = false;
-    checkSocket();
-
-    if (!document.hidden && user && browserCompatible) {
-      walletInitialized = false;
-      await initializeBrowserWallet();
-    }
-  };
-
   onMount(async () => {
     if (browser) {
       // Initialize tab sync service first
@@ -590,40 +529,11 @@
 
       browserCompatible = checkBrowserCompatibility();
 
-      // Default PRO mode OFF inside the app unless user explicitly set it
-      if (localStorage.getItem("proModeUserSet") !== "true") {
-        $proMode = false;
-      }
-
       // Note: initializeBrowserWallet() is now called by $effect above
       // to handle both initial load and user switching
 
-      const handleTabUnload = () => {
-        void disconnectSdkIfActive("tab_unload");
-      };
-      window.addEventListener("beforeunload", handleTabUnload);
-      window.addEventListener("pagehide", handleTabUnload);
-
       checkSocket();
       $pin = Cookies.get("pin");
-
-      visibilityHandler = () => {
-        if (document.hidden) {
-          if (backgroundPauseTimer) {
-            clearTimeout(backgroundPauseTimer);
-          }
-          backgroundPauseTimer = setTimeout(() => {
-            pauseBackground();
-          }, BACKGROUND_PAUSE_DELAY_MS);
-        } else {
-          if (backgroundPauseTimer) {
-            clearTimeout(backgroundPauseTimer);
-            backgroundPauseTimer = null;
-          }
-          resumeBackground();
-        }
-      };
-      document.addEventListener("visibilitychange", visibilityHandler);
 
       // Enable NFC scanning for mobile devices
       if (window.NDEFReader) {
@@ -692,11 +602,6 @@
           // NFC not available or permission denied - that's okay
         }
       }
-
-      return () => {
-        window.removeEventListener("beforeunload", handleTabUnload);
-        window.removeEventListener("pagehide", handleTabUnload);
-      };
     }
   });
 
@@ -704,10 +609,6 @@
     counter = 0;
 
   let checkSocket = () => {
-    if (browser && document.hidden) {
-      checkTimer = setTimeout(checkSocket, 5000);
-      return;
-    }
     counter++;
     let lost = socket?.readyState !== 1 || !$last || Date.now() - $last > 30000;
     if (lost && token) connect(token);
@@ -736,15 +637,6 @@
         } catch (e) {
           console.error("[Layout] Failed to remove event listener:", e);
         }
-      }
-
-      if (visibilityHandler) {
-        document.removeEventListener("visibilitychange", visibilityHandler);
-        visibilityHandler = null;
-      }
-      if (backgroundPauseTimer) {
-        clearTimeout(backgroundPauseTimer);
-        backgroundPauseTimer = null;
       }
     }
   });

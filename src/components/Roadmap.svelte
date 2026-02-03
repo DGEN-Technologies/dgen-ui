@@ -24,11 +24,11 @@
     },
     {
       phase: "Phase 2",
-      title: "Introduction of DGEN Visa & Mastercard",
+      title: "Introduction of DGEN Crypto Credit Card",
       icon: "ph:credit-card-bold",
       color: "from-cyan-400 to-blue-400",
       items: [
-        "Branded Visa or Mastercard for crypto spending (off-ramp)",
+        "Branded Credit Card for crypto spending",
         "Global merchant acceptance",
         "Low fees",
         "Bridging Crypto with Traditional Finance",
