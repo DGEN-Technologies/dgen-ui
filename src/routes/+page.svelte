@@ -23,6 +23,13 @@
   let reduceFx = $state(false);
 
   onMount(() => {
+    if (browser) {
+      const prefersReduced = window.matchMedia?.(
+        "(prefers-reduced-motion: reduce)",
+      )?.matches;
+      reduceFx = Boolean(prefersReduced);
+    }
+
     if (browser && localStorage.getItem("proModeUserSet") !== "true") {
       $proMode = true;
     }
