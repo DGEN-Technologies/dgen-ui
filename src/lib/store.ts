@@ -74,6 +74,7 @@ const persistLocalValueWhen = (
 ) => {
   const s = writable(
     browser &&
+      shouldPersist() &&
       localStorage.getItem(key) !== null &&
       localStorage.getItem(key) !== "undefined"
       ? JSON.parse(localStorage.getItem(key) || "")
