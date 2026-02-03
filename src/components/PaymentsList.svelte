@@ -16,6 +16,13 @@
   import { unitPreference } from "$lib/store";
   import { walletBalance } from "$lib/stores/wallet";
 
+  const EXCLUDED_STATUSES = new Set([
+    "failed",
+    "refundable",
+    "refundPending",
+    "refunded",
+  ]);
+
   let { user, initialFilter = {} } = $props();
   let locale = $derived(user ? locales[user.language] : locales["en"]);
   let currency = $derived(user?.currency || "USD");
@@ -726,14 +733,41 @@
                 >
                   {#if unit === currency}
                     {f(
-                      (totalReceivedSat / sats) * rate,
+                      (payments
+                        .filter(
+                          (p) =>
+                            p.displayAmount > 0 &&
+                            !p.isUsdt &&
+                            !EXCLUDED_STATUSES.has(p.status),
+                        )
+                        .reduce((sum, p) => sum + p.displayAmount, 0) /
+                        sats) *
+                        rate,
                       currency,
                       locale,
                     )}
                   {:else if unit === "btc"}
-                    {btc(totalReceivedSat)} BTC
+                    {btc(
+                      payments
+                        .filter(
+                          (p) =>
+                            p.displayAmount > 0 &&
+                            !p.isUsdt &&
+                            !EXCLUDED_STATUSES.has(p.status),
+                        )
+                        .reduce((sum, p) => sum + p.displayAmount, 0),
+                    )} BTC
                   {:else}
-                    {s(totalReceivedSat)} sats
+                    {s(
+                      payments
+                        .filter(
+                          (p) =>
+                            p.displayAmount > 0 &&
+                            !p.isUsdt &&
+                            !EXCLUDED_STATUSES.has(p.status),
+                        )
+                        .reduce((sum, p) => sum + p.displayAmount, 0),
+                    )} sats
                   {/if}
                 </div>
               </div>
@@ -741,7 +775,7 @@
           </div>
         </div>
 
-        <!-- Total Sent -->
+        <!-- Total Sent (+fees) -->
         <div class="card bg-red-500/10 border border-red-500/30">
           <div class="card-body p-3 sm:p-4">
             <div class="flex items-center gap-2 sm:gap-3">
@@ -750,20 +784,73 @@
                 ></iconify-icon>
               </div>
               <div class="min-w-0">
-                <div class="text-xs sm:text-sm text-white/60">Total Sent</div>
+                <div class="text-xs sm:text-sm text-white/60">
+                  Total Sent (+fees)
+                </div>
                 <div
                   class="text-base sm:text-xl font-bold text-red-400 truncate"
                 >
                   {#if unit === currency}
                     {f(
-                      (totalSentWithFeesSat / sats) * rate,
+                      ((Math.abs(
+                        payments
+                          .filter(
+                            (p) =>
+                              p.displayAmount < 0 &&
+                              !p.isUsdt &&
+                              !EXCLUDED_STATUSES.has(p.status),
+                          )
+                          .reduce((sum, p) => sum + p.displayAmount, 0),
+                      ) +
+                        payments
+                          .filter(
+                            (p) =>
+                              !p.isUsdt && !EXCLUDED_STATUSES.has(p.status),
+                          )
+                          .reduce((sum, p) => sum + (p.feesSat || 0), 0)) /
+                        sats) *
+                        rate,
                       currency,
                       locale,
                     )}
                   {:else if unit === "btc"}
-                    {btc(totalSentWithFeesSat)} BTC
+                    {btc(
+                      Math.abs(
+                        payments
+                          .filter(
+                            (p) =>
+                              p.displayAmount < 0 &&
+                              !p.isUsdt &&
+                              !EXCLUDED_STATUSES.has(p.status),
+                          )
+                          .reduce((sum, p) => sum + p.displayAmount, 0),
+                      ) +
+                        payments
+                          .filter(
+                            (p) =>
+                              !p.isUsdt && !EXCLUDED_STATUSES.has(p.status),
+                          )
+                          .reduce((sum, p) => sum + (p.feesSat || 0), 0),
+                    )} BTC
                   {:else}
-                    {s(totalSentWithFeesSat)} sats
+                    {s(
+                      Math.abs(
+                        payments
+                          .filter(
+                            (p) =>
+                              p.displayAmount < 0 &&
+                              !p.isUsdt &&
+                              !EXCLUDED_STATUSES.has(p.status),
+                          )
+                          .reduce((sum, p) => sum + p.displayAmount, 0),
+                      ) +
+                        payments
+                          .filter(
+                            (p) =>
+                              !p.isUsdt && !EXCLUDED_STATUSES.has(p.status),
+                          )
+                          .reduce((sum, p) => sum + (p.feesSat || 0), 0),
+                    )} sats
                   {/if}
                 </div>
               </div>
@@ -771,40 +858,52 @@
           </div>
         </div>
 
-        <button
-          class="card bg-purple-500/10 border border-purple-500/30 text-left hover:bg-purple-500/15 transition-colors"
-          onclick={() => goto("/refunds")}
-        >
+        <div class="card bg-purple-500/10 border border-purple-500/30">
           <div class="card-body p-3 sm:p-4">
             <div class="flex items-center gap-2 sm:gap-3">
               <div class="text-purple-400 flex-shrink-0">
-                <iconify-icon
-                  icon="ph:arrow-u-up-left"
-                  width="24"
-                  class="sm:w-8"
+                <iconify-icon icon="ph:chart-bar" width="24" class="sm:w-8"
                 ></iconify-icon>
               </div>
               <div class="min-w-0">
-                <div class="text-xs sm:text-sm text-white/60">Total Volume</div>
+                <div class="text-xs sm:text-sm text-white/60">Total Fees</div>
                 <div
                   class="text-base sm:text-xl font-bold text-purple-300 truncate"
                 >
                   {#if unit === currency}
                     {f(
-                      (totalVolumeSat / sats) * rate,
+                      (payments
+                        .filter(
+                          (p) => !p.isUsdt && !EXCLUDED_STATUSES.has(p.status),
+                        )
+                        .reduce((sum, p) => sum + (p.feesSat || 0), 0) /
+                        sats) *
+                        rate,
                       currency,
                       locale,
                     )}
                   {:else if unit === "btc"}
-                    {btc(totalVolumeSat)} BTC
+                    {btc(
+                      payments
+                        .filter(
+                          (p) => !p.isUsdt && !EXCLUDED_STATUSES.has(p.status),
+                        )
+                        .reduce((sum, p) => sum + (p.feesSat || 0), 0),
+                    )} BTC
                   {:else}
-                    {s(totalVolumeSat)} sats
+                    {s(
+                      payments
+                        .filter(
+                          (p) => !p.isUsdt && !EXCLUDED_STATUSES.has(p.status),
+                        )
+                        .reduce((sum, p) => sum + (p.feesSat || 0), 0),
+                    )} sats
                   {/if}
                 </div>
               </div>
             </div>
           </div>
-        </button>
+        </div>
       </div>
     {/if}
 
