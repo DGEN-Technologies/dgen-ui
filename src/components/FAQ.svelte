@@ -85,7 +85,7 @@
       category: "DGEN",
       question: "Why DGEN over other wallets?",
       answer:
-        "<p>Built by Bitcoin enthusiasts. Features accessible on the DGEN web-app include atomic swaps, submarine swaps, cross-chain swaps with 3,500 coins across almost all the main blockchains, cutting-edge Lightning & Liquid technology, Non-custodial, and the DGEN CARD app which is a crypto credit card that can be used internationally (more info on the DGEN CARD app at <a href='http://card.dgentech.io' target='_blank' class='text-dgen-aqua hover:underline'>card.dgentech.io</a>).</p> <p>There are not many crypto wallets/apps on the market that have all these value points together.</p>",
+        "<p>Built by Bitcoin enthusiasts. Features accessible on the DGEN web-app include atomic swaps, submarine swaps, cross-chain swaps with 3,500 coins across almost all the main blockchains, cutting-edge Lightning & Liquid technology, Non-custodial, and the DGEN CARD app which is a crypto card that can be used internationally (more info on the DGEN CARD app at <a href='http://card.dgentech.io' target='_blank' class='text-dgen-aqua hover:underline'>card.dgentech.io</a>).</p> <p>There are not many crypto wallets/apps on the market that have all these value points together.</p>",
       icon: "ph:rocket-bold",
       emoji: "🚀",
     },

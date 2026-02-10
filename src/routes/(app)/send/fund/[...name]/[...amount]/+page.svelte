@@ -50,7 +50,7 @@
 {/if}
 
 <div class="container px-4 mt-20 max-w-xl mx-auto">
-  <Numpad bind:amount {currency} {rate} {fiat} {submit} {locale} />
+  <Numpad bind:amount {currency} {rate} {fiat} {submit} {locale} compactClear />
 
   <form
     use:enhance={handler(toggle)}

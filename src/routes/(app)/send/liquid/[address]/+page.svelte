@@ -140,7 +140,7 @@
 
   <h1 class="text-3xl md:text-4xl font-semibold mb-2">Send via Liquid</h1>
 
-  <div class="text-xl text-secondary break-all">{address}</div>
+  <div class="text-xs sm:text-sm text-secondary break-all">{address}</div>
 
   {#if isLoadingSDK}
     <!-- Loading State -->
@@ -204,6 +204,7 @@
       {locale}
       skipBalanceCheck={true}
       isUSDT={asset === "usdt"}
+      compactClear
     />
 
     <div class="flex justify-center gap-2">

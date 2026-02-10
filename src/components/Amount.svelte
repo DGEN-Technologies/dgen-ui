@@ -35,6 +35,9 @@
         ? "text-orange-400"
         : "text-yellow-300",
   );
+  const effectiveShowAllUnits = $derived(
+    showAllUnits || (invoiceType === types.lightning && !isUSDT),
+  );
 
   // Convert satoshis/smallest units to fiat value
   const toFiat = (sats, exchangeRate) => {
@@ -62,7 +65,7 @@
 
 {#if typeof amount !== "undefined"}
   <div>
-    {#if showAllUnits && !isUSDT}
+    {#if effectiveShowAllUnits}
       <!-- Success screen: Show BTC + sats + fiat all together -->
       <div class="space-y-3">
         <!-- BTC Amount -->
