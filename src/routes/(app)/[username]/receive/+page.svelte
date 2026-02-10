@@ -780,7 +780,7 @@
   });
 </script>
 
-<div class="min-h-screen relative force-dark">
+<div class="min-h-screen relative">
   <!-- Payment Success Overlay -->
   {#if showingSuccess && receivedPayment}
     <div
@@ -958,6 +958,9 @@
             <iconify-icon icon="ph:caret-down-bold" width="16"></iconify-icon>
           </button>
         </div>
+        <span class="text-sm md:text-2sm font-semibold"
+          >(Options other than Lightning Invoice)</span
+        >
       {/if}
 
       <!-- Payment Method Selection (Lightning Address, Bitcoin, Liquid) - EXPANDED view -->
@@ -1733,17 +1736,3 @@
     </button>
   </div>
 {/if}
-
-<style>
-  :global(.force-dark),
-  :global(.force-dark *) {
-    color: #fff !important;
-  }
-
-  :global(.force-dark .gradient-text),
-  :global(.force-dark .text-transparent) {
-    color: #fff !important;
-    -webkit-text-fill-color: #fff !important;
-    background: none !important;
-  }
-</style>

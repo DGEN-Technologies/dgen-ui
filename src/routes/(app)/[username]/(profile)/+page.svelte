@@ -654,16 +654,4 @@
   :global(.animate-pulse-soft) {
     animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
-
-  :global(.force-dark),
-  :global(.force-dark *) {
-    color: #fff !important;
-  }
-
-  :global(.force-dark .gradient-text),
-  :global(.force-dark .text-transparent) {
-    color: #fff !important;
-    -webkit-text-fill-color: #fff !important;
-    background: none !important;
-  }
 </style>

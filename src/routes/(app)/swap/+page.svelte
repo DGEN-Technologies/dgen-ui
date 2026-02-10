@@ -25,7 +25,7 @@
     onclick={() => {
       showSwapInfo = true;
     }}
-    class="mx-auto mb-4 px-3 py-2 w-fit items-center rounded-md text-xs sm:text-sm font-bold text-center text-black bg-gradient-to-r bg-yellow-400/70 border border-yellow-400/50 shadow-lg shadow-yellow-400/50"
+    class="mx-auto mb-4 px-3 py-2 w-fit items-center rounded-md text-xs sm:text-sm font-bold text-center bg-gradient-to-r bg-yellow-400/70 border border-yellow-400/50 shadow-lg shadow-yellow-400/50"
   >
     READ THIS Before Using This Swap / Buy Feature
   </button>
@@ -41,7 +41,7 @@
         transition:scale
       >
         <h3 class="font-bold text-dgen-aqua mb-3">
-          Read before using this feature
+          Read Before Using This Feature
         </h3>
         <div class="overflow-y-auto h-60 sm:h-96">
           <p class="mb-3">
@@ -62,7 +62,7 @@
           </ul>
 
           <div class="mb-3">
-            <div class="font-semibold" style="font-size: 1.5em;">Tip:</div>
+            <div class="font-semibold" style="font-size: 1.5em;">TIPS:</div>
             <p class="mt-1">
               Prepare in advance—select the assets you want to swap, then have
               your wallet addresses ready to copy/paste.
@@ -80,7 +80,9 @@
             happening with your swap.
           </p>
           <p class="mb-3 text-yellow-400">
-            DO NOT USE MIXERS/COINJOINERS with anything
+            DO NOT USE MIXERS/COINJOINERS with any transaction that is involved
+            with a transaction on the DGEN platform or its associated apps due
+            to regulatory compliance
           </p>
           <p class="mb-3 text-yellow-400">
             Note: Off-Ramp feature is not available but it will be soon. The

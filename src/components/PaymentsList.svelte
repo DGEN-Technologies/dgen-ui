@@ -515,7 +515,7 @@
   let isLoading = $derived($isLoadingTransactions);
 </script>
 
-<div class="min-h-screen force-dark">
+<div class="min-h-screen">
   <div
     class="container mx-auto max-w-4xl px-2 sm:px-4 py-3 sm:py-6 space-y-3 sm:space-y-6"
   >
@@ -1262,17 +1262,5 @@
 
   .animate-pulse {
     animation: pulse 2s infinite;
-  }
-
-  :global(.force-dark),
-  :global(.force-dark *) {
-    color: #fff !important;
-  }
-
-  :global(.force-dark .gradient-text),
-  :global(.force-dark .text-transparent) {
-    color: #fff !important;
-    -webkit-text-fill-color: #fff !important;
-    background: none !important;
   }
 </style>
