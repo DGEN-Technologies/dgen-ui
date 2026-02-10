@@ -60,7 +60,7 @@
   <div class="relative z-10 flex flex-col items-center justify-start px-4">
     <!-- Disclaimer -->
     <div
-      class="text-center px-4 mt-14 sm:mt-28"
+      class="text-center px-4 mt-24 sm:mt-28"
       in:fly={{ y: 20, duration: 800, delay: 900 }}
     >
       <div

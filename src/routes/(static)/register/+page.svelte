@@ -12,6 +12,7 @@
   import Pin from "$comp/Pin.svelte";
   import Spinner from "$comp/Spinner.svelte";
   import PasswordInput from "$comp/PasswordInput.svelte";
+  import TermsContent from "$comp/TermsContent.svelte";
 
   import { focus, fail } from "$lib/utils";
   import { avatar, signer, password, pin, loginRedirect } from "$lib/store";
@@ -48,6 +49,13 @@
   let revealPassword = $state(false);
   let confirmPassword = $state("");
   let revealConfirmPassword = $state(false);
+  let formElement = $state();
+
+  let showTerms = $state(false);
+  let termsAccepted = $state(false);
+  let termsScrollEl = $state();
+  let termsScrolledToEnd = $state(false);
+  let pendingSubmit = $state(false);
 
   // Simple avatar color system
   const avatarColors = [
@@ -134,6 +142,43 @@
   let need2fa = $derived(form?.message === "2fa");
   let uploadedSrc = $state(null);
 
+  const openTermsModal = async () => {
+    showTerms = true;
+    pendingSubmit = true;
+    termsScrolledToEnd = false;
+    await tick();
+    if (termsScrollEl) {
+      termsScrollEl.scrollTop = 0;
+      const reached =
+        termsScrollEl.scrollTop + termsScrollEl.clientHeight >=
+        termsScrollEl.scrollHeight - 8;
+      if (reached) termsScrolledToEnd = true;
+    }
+  };
+
+  const handleTermsScroll = () => {
+    if (!termsScrollEl) return;
+    const reached =
+      termsScrollEl.scrollTop + termsScrollEl.clientHeight >=
+      termsScrollEl.scrollHeight - 8;
+    if (reached) termsScrolledToEnd = true;
+  };
+
+  const closeTermsModal = () => {
+    showTerms = false;
+    pendingSubmit = false;
+  };
+
+  const acceptTerms = () => {
+    termsAccepted = true;
+    showTerms = false;
+
+    if (pendingSubmit && formElement) {
+      pendingSubmit = false;
+      formElement.requestSubmit();
+    }
+  };
+
   $effect(() => {
     if (need2fa && form.token === token) token = "";
   });
@@ -217,12 +262,19 @@
   <form
     class="space-y-5"
     method="POST"
-    use:enhance={() => {
+    bind:this={formElement}
+    use:enhance={({ cancel }) => {
       // Validate password confirmation
       if ($password !== confirmPassword) {
         fail($t("accounts.passwordMismatch"));
-        // Cancel form submission
-        return () => {};
+        cancel();
+        return;
+      }
+
+      if (!termsAccepted) {
+        cancel();
+        void openTermsModal();
+        return;
       }
 
       loading = true;
@@ -377,3 +429,70 @@
     </div>
   </form>
 </div>
+
+{#if showTerms}
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+    onclick={closeTermsModal}
+    role="button"
+    tabindex="0"
+  >
+    <div
+      class="glass w-full max-w-3xl rounded-3xl border border-white/10 bg-black/60 p-5 md:p-8"
+      onclick={(e) => e.stopPropagation()}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2 class="text-2xl md:text-3xl font-bold text-white">
+            Terms & Conditions
+          </h2>
+          <p class="text-white/60 text-xs md:text-sm mt-1">
+            Please scroll to the bottom before accepting.
+          </p>
+        </div>
+        <button
+          type="button"
+          class="text-white/60 hover:text-white transition-colors"
+          onclick={closeTermsModal}
+          aria-label="Close terms"
+        >
+          <iconify-icon icon="ph:x-bold" width="22"></iconify-icon>
+        </button>
+      </div>
+
+      <div
+        class="mt-4 max-h-[60vh] overflow-y-auto rounded-2xl border border-white/10 bg-black/40 p-4 md:p-6"
+        bind:this={termsScrollEl}
+        onscroll={handleTermsScroll}
+      >
+        <TermsContent />
+      </div>
+
+      <div class="mt-4 flex flex-col sm:flex-row gap-3 sm:items-center">
+        <button
+          type="button"
+          class="w-full sm:w-auto px-4 py-2 rounded-xl border border-white/20 text-white/80 hover:text-white hover:border-white/50 transition-all"
+          onclick={closeTermsModal}
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="w-full sm:w-auto px-5 py-2 rounded-xl font-semibold transition-all border border-green-400/60 text-green-200 hover:text-white hover:border-green-300 hover:bg-green-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={!termsScrolledToEnd}
+          onclick={acceptTerms}
+        >
+          I agree
+        </button>
+      </div>
+
+      {#if !termsScrolledToEnd}
+        <p class="mt-2 text-xs text-white/50">
+          Scroll to the bottom to enable “I agree”.
+        </p>
+      {/if}
+    </div>
+  </div>
+{/if}
