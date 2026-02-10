@@ -165,6 +165,7 @@
       {currency}
       {rate}
       {submit}
+      compactClear
     />
   {/if}
 

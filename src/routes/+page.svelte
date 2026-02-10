@@ -22,18 +22,16 @@
 
   onMount(() => {
     if (browser) {
-      const override = sessionStorage.getItem("proModeOverride");
       const userSet = localStorage.getItem("proModeUserSet") === "true";
-      if (!userSet && override !== "off") {
+      if (!userSet) {
         proMode.set(true);
       }
       const ua = navigator.userAgent || "";
       const platform = navigator.userAgentData?.platform || "";
-      const isAndroid = /Android/i.test(ua) || /Android/i.test(platform);
       const prefersReduced = window.matchMedia?.(
         "(prefers-reduced-motion: reduce)",
       )?.matches;
-      reduceFx = Boolean(isAndroid || prefersReduced);
+      reduceFx = Boolean(prefersReduced);
     }
 
     // Bind section elements after components are mounted

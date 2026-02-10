@@ -26,7 +26,7 @@
   // Convert relative URLs to full backend URLs for production compatibility
   let bg = $derived(bannerUrl ? `url(${getImageUrl(bannerUrl)})` : null);
   const DEFAULT_CARD_URL = "https://card.dgentech.io";
-  const isValidCreditCardUrl = (url) => {
+  const isValidDGENCardUrl = (url) => {
     try {
       const parsed = new URL(url);
       const allowedHosts = new Set(["card.dgentech.io", "dgentech.io"]);
@@ -35,9 +35,9 @@
       return false;
     }
   };
-  let creditCardUrl = $derived.by(() => {
-    const configured = publicEnv.PUBLIC_CREDITCARD_IS_LIVE_URL || "";
-    if (isValidCreditCardUrl(configured)) {
+  let DGENCardUrl = $derived.by(() => {
+    const configured = publicEnv.PUBLIC_DGENCARD_IS_LIVE_URL || "";
+    if (isValidDGENCardUrl(configured)) {
       return configured;
     }
     return DEFAULT_CARD_URL;
@@ -87,7 +87,9 @@
 
 {#if !$loading}
   <header
-    class="glass backdrop-blur-xl h-[175px] w-full relative mb-16 !z-30 border-b border-white/10 bg-black/40"
+    class="glass backdrop-blur-xl h-[175px] w-full relative mb-16 !z-30 border-b dark:border-white/10 border-gray-300/50 {bg
+      ? 'dark:bg-black/40 bg-white/40'
+      : ''}"
     style:background-image={bg}
   >
     <nav
@@ -119,11 +121,11 @@
         </a>
       {/if}
     </nav>
-    <!-- DGEN Credit Card -->
-    {#if creditCardUrl}
+    <!-- DGEN Card -->
+    {#if DGENCardUrl}
       <div class="mr-2 sm:mr-5 flex justify-end">
         <a
-          href={creditCardUrl}
+          href={DGENCardUrl}
           target="_blank"
           class="inline-flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 rounded-xl bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-2 border-blue-500/30"
         >
@@ -136,7 +138,7 @@
           </div>
           <div class="flex flex-col items-center">
             <span class="text-xs sm:text-sm font-semibold text-blue-300"
-              >DGEN Credit Card is live</span
+              >DGEN Card is live</span
             >
             <span class="text-[7px] sm:text-xs font-semibold text-blue-300"
               >(click here to see it)</span
