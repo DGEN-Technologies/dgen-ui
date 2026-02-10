@@ -35,6 +35,23 @@
   onMount(() => {
     if (!browser) return;
 
+    // Avoid noisy SSL errors from old SW registrations on localhost dev
+    if (
+      import.meta.env.DEV &&
+      (window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1") &&
+      "serviceWorker" in navigator
+    ) {
+      navigator.serviceWorker
+        .getRegistrations()
+        .then((registrations) => {
+          for (const registration of registrations) {
+            registration.unregister().catch(() => {});
+          }
+        })
+        .catch(() => {});
+    }
+
     // Force render after 2 seconds to prevent white screen issues
     // This ensures the app always loads even if translations are stuck
     setTimeout(() => {

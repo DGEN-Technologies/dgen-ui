@@ -50,6 +50,11 @@
   let isSwitchingUsers = $state(false); // Flag to hide stale data during user switch
   let isAcquiringLock = $state(false); // Track if we're currently trying to acquire lock
   let showTabLockBanner = $state(false); // Control banner visibility
+  let sdkSuspended = false;
+  let sdkResumeInFlight = false;
+  let sdkReloadCooldownUntil = 0;
+  let sdkReloadCooldownTimer = null;
+  let sdkDisconnectTimer = null;
 
   $effect(() => ($themeStore = theme));
   $effect(() => (theme = $themeStore));
@@ -57,6 +62,7 @@
   // Watch for user changes and trigger wallet re-initialization
   $effect(() => {
     if (!browser || !browserCompatible) return;
+    if (document.hidden || sdkSuspended) return;
 
     const userId = user?.id || user?.username;
     if (!userId) return;
@@ -88,6 +94,7 @@
 
   const initializeBrowserWallet = async () => {
     if (!user || !browserCompatible) return;
+    if (document.hidden) return;
 
     const userId = user.id || user.username;
 
@@ -534,6 +541,7 @@
 
       checkSocket();
       $pin = Cookies.get("pin");
+      document.addEventListener("visibilitychange", handleVisibilityForSdk);
 
       // Enable NFC scanning for mobile devices
       if (window.NDEFReader) {
@@ -608,12 +616,106 @@
   let checkTimer,
     counter = 0;
 
+  const handleVisibilityForSdk = async () => {
+    if (!browser) return;
+    if (!user || !browserCompatible) return;
+
+    const walletService = await import("$lib/walletService");
+
+    if (document.hidden) {
+      if (sdkSuspended) return;
+      if (!walletService.isConnected()) {
+        sdkSuspended = true;
+        walletInitialized = false;
+        walletEventListenerId = null;
+        return;
+      }
+      if (sdkDisconnectTimer) return;
+
+      sdkDisconnectTimer = setTimeout(async () => {
+        sdkDisconnectTimer = null;
+        if (!document.hidden) return;
+
+        sdkSuspended = true;
+        try {
+          await walletService.disconnect();
+        } catch (error) {
+          console.warn("[Layout] Failed to disconnect SDK on hide:", error);
+        }
+
+        walletEventListenerId = null;
+        walletInitialized = false;
+
+        try {
+          const { walletStore, transactions } = await import(
+            "$lib/stores/wallet"
+          );
+          walletStore.reset();
+          transactions.reset();
+        } catch (error) {
+          console.warn(
+            "[Layout] Failed to reset wallet stores on hide:",
+            error,
+          );
+        }
+      }, 30000);
+
+      return;
+    }
+
+    if (sdkDisconnectTimer) {
+      clearTimeout(sdkDisconnectTimer);
+      sdkDisconnectTimer = null;
+    }
+
+    if (!sdkSuspended || sdkResumeInFlight) return;
+    sdkResumeInFlight = true;
+    try {
+      await initializeBrowserWallet();
+      const walletService = await import("$lib/walletService");
+      if (!walletService.isConnected()) {
+        const now = Date.now();
+        if (now >= sdkReloadCooldownUntil) {
+          sdkReloadCooldownUntil = now + 30000;
+          if (sdkReloadCooldownTimer) {
+            clearTimeout(sdkReloadCooldownTimer);
+          }
+          sdkReloadCooldownTimer = setTimeout(() => {
+            sdkReloadCooldownTimer = null;
+            sdkReloadCooldownUntil = 0;
+          }, 30000);
+          window.location.reload();
+        }
+        return;
+      }
+    } catch (error) {
+      console.warn("[Layout] Failed to resume SDK on show:", error);
+      const now = Date.now();
+      if (now >= sdkReloadCooldownUntil) {
+        sdkReloadCooldownUntil = now + 30000;
+        if (sdkReloadCooldownTimer) {
+          clearTimeout(sdkReloadCooldownTimer);
+        }
+        sdkReloadCooldownTimer = setTimeout(() => {
+          sdkReloadCooldownTimer = null;
+          sdkReloadCooldownUntil = 0;
+        }, 30000);
+        window.location.reload();
+        return;
+      }
+    } finally {
+      sdkResumeInFlight = false;
+      sdkSuspended = false;
+    }
+  };
+
   let checkSocket = () => {
     counter++;
-    let lost = socket?.readyState !== 1 || !$last || Date.now() - $last > 30000;
+    const isOpen = socket?.readyState === 1;
+    let lost = !isOpen || !$last || Date.now() - $last > 30000;
     if (lost && token) connect(token);
-    if (counter > 5 && token) {
-      send("heartbeat", token);
+    if (counter > 5 && token && isOpen) {
+      void send("heartbeat", token);
       counter = 0;
     }
 
@@ -638,6 +740,8 @@
           console.error("[Layout] Failed to remove event listener:", e);
         }
       }
+
+      document.removeEventListener("visibilitychange", handleVisibilityForSdk);
     }
   });
 </script>
