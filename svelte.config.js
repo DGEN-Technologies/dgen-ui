@@ -11,6 +11,41 @@ if (!isProd) {
   imgSrc.push("http://localhost:*");
 }
 
+const connectSrc = [
+  "self",
+  "https://*.railway.app",
+  "https://*.up.railway.app",
+  "wss://*.railway.app",
+  "wss://*.up.railway.app",
+  "https://mempool.space",
+  "https://liquid.network",
+  "https://blockstream.info",
+  "https://*.breez.technology",
+  "https://*.breez.technology:*",
+  "wss://*.breez.technology",
+  "https://breez.fun",
+  "https://api.sideswap.io", // PayJoin API for Breez SDK
+  "wss://api.sideswap.io", // SideSwap WebSocket for swap coordination
+  "wss://api-testnet.sideswap.io", // SideSwap testnet WebSocket
+  "https://cloudflare-dns.com", // DNS-over-HTTPS for BIP353/Lightning address resolution
+  "https://api.iconify.design",
+  "https://api.simplesvg.com",
+  "https://api.unisvg.com",
+  "data:",
+  // NOTE: PUBLIC_WIDGET_API_BASE in .env must match this URL.
+  // If the chatbot backend URL changes, update BOTH:
+  // 1) .env(PUBLIC_WIDGET_API_BASE)
+  // 2) This connect-src entry
+  "https://widget2agent-657488364208.asia-southeast1.run.app",
+];
+if (!isProd) {
+  connectSrc.push(
+    "http://localhost:*",
+    "ws://localhost:*",
+    "https://localhost:*",
+  );
+}
+
 const config = {
   preprocess: vitePreprocess(),
   kit: {
@@ -33,34 +68,7 @@ const config = {
         "style-src": styleSrc, // Google Fonts; inline styles only in development
         "img-src": imgSrc,
         "font-src": ["self", "data:", "https://fonts.gstatic.com"],
-        "connect-src": [
-          "self",
-          "https://*.railway.app",
-          "https://*.up.railway.app",
-          "wss://*.railway.app",
-          "wss://*.up.railway.app",
-          "https://localhost:*",
-          "https://mempool.space",
-          "https://liquid.network",
-          "https://blockstream.info",
-          "https://*.breez.technology",
-          "https://*.breez.technology:*",
-          "wss://*.breez.technology",
-          "https://breez.fun",
-          "https://api.sideswap.io", // PayJoin API for Breez SDK
-          "wss://api.sideswap.io", // SideSwap WebSocket for swap coordination
-          "wss://api-testnet.sideswap.io", // SideSwap testnet WebSocket
-          "https://cloudflare-dns.com", // DNS-over-HTTPS for BIP353/Lightning address resolution
-          "https://api.iconify.design",
-          "https://api.simplesvg.com",
-          "https://api.unisvg.com",
-          "data:",
-          // NOTE: PUBLIC_WIDGET_API_BASE in .env must match this URL.
-          // If the chatbot backend URL changes, update BOTH:
-          // 1) .env(PUBLIC_WIDGET_API_BASE)
-          // 2) This connect-src entry
-          "https://widget2agent-657488364208.asia-southeast1.run.app",
-        ],
+        "connect-src": connectSrc,
         "frame-ancestors": ["none"],
         "base-uri": ["self"],
         "form-action": ["self"],

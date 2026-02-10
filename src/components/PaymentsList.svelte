@@ -894,6 +894,12 @@
                   Your transaction history will appear here
                 {/if}
               </p>
+              <button
+                class="btn btn-primary btn-sm mt-4"
+                onclick={() => window.location.reload()}
+              >
+                Reload
+              </button>
             </div>
           </div>
         {:else}

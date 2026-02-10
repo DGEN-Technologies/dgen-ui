@@ -13,15 +13,29 @@ let token;
 export const auth = () => token && send("login", token);
 
 export const send = async (type, data) => {
-  try {
-    await wait(() => socket?.readyState === 1, 1000, 10);
-  } catch (e) {
-    const { message } = e as Error;
-    if (message === "timeout") reconnectToWebsocket();
+  if (!socket || socket.readyState !== 1) {
+    try {
+      await wait(() => socket?.readyState === 1, 1000, 10);
+    } catch (e) {
+      const { message } = e as Error;
+      if (message === "timeout") {
+        reconnectToWebsocket();
+      }
+      return false;
+    }
   }
 
-  await wait(() => socket?.readyState === 1, 1000, 10);
-  socket.send(JSON.stringify({ type, data }));
+  if (!socket || socket.readyState !== 1) return false;
+
+  try {
+    socket.send(JSON.stringify({ type, data }));
+    return true;
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      console.warn("[WebSocket] send failed:", error);
+    }
+    return false;
+  }
 };
 
 export const messages = (data) => ({
