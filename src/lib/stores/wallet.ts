@@ -10,6 +10,7 @@ import {
   markTxConfirmed,
   clearTrackedTxs,
 } from "../esplora/PollManager";
+import { trackOutgoingTx } from "../sendGate";
 
 // Define interfaces locally to avoid import issues
 interface GetInfoResponse {
@@ -475,6 +476,9 @@ const startEventListening = async (): Promise<void> => {
               // Track pending tx for fast polling (Breez SDK uses Liquid network)
               if (isValidTxid(event.details?.txId)) {
                 trackPendingTx(event.details.txId, "liquid");
+                if (event.details?.paymentType === "send") {
+                  trackOutgoingTx(event.details.txId, "liquid");
+                }
               } else if (event.details?.txId) {
                 logInvalidTxid(event.details.txId, event.details);
               }
@@ -505,6 +509,9 @@ const startEventListening = async (): Promise<void> => {
               // Move from pending to confirming for normal polling (Breez SDK uses Liquid network)
               if (isValidTxid(event.details?.txId)) {
                 trackConfirmingTx(event.details.txId, "liquid");
+                if (event.details?.paymentType === "send") {
+                  trackOutgoingTx(event.details.txId, "liquid");
+                }
               } else if (event.details?.txId) {
                 logInvalidTxid(event.details.txId, event.details);
               }

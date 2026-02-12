@@ -15,6 +15,7 @@
   import Numpad from "./Numpad.svelte";
   import { t } from "$lib/translations";
   import { walletBalance } from "$lib/stores/wallet";
+  import { sendGateStore } from "$lib/sendGate";
 
   let { payreq, rate = 0, currency = "USD" } = $props();
 
@@ -31,6 +32,7 @@
   let limits = $state(null);
   let minSendable = $state(0);
   let maxSendable = $state(0);
+  let gateWaiting = $derived($sendGateStore.status === "waiting");
 
   onMount(async () => {
     if (payreq) {
@@ -311,7 +313,16 @@
       }
     } catch (e) {
       console.error("Payment failed:", e);
-      error = e.message || "Payment failed";
+      const message = e instanceof Error ? e.message : String(e || "");
+      if (
+        message.includes("bad-txns-inputs-missingorspent") ||
+        message.includes("Failed to parse response to txid")
+      ) {
+        error =
+          "Your previous transaction is still propagating. Please wait a moment and try again.";
+      } else {
+        error = message || "Payment failed";
+      }
     } finally {
       loading = false;
     }
@@ -326,6 +337,11 @@
   {#if error}
     <div class="alert alert-error">
       <span>{error}</span>
+    </div>
+  {/if}
+  {#if gateWaiting}
+    <div class="alert alert-info">
+      <span>Waiting for previous transaction to propagate…</span>
     </div>
   {/if}
   {#if pendingTimeoutWarning}
@@ -485,7 +501,7 @@
           <button
             class="btn btn-primary w-full"
             onclick={executeSend}
-            disabled={loading || !preparedPayment}
+            disabled={loading || !preparedPayment || gateWaiting}
           >
             {#if loading}
               <Spinner />
@@ -539,6 +555,9 @@
 
   .alert-error {
     @apply bg-red-500/20 border border-red-500/50 text-red-400;
+  }
+  .alert-info {
+    @apply bg-blue-500/20 border border-blue-500/50 text-blue-200;
   }
 
   .glass {

@@ -1,6 +1,7 @@
 import { browser } from "$app/environment";
 import { env } from "$env/dynamic/public";
 import { bech32, bech32m } from "bech32";
+import * as blech32Lib from "blech32";
 import { sha256 } from "@noble/hashes/sha256";
 import { base58check } from "@scure/base";
 
@@ -30,7 +31,7 @@ const VALID_NETWORKS = new Set<Network>([
   "testnet",
   "liquidtestnet",
 ]);
-const MAX_ADDRESS_LENGTH = 120;
+const MAX_ADDRESS_LENGTH = 200;
 const base58Address = /^[1-9A-HJ-NP-Za-km-z]{25,90}$/;
 const bech32Address = /^(bc1|tb1|bcrt1|lq1|tlq1|ex1|tex1)[0-9a-z]{6,}$/i;
 const bech32Prefixes = new Set(["bc", "tb", "bcrt", "lq", "tlq", "ex", "tex"]);
@@ -85,11 +86,54 @@ function isValidBech32Address(address: string): boolean {
   return false;
 }
 
+const getBlech32Decoders = (): Array<{ decode: (value: string, limit?: number) => any }> => {
+  const lib: any = blech32Lib as any;
+  const candidates: Array<{ decode?: (value: string, limit?: number) => any }> = [
+    lib,
+    lib?.default,
+    lib?.blech32,
+    lib?.blech32m,
+    lib?.default?.blech32,
+    lib?.default?.blech32m,
+  ];
+  const decoders: Array<{ decode: (value: string, limit?: number) => any }> = [];
+  for (const candidate of candidates) {
+    if (candidate && typeof candidate.decode === "function") {
+      decoders.push(candidate as { decode: (value: string, limit?: number) => any });
+    }
+  }
+  return decoders;
+};
+
+const isValidBlech32Address = (address: string): boolean => {
+  if (!bech32Address.test(address)) return false;
+  const normalized = address.toLowerCase();
+  const prefix = normalized.split("1")[0];
+  if (!bech32Prefixes.has(prefix)) return false;
+
+  const decoders = getBlech32Decoders();
+  for (const decoder of decoders) {
+    try {
+      if (decoder.decode.length >= 2) {
+        decoder.decode(normalized, 2048);
+      } else {
+        decoder.decode(normalized);
+      }
+      return true;
+    } catch {}
+  }
+  return false;
+};
+
 function isValidAddress(address: string): boolean {
   if (!address) return false;
   if (address.length < 14 || address.length > MAX_ADDRESS_LENGTH) return false;
   if (!/^[a-zA-Z0-9]+$/.test(address)) return false;
-  return isValidBase58Address(address) || isValidBech32Address(address);
+  return (
+    isValidBase58Address(address) ||
+    isValidBech32Address(address) ||
+    isValidBlech32Address(address)
+  );
 }
 
 function validateAddress(address: string): void {
@@ -345,6 +389,42 @@ export async function getTxStatus(
 }
 
 /**
+ * Check whether a transaction is visible (mempool or confirmed).
+ * Returns false if not found (404).
+ */
+export async function isTxSeen(
+  txid: string,
+  network: Network = "liquid",
+): Promise<boolean> {
+  const normalizedTxid = txid.trim();
+  validateTxid(normalizedTxid);
+  validateNetwork(network);
+  const baseUrl = getBaseUrl();
+  const url = `${baseUrl}/api/esplora/tx/${encodeURIComponent(normalizedTxid)}/status?network=${encodeURIComponent(network)}&ts=${Date.now()}`;
+
+  const response = await fetch(url, {
+    headers: {
+      Accept: "application/json",
+      "Cache-Control": "no-cache",
+    },
+  });
+
+  if (response.status === 404) return false;
+  if (!response.ok) {
+    const errorBody = await response.text();
+    if (import.meta.env.DEV) {
+      console.warn("[EsploraClient] API error:", {
+        status: response.status,
+        body: errorBody,
+      });
+    }
+    throw new Error("Esplora API request failed");
+  }
+
+  return true;
+}
+
+/**
  * Get full transaction details
  */
 export async function getTx(
@@ -504,6 +584,7 @@ export async function broadcastTx(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      "Accept": "application/json",
     },
     body: JSON.stringify({ txHex: normalizedTxHex, network }),
   });

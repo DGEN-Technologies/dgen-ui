@@ -4,6 +4,8 @@ import { env as publicEnv } from "$env/dynamic/public";
 import * as bip39 from "bip39";
 import { SecureStorage } from "./secureStorage";
 import { initBreezLogger, sdkLogger, lightningAddressLogger } from "./logger";
+import { trackPendingTx } from "./esplora/PollManager";
+import { trackOutgoingTx, waitForOutgoingSlot } from "./sendGate";
 import { sha256 } from "@noble/hashes/sha256";
 import { bytesToHex } from "@noble/hashes/utils";
 import { walletUnlockLimiter, paymentLimiter } from "./security/rateLimiter";
@@ -515,7 +517,18 @@ export const sendPayment = async (
   params: breezSdk.SendPaymentRequest,
 ): Promise<breezSdk.SendPaymentResponse> => {
   if (!sdk) throw new Error("SDK not initialized");
-  return await sdk.sendPayment(params);
+  await waitForOutgoingSlot();
+  const response = await sdk.sendPayment(params);
+  const txId = response?.payment?.txId;
+  if (typeof txId === "string" && /^[a-fA-F0-9]{64}$/.test(txId)) {
+    sdkLogger.info("SendPayment broadcast txId:", txId);
+    // Kick off fast polling immediately to reduce stale-UTXO follow-ups.
+    trackPendingTx(txId, "liquid");
+    trackOutgoingTx(txId, "liquid");
+  } else if (txId) {
+    sdkLogger.warn("SendPayment returned non-txid identifier:", txId);
+  }
+  return response;
 };
 
 // Receiving Operations
@@ -806,7 +819,17 @@ export const lnurlPay = async (
   params: breezSdk.LnUrlPayRequest,
 ): Promise<breezSdk.LnUrlPayResult> => {
   if (!sdk) throw new Error("SDK not initialized");
-  return await sdk.lnurlPay(params);
+  await waitForOutgoingSlot();
+  const result = await sdk.lnurlPay(params);
+  const txId = result?.payment?.txId;
+  if (typeof txId === "string" && /^[a-fA-F0-9]{64}$/.test(txId)) {
+    sdkLogger.info("LnurlPay broadcast txId:", txId);
+    trackPendingTx(txId, "liquid");
+    trackOutgoingTx(txId, "liquid");
+  } else if (txId) {
+    sdkLogger.warn("LnurlPay returned non-txid identifier:", txId);
+  }
+  return result;
 };
 
 // Lightning Address types

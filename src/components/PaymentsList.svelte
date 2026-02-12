@@ -497,6 +497,14 @@
   let payments = $derived(
     pageData?.transactions
       .filter((p) => {
+        const normalizedStatus = (p.status || "").toLowerCase();
+        const isUnsettled =
+          normalizedStatus &&
+          !["complete", "success", "failed", "refunded"].includes(
+            normalizedStatus,
+          );
+        if (isUnsettled) return true;
+
         // Filter out transactions with 0 or very small amounts
         // Check both the original amountSat and any USDT amounts
         if (

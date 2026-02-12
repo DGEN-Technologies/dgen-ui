@@ -286,16 +286,45 @@ function createTransactionStore() {
         // Enhance transactions with additional fields
         const enhanced = transactions.map((tx) => enhancePayment(tx, rates));
 
+        // Preserve local pending transactions that aren't yet visible in SDK list
+        const currentState = get({ subscribe });
+        const now = Date.now();
+        const PENDING_GRACE_MS = 2 * 60 * 60 * 1000; // 2 hours
+        const isUnsettled = (status?: string): boolean => {
+          const normalized = (status || "").toLowerCase();
+          return !["complete", "success", "failed", "refunded"].includes(
+            normalized,
+          );
+        };
+        const preservedPending = currentState.allTransactions.filter((tx) => {
+          if (!isUnsettled(tx.status)) return false;
+          const referenceTime =
+            typeof tx.paymentTime === "number" && tx.paymentTime > 0
+              ? tx.paymentTime * 1000
+              : now;
+          return now - referenceTime <= PENDING_GRACE_MS;
+        });
+
+        const mergedById = new Map<string, EnhancedPayment>();
+        for (const tx of enhanced) {
+          mergedById.set(tx.id, tx);
+        }
+        for (const tx of preservedPending) {
+          if (!mergedById.has(tx.id)) {
+            mergedById.set(tx.id, tx);
+          }
+        }
+        const merged = Array.from(mergedById.values());
+
         update((state) => ({
           ...state,
-          allTransactions: enhanced,
+          allTransactions: merged,
           isLoading: false,
           lastSync: Date.now(),
           fiatRates: rates,
         }));
 
         // Apply current filter (for client-side filtering of type, status, search)
-        const currentState = get({ subscribe });
         this.applyFilter(currentState.filter);
       } catch (error) {
         console.error("Failed to load transactions:", error);
