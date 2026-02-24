@@ -56,8 +56,23 @@
   let sdkReloadCooldownTimer = null;
   let sdkDisconnectTimer = null;
 
+  const isAndroidDevice = () => {
+    if (!browser) return false;
+    const ua = navigator.userAgent || "";
+    const platform = navigator.userAgentData?.platform || "";
+    return /Android/i.test(ua) || /Android/i.test(platform);
+  };
+
   $effect(() => ($themeStore = theme));
   $effect(() => (theme = $themeStore));
+
+  $effect(() => {
+    if (!browser) return;
+    if (!user) return;
+    if (isAndroidDevice()) {
+      proMode.set(false);
+    }
+  });
 
   // Watch for user changes and trigger wallet re-initialization
   $effect(() => {
@@ -713,7 +728,11 @@
     counter++;
     const isOpen = socket?.readyState === 1;
     let lost = !isOpen || !$last || Date.now() - $last > 30000;
-    if (lost && token) connect(token);
+    if (lost && token) {
+      connect(token).catch((error) => {
+        console.warn("[Layout] Socket reconnect failed:", error);
+      });
+    }
     if (counter > 5 && token && isOpen) {
       void send("heartbeat", token);
       counter = 0;

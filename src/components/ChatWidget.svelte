@@ -446,7 +446,6 @@
     class="widget-container"
     id="dgen-chat-widget"
     role="dialog"
-    aria-modal="true"
     aria-label="DGEN support chat"
   >
     <!-- Header -->

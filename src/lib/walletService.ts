@@ -4,9 +4,29 @@ import { env as publicEnv } from "$env/dynamic/public";
 import * as bip39 from "bip39";
 import { SecureStorage } from "./secureStorage";
 import { initBreezLogger, sdkLogger, lightningAddressLogger } from "./logger";
+import { trackPendingTx } from "./esplora/PollManager";
+import { trackOutgoingTx, waitForOutgoingSlot } from "./sendGate";
 import { sha256 } from "@noble/hashes/sha256";
 import { bytesToHex } from "@noble/hashes/utils";
 import { walletUnlockLimiter, paymentLimiter } from "./security/rateLimiter";
+import { mapTxError } from "./txErrors";
+
+export const resolveLightningAddress = async (
+  address: string,
+): Promise<breezSdk.LnUrlPayRequestData> => {
+  const response = await fetch(
+    `/api/lnurl/resolve?address=${encodeURIComponent(address.trim())}`,
+  );
+  if (!response.ok) {
+    const detail = await response.text();
+    sdkLogger.warn("Lightning address lookup failed", {
+      status: response.status,
+      detail: detail?.slice(0, 200),
+    });
+    throw new Error(`Lightning address lookup failed (${response.status})`);
+  }
+  return (await response.json()) as breezSdk.LnUrlPayRequestData;
+};
 
 // Private SDK instance - not exposed outside this module
 let sdk: breezSdk.BindingLiquidSdk | null = null;
@@ -14,6 +34,8 @@ let wasmInitialized = false;
 let eventListeners: Map<string, string> = new Map(); // Track listener IDs
 let currentUserId: string | null = null;
 let isConnecting = false; // Prevent concurrent connections
+const SDK_CONFIG_VERSION = 4;
+const SDK_CONFIG_VERSION_KEY = "breez_sdk_config_version";
 
 // Secure storage instance
 const secureStorage = SecureStorage.getInstance();
@@ -53,6 +75,30 @@ const buildBackendExplorerUrl = (networkPath: string): string | null => {
   } catch {
     return null;
   }
+};
+
+const resolveExplorerOverride = (
+  explicitValue: string | undefined,
+  fallbackNetwork?: "bitcoin" | "liquid",
+): string | null => {
+  const explicit = normalizeExplorerUrl(explicitValue);
+  if (explicit) return explicit;
+  if (!fallbackNetwork) return null;
+  return buildBackendExplorerUrl(fallbackNetwork);
+};
+
+const redactUrl = (value: string): string => {
+  try {
+    const url = new URL(value);
+    return `${url.origin}/...`;
+  } catch {
+    return "<invalid-url>";
+  }
+};
+
+const summarizeOffer = (offer?: string): string => {
+  if (!offer) return "<none>";
+  return `len:${offer.length}`;
 };
 
 /**
@@ -183,16 +229,22 @@ export const initWallet = async (
     return;
   }
 
-  // If already connected for this user, just return
-  if (sdk && currentUserId === userId) {
+  const needsConfigRefresh = (() => {
+    if (typeof window === "undefined") return false;
+    const stored = window.localStorage.getItem(SDK_CONFIG_VERSION_KEY);
+    return stored !== String(SDK_CONFIG_VERSION);
+  })();
+
+  // If already connected for this user and config is current, just return
+  if (sdk && currentUserId === userId && !needsConfigRefresh) {
     return;
   }
 
   try {
     isConnecting = true;
 
-    // Disconnect existing SDK if switching users
-    if (sdk && currentUserId !== userId) {
+    // Disconnect existing SDK if switching users or config version changed
+    if (sdk && (currentUserId !== userId || needsConfigRefresh)) {
       await disconnect();
     }
 
@@ -204,6 +256,13 @@ export const initWallet = async (
 
     // Connect to SDK with mnemonic
     await connectSdk(mnemonic);
+
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(
+        SDK_CONFIG_VERSION_KEY,
+        String(SDK_CONFIG_VERSION),
+      );
+    }
   } catch (error) {
     throw error;
   } finally {
@@ -237,50 +296,42 @@ const connectSdk = async (mnemonic: string, retryCount = 0): Promise<void> => {
     }
     config.breezApiKey = breezApiKey;
 
-    // Configure custom blockchain explorers to avoid rate limits
-    // Prefer explicit VITE_* overrides, then backend proxy, then public explorers.
-    const liquidExplorerUrl =
-      normalizeExplorerUrl(import.meta.env.VITE_LIQUID_EXPLORER_URL) ??
-      buildBackendExplorerUrl("liquid") ??
-      normalizeExplorerUrl(publicEnv.PUBLIC_LIQUID_EXPLORER);
-    const bitcoinExplorerUrl =
-      normalizeExplorerUrl(import.meta.env.VITE_BITCOIN_EXPLORER_URL) ??
-      buildBackendExplorerUrl("bitcoin") ??
-      normalizeExplorerUrl(publicEnv.PUBLIC_EXPLORER);
-
-    if (liquidExplorerUrl) {
-      sdkLogger.info("Using Liquid explorer:", liquidExplorerUrl);
-      config.liquidExplorer = {
-        type: "esplora",
-        url: liquidExplorerUrl,
-        useWaterfalls: false,
-      };
-    } else {
-      sdkLogger.warn("No Liquid explorer configured; SDK will use defaults.");
-    }
-
+    const bitcoinExplorerUrl = resolveExplorerOverride(
+      import.meta.env.VITE_BITCOIN_EXPLORER_URL,
+      "bitcoin",
+    );
+    // Explorer overrides:
+    // - Bitcoin is routed through our backend proxy (enterprise tokens applied server-side).
+    // - Liquid stays on Breez defaults to preserve Breez-only endpoints (Option A).
     if (bitcoinExplorerUrl) {
-      sdkLogger.info("Using Bitcoin explorer:", bitcoinExplorerUrl);
       config.bitcoinExplorer = {
         type: "esplora",
         url: bitcoinExplorerUrl,
         useWaterfalls: false,
       };
-    } else {
-      sdkLogger.warn("No Bitcoin explorer configured; SDK will use defaults.");
     }
+
+    sdkLogger.info(
+      `[SDK] Explorer config: bitcoin=${config.bitcoinExplorer.url} useWaterfalls=${config.bitcoinExplorer.useWaterfalls}; liquid=${config.liquidExplorer.url} useWaterfalls=${config.liquidExplorer.useWaterfalls}`,
+    );
 
     // Note: The SDK already includes default asset metadata for LBTC and USDT on mainnet
     // Additional assets can be added here if needed
     // config.assetMetadata = [...(config.assetMetadata || []), { additional assets }];
 
-    // Add exponential backoff delay to help avoid blockstream.info rate limits (429 errors)
-    // This is especially important when multiple apps are running or on retries
-    const delayMs = 5000 * Math.pow(2, retryCount); // 5s, 10s, 20s
-    sdkLogger.info(
-      `Connecting to SDK (attempt ${retryCount + 1}/${maxRetries + 1}) with ${delayMs}ms delay...`,
-    );
-    await new Promise((resolve) => setTimeout(resolve, delayMs));
+    if (retryCount > 0) {
+      // Add exponential backoff delay to help avoid blockstream.info rate limits (429 errors)
+      // This is especially important when multiple apps are running or on retries
+      const delayMs = 5000 * Math.pow(2, retryCount); // 5s, 10s, 20s
+      sdkLogger.info(
+        `Connecting to SDK (attempt ${retryCount + 1}/${maxRetries + 1}) with ${delayMs}ms delay...`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    } else {
+      sdkLogger.info(
+        `Connecting to SDK (attempt ${retryCount + 1}/${maxRetries + 1})...`,
+      );
+    }
 
     // Connect to Breez network with the mnemonic directly - exactly like wasm-example-app
     sdk = await breezSdk.connect({
@@ -501,7 +552,27 @@ export const parseInput = async (
   input: string,
 ): Promise<breezSdk.InputType> => {
   if (!sdk) throw new Error("SDK not initialized");
-  return await sdk.parse(input);
+  const trimmed = input?.trim() ?? "";
+  try {
+    return await sdk.parse(trimmed);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : String(error || "");
+    const lower = trimmed.toLowerCase();
+    if (trimmed && trimmed.includes("@") && !lower.startsWith("lightning:")) {
+      try {
+        return await sdk.parse(`lightning:${trimmed}`);
+      } catch (retryError) {
+        try {
+          const data = await resolveLightningAddress(trimmed);
+          return { type: "lnUrlPay", data };
+        } catch {
+          throw retryError;
+        }
+      }
+    }
+    throw error instanceof Error ? error : new Error(message);
+  }
 };
 
 export const prepareSendPayment = async (
@@ -515,7 +586,25 @@ export const sendPayment = async (
   params: breezSdk.SendPaymentRequest,
 ): Promise<breezSdk.SendPaymentResponse> => {
   if (!sdk) throw new Error("SDK not initialized");
-  return await sdk.sendPayment(params);
+  await waitForOutgoingSlot();
+  try {
+    const response = await sdk.sendPayment(params);
+    const txId = response?.payment?.txId;
+    if (typeof txId === "string" && /^[a-fA-F0-9]{64}$/.test(txId)) {
+      sdkLogger.info("SendPayment broadcast txId:", txId);
+      // Kick off fast polling immediately to reduce stale-UTXO follow-ups.
+      trackPendingTx(txId, "liquid");
+      trackOutgoingTx(txId, "liquid");
+    } else if (txId) {
+      sdkLogger.warn("SendPayment returned non-txid identifier:", txId);
+    }
+    return response;
+  } catch (error) {
+    sdkLogger.error("SendPayment failed:", error);
+    const message =
+      error instanceof Error ? error.message : String(error || "");
+    throw new Error(mapTxError(message, "Payment failed"));
+  }
 };
 
 // Receiving Operations
@@ -775,7 +864,7 @@ export const getNodeInfo = async (): Promise<breezSdk.NodeState | null> => {
 // Lightning Address / LNURL Operations
 export const registerWebhook = async (webhookUrl: string): Promise<void> => {
   if (!sdk) throw new Error("SDK not initialized");
-  sdkLogger.info("Registering webhook:", webhookUrl);
+  sdkLogger.info("Registering webhook:", redactUrl(webhookUrl));
   await sdk.registerWebhook(webhookUrl);
   sdkLogger.info("Webhook registered successfully");
 };
@@ -806,7 +895,24 @@ export const lnurlPay = async (
   params: breezSdk.LnUrlPayRequest,
 ): Promise<breezSdk.LnUrlPayResult> => {
   if (!sdk) throw new Error("SDK not initialized");
-  return await sdk.lnurlPay(params);
+  await waitForOutgoingSlot();
+  try {
+    const result = await sdk.lnurlPay(params);
+    const txId = result?.payment?.txId;
+    if (typeof txId === "string" && /^[a-fA-F0-9]{64}$/.test(txId)) {
+      sdkLogger.info("LnurlPay broadcast txId:", txId);
+      trackPendingTx(txId, "liquid");
+      trackOutgoingTx(txId, "liquid");
+    } else if (txId) {
+      sdkLogger.warn("LnurlPay returned non-txid identifier:", txId);
+    }
+    return result;
+  } catch (error) {
+    sdkLogger.error("LnurlPay failed:", error);
+    const message =
+      error instanceof Error ? error.message : String(error || "");
+    throw new Error(mapTxError(message, "Payment failed"));
+  }
 };
 
 // Lightning Address types
@@ -863,7 +969,10 @@ export const recoverLightningAddress = async (
 ): Promise<LnAddressRegistrationResult | null> => {
   if (!sdk) throw new Error("SDK not initialized");
 
-  lightningAddressLogger.info("Attempting recovery with webhook:", webhookUrl);
+  lightningAddressLogger.info(
+    "Attempting recovery with webhook:",
+    redactUrl(webhookUrl),
+  );
 
   try {
     // Get wallet info for pubkey
@@ -1021,7 +1130,7 @@ const registerLightningAddressSingle = async (
       bolt12Offer = await generateLightningAddressOffer(username);
       lightningAddressLogger.info(
         "BOLT12 offer generated:",
-        bolt12Offer.substring(0, 50) + "...",
+        summarizeOffer(bolt12Offer),
       );
     }
 
@@ -1118,17 +1227,30 @@ export const registerLightningAddress = async (
   const requestedUsername = username;
   let currentUsername = username;
   let lastError: Error | null = null;
+  const attemptedUsernames = new Set<string>();
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       // First attempt: try base username
-      // Second attempt: try username1
-      // Third attempt: try username2, etc.
-      currentUsername = attempt === 0 ? username : `${username}${attempt}`;
+      // Subsequent attempts: add a random suffix between 10 and 1000
+      if (attempt === 0) {
+        currentUsername = username;
+      } else {
+        let suffix = 10;
+        let candidate = "";
+        let tries = 0;
+        do {
+          suffix = 10 + Math.floor(Math.random() * 991);
+          candidate = `${username}${suffix}`;
+          tries += 1;
+        } while (attemptedUsernames.has(candidate) && tries < 5);
+        currentUsername = candidate;
+      }
 
       lightningAddressLogger.info(
         `Registration attempt ${attempt + 1}/${maxRetries} with username: ${currentUsername}`,
       );
+      attemptedUsernames.add(currentUsername);
 
       const result = await registerLightningAddressSingle(
         currentUsername,

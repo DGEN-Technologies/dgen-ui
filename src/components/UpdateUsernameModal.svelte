@@ -7,7 +7,7 @@
     type LnAddressRegistrationResult,
   } from "$lib/walletService";
   import { success, fail } from "$lib/utils";
-  import { PUBLIC_DGEN_URL } from "$env/static/public";
+  import { PUBLIC_DGEN_URL, PUBLIC_DOMAIN } from "$env/static/public";
 
   interface Props {
     currentUsername: string;
@@ -22,7 +22,7 @@
   let validationError = $state<string | null>(null);
   let showConfirmation = $state(false);
 
-  const domain = "breez.fun";
+  const domain = PUBLIC_DOMAIN || "breez.fun";
 
   // Validation
   const validateUsername = (value: string): string | null => {
@@ -78,7 +78,6 @@
 
       // Format username before update
       const formattedUsername = formatUsername(newUsername);
-      console.log("[UpdateUsername] Updating username to:", formattedUsername);
 
       // Use update function which generates new BOLT12 offer and has retry logic
       // This will automatically try with discriminators if username is taken
@@ -86,8 +85,6 @@
         formattedUsername,
         webhookUrl.toString(),
       );
-
-      console.log("[UpdateUsername] Update successful:", result);
 
       // Update store
       lnAddressStore.setUpdateSuccess(

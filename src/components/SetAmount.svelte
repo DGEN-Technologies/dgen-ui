@@ -83,6 +83,7 @@
   // Quick amount shortcuts - always $5, $25, $50, $100
   // These are USD dollar values that get converted to sats/USDT units
   let quickAmountsDollars = [5, 25, 50, 100];
+  let canConvertRate = $derived(Number.isFinite(rate) && rate > 0);
 </script>
 
 {#if settingAmount}
@@ -180,7 +181,13 @@
                   <button
                     type="button"
                     class="glass rounded-lg py-3 px-2 text-sm font-semibold hover:bg-white/20 border border-white/20 hover:border-white/40 transition-all hover:scale-105 flex items-center justify-center aspect-square"
-                    title="${dollarAmount}"
+                    title={"$" + dollarAmount}
+                    class:opacity-50={!canConvertRate &&
+                      !(invoiceType === "liquid" && selectedAsset === "usdt")}
+                    class:cursor-not-allowed={!canConvertRate &&
+                      !(invoiceType === "liquid" && selectedAsset === "usdt")}
+                    disabled={!canConvertRate &&
+                      !(invoiceType === "liquid" && selectedAsset === "usdt")}
                     onclick={() => {
                       if (
                         invoiceType === "liquid" &&
@@ -189,6 +196,9 @@
                         // For USDT: $1 USD = 100000000 smallest units (10^8)
                         newAmount = Math.round(dollarAmount * 100000000);
                       } else {
+                        if (!canConvertRate) {
+                          return;
+                        }
                         // For Bitcoin: convert USD to sats using exchange rate
                         // dollarAmount * 100,000,000 / rate = sats
                         let calculatedSats = Math.round(
@@ -198,7 +208,7 @@
                       }
                     }}
                   >
-                    ${dollarAmount}
+                    {"$" + dollarAmount}
                   </button>
                 {/each}
               </div>
