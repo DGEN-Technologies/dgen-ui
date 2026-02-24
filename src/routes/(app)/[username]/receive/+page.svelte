@@ -1550,6 +1550,7 @@
           bind:showQr={$showQr}
           {txt}
           t={$t}
+          showSetAmount={invoiceType === types.lightning}
         />
       {:else}
         <!-- Lightning Invoice BOLT11 View (DEFAULT) -->
