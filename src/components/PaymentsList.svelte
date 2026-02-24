@@ -815,7 +815,7 @@
               </div>
             </div>
           </div>
-        </div>
+        </button>
       </div>
     {/if}
 
