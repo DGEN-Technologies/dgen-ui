@@ -1200,17 +1200,30 @@ export const registerLightningAddress = async (
   const requestedUsername = username;
   let currentUsername = username;
   let lastError: Error | null = null;
+  const attemptedUsernames = new Set<string>();
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       // First attempt: try base username
-      // Second attempt: try username1
-      // Third attempt: try username2, etc.
-      currentUsername = attempt === 0 ? username : `${username}${attempt}`;
+      // Subsequent attempts: add a random suffix between 10 and 1000
+      if (attempt === 0) {
+        currentUsername = username;
+      } else {
+        let suffix = 10;
+        let candidate = "";
+        let tries = 0;
+        do {
+          suffix = 10 + Math.floor(Math.random() * 991);
+          candidate = `${username}${suffix}`;
+          tries += 1;
+        } while (attemptedUsernames.has(candidate) && tries < 5);
+        currentUsername = candidate;
+      }
 
       lightningAddressLogger.info(
         `Registration attempt ${attempt + 1}/${maxRetries} with username: ${currentUsername}`,
       );
+      attemptedUsernames.add(currentUsername);
 
       const result = await registerLightningAddressSingle(
         currentUsername,
