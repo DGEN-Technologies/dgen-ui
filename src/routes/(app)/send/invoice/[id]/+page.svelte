@@ -2,25 +2,19 @@
   import { invalidate } from "$app/navigation";
   import { untrack } from "svelte";
   import handler from "$lib/handler";
-  import { onDestroy, onMount } from "svelte";
   import { t } from "$lib/translations";
   import { goto, invalidateAll } from "$app/navigation";
   import { pin } from "$lib/store";
   import { enhance } from "$app/forms";
   import Amount from "$comp/Amount.svelte";
   import Avatar from "$comp/Avatar.svelte";
-  import Icon from "$comp/Icon.svelte";
   import Numpad from "$comp/Numpad.svelte";
   import Spinner from "$comp/Spinner.svelte";
-  import { page } from "$app/stores";
   import {
     btc,
     sat,
     post,
-    back,
     f,
-    toFiat,
-    s,
     sats,
     focus,
     loc,
@@ -105,11 +99,6 @@
   // 	}
   // });
 
-  let setMax = (e) => {
-    e.preventDefault();
-    fiat = false;
-    amount = balance;
-  };
 </script>
 
 {#if form?.message}
@@ -191,13 +180,6 @@
           {/if}
         </button>
       {:else}
-        <button
-          type="button"
-          class="btn !w-auto grow"
-          onclick={setMax}
-          onkeydown={setMax}>Max ⚡️{s(balance)}</button
-        >
-
         <button
           bind:this={submit}
           type="button"

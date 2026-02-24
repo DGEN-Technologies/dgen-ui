@@ -1,13 +1,12 @@
 <script>
-  import { tick, onMount } from "svelte";
+  import { onMount } from "svelte";
   import { t } from "$lib/translations";
-  import Icon from "$comp/Icon.svelte";
   import Numpad from "$comp/Numpad.svelte";
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
   import { rate } from "$lib/store";
-  import { loc, fail, s, focus } from "$lib/utils";
-  import { assetBalances, walletBalance } from "$lib/stores/wallet";
+  import { loc, fail, focus } from "$lib/utils";
+  import { assetBalances } from "$lib/stores/wallet";
   import { ASSET_IDS } from "$lib/assets";
 
   let { data } = $props();
@@ -106,22 +105,6 @@
   $effect(() => ($rate = data.rate));
   $effect(() => (amount = a));
 
-  let setMax = async (e) => {
-    e.preventDefault();
-    fiat = false;
-
-    // For USDT, we need to handle the balance differently since Numpad expects
-    // the amount in smallest units, but for USDT we show it as decimal
-    if (asset === "usdt") {
-      // Set the amount in smallest units (same as balance)
-      amount = balance();
-    } else {
-      amount = balance();
-    }
-
-    await tick();
-    submit.click();
-  };
 </script>
 
 <div class="container px-4 max-w-xl mx-auto space-y-5 text-center">
@@ -208,19 +191,6 @@
     />
 
     <div class="flex justify-center gap-2">
-      <button
-        type="button"
-        class="btn !w-auto grow"
-        onclick={setMax}
-        onkeydown={setMax}
-      >
-        {#if asset === "usdt"}
-          Max {(balance() / 100000000).toFixed(2)} USDT
-        {:else}
-          Max ⚡️{s(balance())}
-        {/if}
-      </button>
-
       <button
         use:focus
         bind:this={submit}

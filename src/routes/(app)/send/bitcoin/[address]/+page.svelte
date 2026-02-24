@@ -1,11 +1,9 @@
 <script>
-  import { tick } from "svelte";
   import { t } from "$lib/translations";
-  import Icon from "$comp/Icon.svelte";
   import Numpad from "$comp/Numpad.svelte";
   import { page } from "$app/stores";
   import { rate } from "$lib/store";
-  import { loc, fail, s, focus } from "$lib/utils";
+  import { loc, focus } from "$lib/utils";
   import { walletBalance } from "$lib/stores/wallet";
   import { goto } from "$app/navigation";
 
@@ -31,13 +29,6 @@
   $effect(() => ($rate = data.rate));
   $effect(() => (amount = a));
 
-  let setMax = async (e) => {
-    e.preventDefault();
-    fiat = false;
-    amount = $walletBalance;
-    await tick();
-    submit.click();
-  };
 </script>
 
 <div class="container px-4 max-w-xl mx-auto space-y-5 text-center">
@@ -71,13 +62,6 @@
   />
 
   <div class="flex justify-center gap-2">
-    <button
-      type="button"
-      class="btn !w-auto grow"
-      onclick={setMax}
-      onkeydown={setMax}>Max ⚡️{s($walletBalance)}</button
-    >
-
     <form
       action={`/send/bitcoin/${encodeURIComponent(address)}/${amount}/`}
       class="contents"
