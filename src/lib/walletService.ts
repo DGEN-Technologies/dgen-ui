@@ -298,7 +298,7 @@ const connectSdk = async (mnemonic: string, retryCount = 0): Promise<void> => {
 
     const bitcoinExplorerUrl = resolveExplorerOverride(
       import.meta.env.VITE_BITCOIN_EXPLORER_URL,
-      "bitcoin"
+      "bitcoin",
     );
     // Explorer overrides:
     // - Bitcoin is routed through our backend proxy (enterprise tokens applied server-side).
@@ -312,7 +312,7 @@ const connectSdk = async (mnemonic: string, retryCount = 0): Promise<void> => {
     }
 
     sdkLogger.info(
-      `[SDK] Explorer config: bitcoin=${config.bitcoinExplorer.url} useWaterfalls=${config.bitcoinExplorer.useWaterfalls}; liquid=${config.liquidExplorer.url} useWaterfalls=${config.liquidExplorer.useWaterfalls}`
+      `[SDK] Explorer config: bitcoin=${config.bitcoinExplorer.url} useWaterfalls=${config.bitcoinExplorer.useWaterfalls}; liquid=${config.liquidExplorer.url} useWaterfalls=${config.liquidExplorer.useWaterfalls}`,
     );
 
     // Note: The SDK already includes default asset metadata for LBTC and USDT on mainnet

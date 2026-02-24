@@ -737,83 +737,83 @@ export async function initTransactionEventHandling(): Promise<void> {
 
     const listenerId = await walletService.addEventListener(
       (event: breezSdk.SdkEvent) => {
-      // Handle all payment state events based on Breez SDK event flows
-      switch (event.type) {
-        // Send Payment Events (Lightning, Bitcoin, Liquid)
-        case "paymentPending":
-        case "paymentWaitingConfirmation":
-          handlePaymentUpdate(event);
-          break;
+        // Handle all payment state events based on Breez SDK event flows
+        switch (event.type) {
+          // Send Payment Events (Lightning, Bitcoin, Liquid)
+          case "paymentPending":
+          case "paymentWaitingConfirmation":
+            handlePaymentUpdate(event);
+            break;
 
-        case "paymentSucceeded":
-          handlePaymentUpdate(event);
-          transactionStore.loadTransactions(true);
-          break;
+          case "paymentSucceeded":
+            handlePaymentUpdate(event);
+            transactionStore.loadTransactions(true);
+            break;
 
-        case "paymentFailed":
-          handlePaymentUpdate(event);
-          transactionStore.loadTransactions(true);
-          break;
+          case "paymentFailed":
+            handlePaymentUpdate(event);
+            transactionStore.loadTransactions(true);
+            break;
 
-        case "paymentRefundPending":
-          handlePaymentUpdate(event);
-          break;
+          case "paymentRefundPending":
+            handlePaymentUpdate(event);
+            break;
 
-        case "paymentRefunded":
-          handlePaymentUpdate(event);
-          transactionStore.loadTransactions(true);
-          break;
+          case "paymentRefunded":
+            handlePaymentUpdate(event);
+            transactionStore.loadTransactions(true);
+            break;
 
-        case "paymentWaitingFeeAcceptance":
-        case "paymentRefundable":
-          handlePaymentUpdate(event);
-          break;
+          case "paymentWaitingFeeAcceptance":
+          case "paymentRefundable":
+            handlePaymentUpdate(event);
+            break;
 
-        case "synced":
-          // Mark initial sync as complete
-          import("$lib/stores/wallet").then(({ walletStore }) => {
-            walletStore.update((state) => ({
-              ...state,
-              didCompleteInitialSync: true,
-            }));
-          });
-
-          // Load transactions after sync completes (with decrypted metadata)
-          transactionStore.loadTransactions(true);
-          break;
-
-        case "dataSynced":
-          const didPull = (event as any).didPullNewRecords;
-
-          // Import wallet store dynamically to avoid circular dependencies
-          import("$lib/stores/wallet").then(async ({ walletStore }) => {
-            try {
-              const info = await walletService.getWalletInfo();
+          case "synced":
+            // Mark initial sync as complete
+            import("$lib/stores/wallet").then(({ walletStore }) => {
               walletStore.update((state) => ({
                 ...state,
-                isConnecting: false,
                 didCompleteInitialSync: true,
-                info: info || state.info,
-                error: null,
               }));
-            } catch (e) {
-              console.error(
-                "[TransactionService] Failed to load wallet info after data sync:",
-                e,
-              );
-            }
-          });
+            });
 
-          // Refresh transactions to get correct payment types
-          if (didPull) {
+            // Load transactions after sync completes (with decrypted metadata)
             transactionStore.loadTransactions(true);
-          }
-          break;
+            break;
 
-        default:
-          break;
-      }
-    },
+          case "dataSynced":
+            const didPull = (event as any).didPullNewRecords;
+
+            // Import wallet store dynamically to avoid circular dependencies
+            import("$lib/stores/wallet").then(async ({ walletStore }) => {
+              try {
+                const info = await walletService.getWalletInfo();
+                walletStore.update((state) => ({
+                  ...state,
+                  isConnecting: false,
+                  didCompleteInitialSync: true,
+                  info: info || state.info,
+                  error: null,
+                }));
+              } catch (e) {
+                console.error(
+                  "[TransactionService] Failed to load wallet info after data sync:",
+                  e,
+                );
+              }
+            });
+
+            // Refresh transactions to get correct payment types
+            if (didPull) {
+              transactionStore.loadTransactions(true);
+            }
+            break;
+
+          default:
+            break;
+        }
+      },
     );
     transactionEventListenerId = listenerId;
     transactionEventListenerActive = true;

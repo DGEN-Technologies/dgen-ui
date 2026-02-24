@@ -314,7 +314,8 @@ export async function connect(t) {
   // Logging utility for debugging (only in development)
   const log = (message: string, data?: any) => {
     const isLocalhost =
-      typeof window !== "undefined" && window.location?.hostname === "localhost";
+      typeof window !== "undefined" &&
+      window.location?.hostname === "localhost";
     if (import.meta.env.DEV || isLocalhost) {
       console.log(`[WebSocket] ${message}`, data || "");
     }
