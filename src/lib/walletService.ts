@@ -30,7 +30,7 @@ let wasmInitialized = false;
 let eventListeners: Map<string, string> = new Map(); // Track listener IDs
 let currentUserId: string | null = null;
 let isConnecting = false; // Prevent concurrent connections
-const SDK_CONFIG_VERSION = 2;
+const SDK_CONFIG_VERSION = 4;
 const SDK_CONFIG_VERSION_KEY = "breez_sdk_config_version";
 
 // Secure storage instance
@@ -71,6 +71,16 @@ const buildBackendExplorerUrl = (networkPath: string): string | null => {
   } catch {
     return null;
   }
+};
+
+const resolveExplorerOverride = (
+  explicitValue: string | undefined,
+  fallbackNetwork?: "bitcoin" | "liquid",
+): string | null => {
+  const explicit = normalizeExplorerUrl(explicitValue);
+  if (explicit) return explicit;
+  if (!fallbackNetwork) return null;
+  return buildBackendExplorerUrl(fallbackNetwork);
 };
 
 /**
@@ -268,8 +278,24 @@ const connectSdk = async (mnemonic: string, retryCount = 0): Promise<void> => {
     }
     config.breezApiKey = breezApiKey;
 
-    // Use SDK default explorers to keep mempool view aligned with Breez services.
-    // Custom explorers can cause input-missing errors when mempools diverge.
+    const bitcoinExplorerUrl = resolveExplorerOverride(
+      import.meta.env.VITE_BITCOIN_EXPLORER_URL,
+      "bitcoin"
+    );
+    // Explorer overrides:
+    // - Bitcoin is routed through our backend proxy (enterprise tokens applied server-side).
+    // - Liquid stays on Breez defaults to preserve Breez-only endpoints (Option A).
+    if (bitcoinExplorerUrl) {
+      config.bitcoinExplorer = {
+        type: "esplora",
+        url: bitcoinExplorerUrl,
+        useWaterfalls: false,
+      };
+    }
+
+    sdkLogger.info(
+      `[SDK] Explorer config: bitcoin=${config.bitcoinExplorer.url} useWaterfalls=${config.bitcoinExplorer.useWaterfalls}; liquid=${config.liquidExplorer.url} useWaterfalls=${config.liquidExplorer.useWaterfalls}`
+    );
 
     // Note: The SDK already includes default asset metadata for LBTC and USDT on mainnet
     // Additional assets can be added here if needed
