@@ -676,6 +676,87 @@
     </div>
   </div>
 
+  <!-- Logs Export -->
+  <div
+    class="premium-card backdrop-blur-xl bg-white/5 border border-white/10 hover:border-blue-500/40 transition-all duration-500 animate-scaleIn p-2.5 md:p-3.5 rounded-lg md:rounded-xl"
+    style="animation-delay: 0.4s;"
+  >
+    <div class="flex flex-col gap-2.5 md:gap-3">
+      <div>
+        <span class="font-bold text-xs md:text-sm gradient-text"
+          >Application Logs</span
+        >
+        <p class="text-white/60 mt-0.5 text-[10px] md:text-xs">
+          Export technical logs from this device to share with support when
+          troubleshooting issues.
+        </p>
+      </div>
+
+      <div class="flex gap-2 items-center">
+        <!-- Export Logs -->
+        <button
+          type="button"
+          class="flex-1 p-2.5 md:p-3 rounded-lg md:rounded-xl border border-blue-500/40 bg-blue-500/20 hover:border-blue-400 transition-all duration-300"
+          onclick={exportLogs}
+          disabled={isExporting}
+        >
+          <div class="flex items-center justify-center gap-1.5">
+            <iconify-icon icon="ph:export-bold" class="text-blue-300" width="16"
+            ></iconify-icon>
+            <span class="font-semibold text-xs md:text-sm">
+              {#if isExporting}
+                Exporting…
+              {:else}
+                Export Logs
+              {/if}
+            </span>
+          </div>
+        </button>
+
+        <!-- Clear Logs -->
+        <button
+          type="button"
+          class="px-2.5 md:px-3 p-2.5 md:p-3 rounded-lg md:rounded-xl border border-red-500/50 bg-red-500/10
+                text-red-300 text-[10px] md:text-xs
+                hover:bg-red-500/20 hover:border-red-400
+                transition-all flex items-center justify-center gap-1.5 flex-none"
+          onclick={() => (showClearConfirm = true)}
+        >
+          <iconify-icon icon="ph:trash-bold" class="text-red-300" width="14"
+          ></iconify-icon>
+          <span>Clear Logs</span>
+        </button>
+      </div>
+
+      {#if showClearConfirm}
+        <div
+          class="mt-1.5 p-2 md:p-2.5 rounded-lg md:rounded-xl border border-red-500/40 bg-red-500/10 text-[10px] md:text-xs text-red-100 space-y-1.5"
+        >
+          <p class="font-semibold">Clear all logs from this device?</p>
+          <p class="text-[9px] md:text-[11px] text-red-200/80">
+            This only deletes logs stored in this browser. It cannot be undone.
+          </p>
+          <div class="flex justify-end gap-1.5 mt-0.5">
+            <button
+              type="button"
+              class="px-2 md:px-2.5 py-1 md:py-1.5 rounded-md border border-white/20 text-[10px] md:text-xs hover:bg-white/5"
+              onclick={() => (showClearConfirm = false)}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              class="px-2 md:px-2.5 py-1 md:py-1.5 rounded-md border border-red-500/60 bg-red-500/40 text-[10px] md:text-xs font-semibold hover:bg-red-500/60"
+              onclick={handleClearLogs}
+            >
+              Confirm clear
+            </button>
+          </div>
+        </div>
+      {/if}
+    </div>
+  </div>
+
   <!-- Tip Prompt Settings (temporarily disabled) -->
   <!-- <div
     class="premium-card backdrop-blur-xl bg-white/5 border-2 border-white/10 hover:border-orange-500/40 transition-all duration-500 animate-scaleIn"
