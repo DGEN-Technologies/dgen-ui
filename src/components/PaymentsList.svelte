@@ -550,9 +550,7 @@
   let totalBalanceSat = $derived(
     ($walletBalance || 0) + usdtToSats(usdtBalanceSat),
   );
-  let totalSentSat = $derived(
-    Math.max(0, totalReceivedSat - totalBalanceSat),
-  );
+  let totalSentSat = $derived(Math.max(0, totalReceivedSat - totalBalanceSat));
   let totalVolumeSat = $derived(totalReceivedSat + totalSentSat);
   let totalPages = $derived(pageData?.totalPages || 0);
   let isLoading = $derived($isLoadingTransactions);
@@ -755,12 +753,7 @@
                   class="text-base sm:text-xl font-bold text-green-400 truncate"
                 >
                   {#if unit === currency}
-                    {f(
-                      (totalReceivedSat / sats) *
-                        rate,
-                      currency,
-                      locale,
-                    )}
+                    {f((totalReceivedSat / sats) * rate, currency, locale)}
                   {:else if unit === "btc"}
                     {btc(totalReceivedSat)} BTC
                   {:else}
@@ -786,12 +779,7 @@
                   class="text-base sm:text-xl font-bold text-red-400 truncate"
                 >
                   {#if unit === currency}
-                    {f(
-                      (totalSentSat / sats) *
-                        rate,
-                      currency,
-                      locale,
-                    )}
+                    {f((totalSentSat / sats) * rate, currency, locale)}
                   {:else if unit === "btc"}
                     {btc(totalSentSat)} BTC
                   {:else}
@@ -817,11 +805,7 @@
                 <div class="text-xs sm:text-sm text-white/60">Total Volume</div>
                 <div class="text-base sm:text-xl font-bold text-purple-300">
                   {#if unit === currency}
-                    {f(
-                      (totalVolumeSat / sats) * rate,
-                      currency,
-                      locale,
-                    )}
+                    {f((totalVolumeSat / sats) * rate, currency, locale)}
                   {:else if unit === "btc"}
                     {btc(totalVolumeSat)} BTC
                   {:else}

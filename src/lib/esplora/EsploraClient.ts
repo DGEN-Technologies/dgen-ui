@@ -86,20 +86,26 @@ function isValidBech32Address(address: string): boolean {
   return false;
 }
 
-const getBlech32Decoders = (): Array<{ decode: (value: string, limit?: number) => any }> => {
+const getBlech32Decoders = (): Array<{
+  decode: (value: string, limit?: number) => any;
+}> => {
   const lib: any = blech32Lib as any;
-  const candidates: Array<{ decode?: (value: string, limit?: number) => any }> = [
-    lib,
-    lib?.default,
-    lib?.blech32,
-    lib?.blech32m,
-    lib?.default?.blech32,
-    lib?.default?.blech32m,
-  ];
-  const decoders: Array<{ decode: (value: string, limit?: number) => any }> = [];
+  const candidates: Array<{ decode?: (value: string, limit?: number) => any }> =
+    [
+      lib,
+      lib?.default,
+      lib?.blech32,
+      lib?.blech32m,
+      lib?.default?.blech32,
+      lib?.default?.blech32m,
+    ];
+  const decoders: Array<{ decode: (value: string, limit?: number) => any }> =
+    [];
   for (const candidate of candidates) {
     if (candidate && typeof candidate.decode === "function") {
-      decoders.push(candidate as { decode: (value: string, limit?: number) => any });
+      decoders.push(
+        candidate as { decode: (value: string, limit?: number) => any },
+      );
     }
   }
   return decoders;
@@ -584,7 +590,7 @@ export async function broadcastTx(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Accept": "application/json",
+      Accept: "application/json",
     },
     body: JSON.stringify({ txHex: normalizedTxHex, network }),
   });

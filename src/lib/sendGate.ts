@@ -19,7 +19,10 @@ let waitPromise: Promise<void> | null = null;
 const sleep = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
-export function trackOutgoingTx(txid: string, network: Network = "liquid"): void {
+export function trackOutgoingTx(
+  txid: string,
+  network: Network = "liquid",
+): void {
   pending = { txid, network, since: Date.now() };
 }
 
@@ -47,7 +50,9 @@ export async function waitForOutgoingSlot(): Promise<void> {
       await sleep(POLL_INTERVAL_MS);
     }
     if (MAX_WAIT_MS > 0) {
-      sdkLogger.warn("Send gate timeout, proceeding without mempool visibility");
+      sdkLogger.warn(
+        "Send gate timeout, proceeding without mempool visibility",
+      );
       pending = null;
       sendGateStore.set({ status: "idle" });
     }

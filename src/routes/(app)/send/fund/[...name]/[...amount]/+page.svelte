@@ -31,11 +31,7 @@
 <div class="container px-4 mt-20 max-w-xl mx-auto">
   <Numpad bind:amount {currency} {rate} {fiat} {submit} {locale} compactClear />
 
-  <form
-    use:enhance={handler(toggle)}
-    method="POST"
-    class="space-y-5"
-  >
+  <form use:enhance={handler(toggle)} method="POST" class="space-y-5">
     <input name="fund" value={name} type="hidden" />
     <input name="amount" value={amount} type="hidden" />
     <input name="pin" value={$pin} type="hidden" />

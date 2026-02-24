@@ -28,7 +28,6 @@
     fiat = $state();
   $effect(() => ($rate = data.rate));
   $effect(() => (amount = a));
-
 </script>
 
 <div class="container px-4 max-w-xl mx-auto space-y-5 text-center">

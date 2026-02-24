@@ -506,7 +506,8 @@ export const parseInput = async (
   try {
     return await sdk.parse(trimmed);
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error || "");
+    const message =
+      error instanceof Error ? error.message : String(error || "");
     const lower = trimmed.toLowerCase();
     if (trimmed && trimmed.includes("@") && !lower.startsWith("lightning:")) {
       try {
@@ -550,7 +551,8 @@ export const sendPayment = async (
     return response;
   } catch (error) {
     sdkLogger.error("SendPayment failed:", error);
-    const message = error instanceof Error ? error.message : String(error || "");
+    const message =
+      error instanceof Error ? error.message : String(error || "");
     throw new Error(mapTxError(message, "Payment failed"));
   }
 };
@@ -857,7 +859,8 @@ export const lnurlPay = async (
     return result;
   } catch (error) {
     sdkLogger.error("LnurlPay failed:", error);
-    const message = error instanceof Error ? error.message : String(error || "");
+    const message =
+      error instanceof Error ? error.message : String(error || "");
     throw new Error(mapTxError(message, "Payment failed"));
   }
 };

@@ -10,15 +10,7 @@
   import Avatar from "$comp/Avatar.svelte";
   import Numpad from "$comp/Numpad.svelte";
   import Spinner from "$comp/Spinner.svelte";
-  import {
-    btc,
-    sat,
-    post,
-    f,
-    sats,
-    focus,
-    loc,
-  } from "$lib/utils";
+  import { btc, sat, post, f, sats, focus, loc } from "$lib/utils";
   import { walletBalance } from "$lib/stores/wallet";
   let { data, form } = $props();
 
@@ -98,7 +90,6 @@
   // 		}
   // 	}
   // });
-
 </script>
 
 {#if form?.message}

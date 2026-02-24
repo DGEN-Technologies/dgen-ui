@@ -37,7 +37,8 @@ export const GET = async ({ url, fetch }) => {
     throw error(502, "LNURL callback request failed");
   }
 
-  const contentType = response.headers.get("content-type") || "application/json";
+  const contentType =
+    response.headers.get("content-type") || "application/json";
   const body = await response.text();
 
   return new Response(body, {
