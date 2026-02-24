@@ -28,12 +28,16 @@
   let error = $state("");
   let preparedPayment = $state(null);
   let isLightningAddress = $state(false);
+  let isAmountlessInvoice = $state(false);
   let amountSat = $state(1000); // Default amount for Lightning addresses
   let comment = $state("");
   let limits = $state(null);
   let minSendable = $state(0);
   let maxSendable = $state(0);
   let gateWaiting = $derived($sendGateStore.status === "waiting");
+  let lnUrlData = $derived(
+    parsed?.type === "lnUrlPay" ? parsed.data : parsed?.lnUrlPay?.data,
+  );
 
   onMount(async () => {
     if (payreq) {
@@ -67,6 +71,11 @@
     try {
       loading = true;
       error = "";
+      preparedPayment = null;
+      isLightningAddress = false;
+      isAmountlessInvoice = false;
+      minSendable = 0;
+      maxSendable = 0;
 
       console.log("[SendLightning] Attempting to parse:", payreq);
 
@@ -78,12 +87,32 @@
       console.log("[SendLightning] Parsed type:", parsed?.type);
 
       // Handle based on type
-      if (parsed?.type === "invoice" || parsed?.invoice) {
+      if (
+        parsed?.type === "invoice" ||
+        parsed?.type === "bolt11" ||
+        parsed?.invoice
+      ) {
         // Handle regular Lightning invoice
         isLightningAddress = false;
 
         if (!parsed.invoice.amountMsat) {
-          error = "Invoice does not specify an amount";
+          isAmountlessInvoice = true;
+
+          const limitsResponse = await fetchLightningLimits();
+          limits = limitsResponse;
+          const networkMinSat = Number(limitsResponse.send.minSat);
+          const networkMaxSat = Number(limitsResponse.send.maxSat);
+
+          minSendable = networkMinSat;
+          maxSendable = networkMaxSat;
+          amountSat = Math.max(1000, networkMinSat);
+
+          console.log(
+            "[SendLightning] Amountless invoice detected, amount range:",
+            minSendable,
+            "-",
+            maxSendable,
+          );
           loading = false;
           return;
         }
@@ -100,6 +129,7 @@
       } else if (parsed?.type === "lnUrlPay" || parsed?.lnUrlPay) {
         // Handle Lightning Address / LNURL-Pay
         isLightningAddress = true;
+        isAmountlessInvoice = false;
 
         // Fetch network limits
         const limitsResponse = await fetchLightningLimits();
@@ -136,6 +166,7 @@
       } else if (parsed?.type === "bolt12Offer" || parsed?.offer) {
         // Handle BOLT12 Offer (Lightning addresses registered with Breez return this)
         isLightningAddress = true;
+        isAmountlessInvoice = false;
 
         // Fetch network limits
         const limitsResponse = await fetchLightningLimits();
@@ -188,7 +219,13 @@
   }
 
   async function prepareLightningAddressPayment() {
-    if (!parsed?.lnUrlPay && !parsed?.offer) return;
+    if (
+      !parsed?.lnUrlPay &&
+      parsed?.type !== "lnUrlPay" &&
+      !parsed?.offer &&
+      !isAmountlessInvoice
+    )
+      return;
 
     try {
       loading = true;
@@ -202,13 +239,15 @@
       }
 
       if (parsed.type === "lnUrlPay" || parsed.lnUrlPay) {
+        if (!lnUrlData) {
+          throw new Error("Missing LNURL pay data");
+        }
         // Prepare LNURL payment
-        const lnUrlData = parsed.data || parsed.lnUrlPay?.data;
         const prepareRequest = {
           data: lnUrlData,
           amount: {
             type: "bitcoin",
-            receiverAmountSat: BigInt(amountSat),
+            receiverAmountSat: amountSat,
           },
           comment: comment || undefined,
           validateSuccessActionUrl: false,
@@ -216,6 +255,18 @@
 
         preparedPayment = await prepareLnurlPay(prepareRequest);
         console.log("[SendLightning] LNURL payment prepared:", preparedPayment);
+      } else if (isAmountlessInvoice && parsed?.invoice) {
+        preparedPayment = await prepareSendPayment({
+          destination: parsed.invoice.bolt11,
+          amount: {
+            type: "bitcoin",
+            receiverAmountSat: amountSat,
+          },
+        });
+        console.log(
+          "[SendLightning] Amountless invoice prepared:",
+          preparedPayment,
+        );
       } else if (parsed.type === "bolt12Offer" || parsed.offer) {
         // Prepare BOLT12 payment
         const prepareRequest = {
@@ -363,10 +414,12 @@
           <h1 class="text-2xl font-bold mb-2">
             {isLightningAddress
               ? "Send to Lightning Address"
-              : `${$t("payments.send")} Lightning Payment`}
+              : isAmountlessInvoice
+                ? "Set Amount for Invoice"
+                : `${$t("payments.send")} Lightning Payment`}
           </h1>
           <p class="text-white/60">
-            {isLightningAddress
+            {isLightningAddress || isAmountlessInvoice
               ? "Enter amount and confirm"
               : "Confirm payment details"}
           </p>
@@ -399,7 +452,7 @@
               </p>
             </div>
 
-            {#if parsed.lnUrlPay?.data?.commentAllowed > 0}
+            {#if lnUrlData?.commentAllowed > 0}
               <div class="text-left">
                 <label class="text-sm text-white/60 mb-2 block"
                   >Comment (optional)</label
@@ -407,7 +460,7 @@
                 <input
                   type="text"
                   bind:value={comment}
-                  maxlength={parsed.lnUrlPay.data.commentAllowed}
+                  maxlength={lnUrlData.commentAllowed}
                   class="input w-full"
                   placeholder="Add a message..."
                   disabled={loading}
@@ -421,6 +474,31 @@
                 <p class="font-mono">
                   ⚡ {formatSats(Number(preparedPayment.feesSat))} sats
                 </p>
+              </div>
+            {/if}
+          {:else if isAmountlessInvoice}
+            <!-- Amountless Invoice Payment -->
+            <div class="text-left">
+              <p class="text-sm text-white/60 mb-1">Invoice</p>
+              <p class="break-all font-mono text-sm">{payreq}</p>
+            </div>
+
+            <div class="text-left">
+              <Numpad
+                bind:amount={amountSat}
+                {rate}
+                {currency}
+                skipBalanceCheck={true}
+              />
+              <p class="text-xs text-white/40 mt-2 text-center">
+                Min: {formatSats(minSendable)} | Max: {formatSats(maxSendable)}
+              </p>
+            </div>
+
+            {#if parsed.invoice?.description}
+              <div class="text-left">
+                <p class="text-sm text-white/60 mb-1">Description</p>
+                <p class="break-words">{parsed.invoice.description}</p>
               </div>
             {/if}
           {:else}
@@ -462,7 +540,7 @@
       {/if}
 
       <div class="space-y-3">
-        {#if parsed && isLightningAddress && !preparedPayment}
+        {#if parsed && (isLightningAddress || isAmountlessInvoice) && !preparedPayment}
           <button
             class="btn btn-primary w-full"
             onclick={prepareLightningAddressPayment}

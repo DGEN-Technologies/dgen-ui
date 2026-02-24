@@ -11,6 +11,19 @@ import { bytesToHex } from "@noble/hashes/utils";
 import { walletUnlockLimiter, paymentLimiter } from "./security/rateLimiter";
 import { mapTxError } from "./txErrors";
 
+export const resolveLightningAddress = async (
+  address: string,
+): Promise<breezSdk.LnUrlPayRequestData> => {
+  const response = await fetch(
+    `/api/lnurl/resolve?address=${encodeURIComponent(address.trim())}`,
+  );
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(detail || "Lightning address lookup failed");
+  }
+  return (await response.json()) as breezSdk.LnUrlPayRequestData;
+};
+
 // Private SDK instance - not exposed outside this module
 let sdk: breezSdk.BindingLiquidSdk | null = null;
 let wasmInitialized = false;
@@ -504,7 +517,26 @@ export const parseInput = async (
   input: string,
 ): Promise<breezSdk.InputType> => {
   if (!sdk) throw new Error("SDK not initialized");
-  return await sdk.parse(input);
+  const trimmed = input?.trim() ?? "";
+  try {
+    return await sdk.parse(trimmed);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error || "");
+    const lower = trimmed.toLowerCase();
+    if (trimmed && trimmed.includes("@") && !lower.startsWith("lightning:")) {
+      try {
+        return await sdk.parse(`lightning:${trimmed}`);
+      } catch (retryError) {
+        try {
+          const data = await resolveLightningAddress(trimmed);
+          return { type: "lnUrlPay", data };
+        } catch {
+          throw retryError;
+        }
+      }
+    }
+    throw error instanceof Error ? error : new Error(message);
+  }
 };
 
 export const prepareSendPayment = async (
