@@ -22,7 +22,12 @@
   let locale = $derived(loc(user));
   let { amount } = $state(form || invoice);
 
-  let rate = $derived(invoice.rate * (data.rate / data.invoiceRate));
+  const safeRate = Number.isFinite(data.rate) && data.rate > 0 ? data.rate : 1;
+  const safeInvoiceRate =
+    Number.isFinite(data.invoiceRate) && data.invoiceRate > 0
+      ? data.invoiceRate
+      : safeRate;
+  let rate = $derived(invoice.rate * (safeRate / safeInvoiceRate));
 
   let a = $state(),
     af = $state(),

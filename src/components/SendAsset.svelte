@@ -11,6 +11,10 @@
   import getRates from "$lib/rates";
   import { sendGateStore } from "$lib/sendGate";
   import { onMount } from "svelte";
+  import {
+    isValidAddressFormat,
+    normalizeAddressInput,
+  } from "$lib/esplora/EsploraClient";
 
   let { onSuccess, onCancel, currency = "USD" } = $props();
 
@@ -83,6 +87,14 @@
         throw new Error("Please enter a destination address");
       }
 
+      const normalizedDestination = normalizeAddressInput(destination);
+      if (!normalizedDestination) {
+        throw new Error("Please enter a destination address");
+      }
+      if (!isValidAddressFormat(normalizedDestination)) {
+        throw new Error("Invalid address format");
+      }
+
       // Convert amount from satoshis to asset units
       // For LBTC: 1 BTC = 100,000,000 sats, so divide by 100000000
       // For USDT: amount is already in smallest units (same as sats precision)
@@ -92,7 +104,7 @@
           : amount / 100000000; // LBTC is BTC on Liquid
 
       prepareResponse = await prepareSendAsset({
-        destination,
+        destination: normalizedDestination,
         toAsset: selectedAsset,
         receiverAmount,
         estimateAssetFees,

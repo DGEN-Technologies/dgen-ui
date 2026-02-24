@@ -8,11 +8,21 @@
   import { loc, fail, focus } from "$lib/utils";
   import { assetBalances } from "$lib/stores/wallet";
   import { ASSET_IDS } from "$lib/assets";
+  import {
+    isValidAddressFormat,
+    normalizeAddressInput,
+  } from "$lib/esplora/EsploraClient";
 
   let { data } = $props();
 
   let { user } = data;
-  let { address } = $page.params;
+  const rawAddress = $page.params?.address ?? "";
+  let address = normalizeAddressInput(rawAddress);
+  let addressError = $derived(() => {
+    if (!rawAddress || !address) return "Missing destination address";
+    if (!isValidAddressFormat(rawAddress)) return "Invalid address format";
+    return "";
+  });
   let { currency, username } = user;
   let locale = loc(user);
 
@@ -26,6 +36,11 @@
 
   onMount(async () => {
     try {
+      if (!rawAddress || addressError) {
+        isLoadingSDK = false;
+        return;
+      }
+
       // Wait for SDK to be ready
       const { isConnected, parseInput } = await import("$lib/walletService");
 
@@ -44,7 +59,7 @@
         return;
       }
 
-      parsedInput = await parseInput(address);
+      parsedInput = await parseInput(rawAddress.trim());
 
       console.log("[Send Liquid] Full parsed input:", parsedInput);
       console.log("[Send Liquid] Parsed input type:", parsedInput?.type);
@@ -73,7 +88,9 @@
 
           // Auto-navigate to confirmation if amount is present
           if (autoAmount > 0) {
-            goto(`/send/liquid/${address}/${autoAmount}?asset=${asset}`);
+            goto(
+              `/send/liquid/${encodeURIComponent(rawAddress)}/${autoAmount}?asset=${asset}`,
+            );
           }
         } else {
           console.log("[Send Liquid] No embedded amount found in BIP21");
@@ -123,6 +140,9 @@
   <h1 class="text-3xl md:text-4xl font-semibold mb-2">Send via Liquid</h1>
 
   <div class="text-xs sm:text-sm text-secondary break-all">{address}</div>
+  {#if addressError}
+    <div class="text-xs sm:text-sm text-red-400">{addressError}</div>
+  {/if}
 
   {#if isLoadingSDK}
     <!-- Loading State -->
@@ -197,8 +217,11 @@
         class="btn !w-auto grow {asset === 'usdt'
           ? 'bg-green-500 hover:bg-green-600 text-white border-green-500'
           : 'bg-orange-500 hover:bg-orange-600 text-white border-orange-500'}"
-        disabled={!amount || amount <= 0}
-        onclick={() => goto(`/send/liquid/${address}/${amount}?asset=${asset}`)}
+        disabled={!amount || amount <= 0 || !!addressError}
+        onclick={() =>
+          goto(
+            `/send/liquid/${encodeURIComponent(rawAddress)}/${amount}?asset=${asset}`,
+          )}
       >
         {$t("payments.next")}
       </button>

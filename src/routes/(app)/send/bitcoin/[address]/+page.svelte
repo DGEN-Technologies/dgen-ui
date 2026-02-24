@@ -6,13 +6,21 @@
   import { loc, focus } from "$lib/utils";
   import { walletBalance } from "$lib/stores/wallet";
   import { goto } from "$app/navigation";
+  import {
+    isValidAddressFormat,
+    normalizeAddressInput,
+  } from "$lib/esplora/EsploraClient";
 
   let { data } = $props();
 
   let { user } = data;
-  let { address } = $page.params;
-  // Clean up the address - remove any trailing whitespace or newlines
-  address = address.trim();
+  const rawAddress = $page.params?.address ?? "";
+  let address = normalizeAddressInput(rawAddress);
+  let addressError = $derived(() => {
+    if (!rawAddress || !address) return "Missing destination address";
+    if (!isValidAddressFormat(rawAddress)) return "Invalid address format";
+    return "";
+  });
   let { currency, username } = user;
   let locale = loc(user);
 
@@ -47,6 +55,9 @@
   <h1 class="text-3xl md:text-4xl font-semibold mb-2">{$t("payments.send")}</h1>
 
   <div class="text-xs sm:text-sm text-secondary break-all">{address}</div>
+  {#if addressError}
+    <div class="text-xs sm:text-sm text-red-400">{addressError}</div>
+  {/if}
 
   <Numpad
     bind:amount={a}
@@ -70,7 +81,7 @@
         bind:this={submit}
         type="submit"
         class="btn !w-auto grow btn-accent"
-        disabled={!a || a <= 0}
+        disabled={!a || a <= 0 || !!addressError}
       >
         {$t("payments.next")}
       </button>

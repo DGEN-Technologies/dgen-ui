@@ -71,6 +71,19 @@ const logWalletError = (context: string, error: unknown): void => {
   console.error(`[WalletStore] ${context}:`, error);
 };
 
+const logSdkEvent = (event: SdkEvent): void => {
+  const details = event.details;
+  const txIdLength = typeof details?.txId === "string" ? details.txId.length : 0;
+  const safeDetails = details
+    ? {
+        paymentType: details.paymentType,
+        status: details.status,
+        txIdLength,
+      }
+    : undefined;
+  console.log("[WalletStore] Event received:", event.type, safeDetails);
+};
+
 interface Payment {
   id: string;
   paymentType: string;
@@ -458,7 +471,7 @@ const startEventListening = async (): Promise<void> => {
   try {
     // addEventListener expects just the callback function, not a string first
     await walletService.addEventListener((event: SdkEvent) => {
-      console.log("[WalletStore] Event received:", event.type, event);
+      logSdkEvent(event);
 
       // Import paymentEvents dynamically to avoid circular dependencies
       import("./paymentEvents")

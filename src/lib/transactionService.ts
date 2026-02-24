@@ -95,9 +95,47 @@ class TransactionCache {
       store.put(txWithId);
     }
 
-    return new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(transaction.error);
+    });
+
+    await this.pruneTransactions(MAX_CACHED_TRANSACTIONS);
+  }
+
+  async pruneTransactions(maxEntries: number): Promise<void> {
+    await this.init();
+    if (!this.db) return;
+
+    const count = await new Promise<number>((resolve, reject) => {
+      const tx = this.db!.transaction([this.storeName], "readonly");
+      const store = tx.objectStore(this.storeName);
+      const request = store.count();
+      request.onsuccess = () => resolve(request.result || 0);
+      request.onerror = () => reject(request.error);
+    });
+
+    if (count <= maxEntries) return;
+
+    const toDelete = count - maxEntries;
+
+    await new Promise<void>((resolve, reject) => {
+      const tx = this.db!.transaction([this.storeName], "readwrite");
+      const store = tx.objectStore(this.storeName);
+      const index = store.index("paymentTime");
+      let deleted = 0;
+      const request = index.openCursor();
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (!cursor || deleted >= toDelete) {
+          resolve();
+          return;
+        }
+        store.delete(cursor.primaryKey);
+        deleted += 1;
+        cursor.continue();
+      };
+      request.onerror = () => reject(request.error);
     });
   }
 
@@ -188,6 +226,10 @@ class TransactionCache {
 
 // Initialize cache
 const cache = new TransactionCache();
+const MAX_CACHED_TRANSACTIONS = 2000;
+
+let transactionEventListenerId: string | null = null;
+let transactionEventListenerActive = false;
 
 // Transaction store with filtering and pagination
 function createTransactionStore() {
@@ -682,12 +724,16 @@ export const transactionError = derived(
 // Auto-refresh transactions on SDK events
 export async function initTransactionEventHandling(): Promise<void> {
   try {
+    if (transactionEventListenerActive) {
+      return;
+    }
     // Check if SDK is connected first
     if (!walletService.isConnected()) {
       throw new Error("SDK not initialized");
     }
 
-    await walletService.addEventListener((event: breezSdk.SdkEvent) => {
+    const listenerId = await walletService.addEventListener(
+      (event: breezSdk.SdkEvent) => {
       // Handle all payment state events based on Breez SDK event flows
       switch (event.type) {
         // Send Payment Events (Lightning, Bitcoin, Liquid)
@@ -764,7 +810,10 @@ export async function initTransactionEventHandling(): Promise<void> {
         default:
           break;
       }
-    });
+    },
+    );
+    transactionEventListenerId = listenerId;
+    transactionEventListenerActive = true;
   } catch (error) {
     console.error("[TransactionService] Failed to init event handling:", error);
     throw error;

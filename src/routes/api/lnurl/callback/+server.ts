@@ -37,6 +37,21 @@ export const GET = async ({ url, fetch }) => {
     throw error(502, "LNURL callback request failed");
   }
 
+  if (!response.ok) {
+    const detail = await response.text();
+    console.warn("[LNURL] Callback rejected", {
+      status: response.status,
+      detail: detail?.slice(0, 200),
+    });
+    return new Response(
+      JSON.stringify({ status: "ERROR", reason: "LNURL callback failed" }),
+      {
+        status: 502,
+        headers: { "content-type": "application/json" },
+      },
+    );
+  }
+
   const contentType =
     response.headers.get("content-type") || "application/json";
   const body = await response.text();

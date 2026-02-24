@@ -142,6 +142,29 @@ function isValidAddress(address: string): boolean {
   );
 }
 
+export const normalizeAddressInput = (input: string): string => {
+  if (!input) return "";
+  const trimmed = input.trim();
+  if (!trimmed) return "";
+
+  const lower = trimmed.toLowerCase();
+  const schemes = ["bitcoin", "liquidnetwork", "liquid"];
+  for (const scheme of schemes) {
+    if (lower.startsWith(`${scheme}:`)) {
+      const withoutScheme = trimmed.slice(scheme.length + 1);
+      return withoutScheme.split("?")[0];
+    }
+  }
+
+  return trimmed;
+};
+
+export const isValidAddressFormat = (input: string): boolean => {
+  const normalized = normalizeAddressInput(input);
+  if (!normalized) return false;
+  return isValidAddress(normalized);
+};
+
 function validateAddress(address: string): void {
   if (!isValidAddress(address)) {
     throw new Error("Invalid address format");

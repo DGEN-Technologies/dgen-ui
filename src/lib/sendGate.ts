@@ -3,7 +3,7 @@ import { sdkLogger } from "./logger";
 import { writable } from "svelte/store";
 
 const POLL_INTERVAL_MS = 5000;
-const MAX_WAIT_MS = 0; // 0 = wait indefinitely until tx is visible
+const MAX_WAIT_MS = 15 * 60 * 1000; // 15 minutes max wait
 
 type SendGateState = {
   status: "idle" | "waiting";

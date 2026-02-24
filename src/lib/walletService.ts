@@ -19,7 +19,11 @@ export const resolveLightningAddress = async (
   );
   if (!response.ok) {
     const detail = await response.text();
-    throw new Error(detail || "Lightning address lookup failed");
+    sdkLogger.warn("Lightning address lookup failed", {
+      status: response.status,
+      detail: detail?.slice(0, 200),
+    });
+    throw new Error(`Lightning address lookup failed (${response.status})`);
   }
   return (await response.json()) as breezSdk.LnUrlPayRequestData;
 };

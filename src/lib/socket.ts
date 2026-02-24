@@ -201,7 +201,7 @@ export const messages = (data) => ({
     const { requestId, payload } = data;
     console.log("[WebSocket] Webhook request received:", {
       requestId,
-      payload,
+      template: payload?.template,
     });
 
     try {
