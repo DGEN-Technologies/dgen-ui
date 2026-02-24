@@ -307,6 +307,7 @@
         {txt}
         t={$t}
         bind:showQr={$showQr}
+        showSetAmount={type === types.lightning}
       />
     </div>
 

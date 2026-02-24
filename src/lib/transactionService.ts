@@ -95,9 +95,47 @@ class TransactionCache {
       store.put(txWithId);
     }
 
-    return new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(transaction.error);
+    });
+
+    await this.pruneTransactions(MAX_CACHED_TRANSACTIONS);
+  }
+
+  async pruneTransactions(maxEntries: number): Promise<void> {
+    await this.init();
+    if (!this.db) return;
+
+    const count = await new Promise<number>((resolve, reject) => {
+      const tx = this.db!.transaction([this.storeName], "readonly");
+      const store = tx.objectStore(this.storeName);
+      const request = store.count();
+      request.onsuccess = () => resolve(request.result || 0);
+      request.onerror = () => reject(request.error);
+    });
+
+    if (count <= maxEntries) return;
+
+    const toDelete = count - maxEntries;
+
+    await new Promise<void>((resolve, reject) => {
+      const tx = this.db!.transaction([this.storeName], "readwrite");
+      const store = tx.objectStore(this.storeName);
+      const index = store.index("paymentTime");
+      let deleted = 0;
+      const request = index.openCursor();
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (!cursor || deleted >= toDelete) {
+          resolve();
+          return;
+        }
+        store.delete(cursor.primaryKey);
+        deleted += 1;
+        cursor.continue();
+      };
+      request.onerror = () => reject(request.error);
     });
   }
 
@@ -188,6 +226,10 @@ class TransactionCache {
 
 // Initialize cache
 const cache = new TransactionCache();
+const MAX_CACHED_TRANSACTIONS = 2000;
+
+let transactionEventListenerId: string | null = null;
+let transactionEventListenerActive = false;
 
 // Transaction store with filtering and pagination
 function createTransactionStore() {
@@ -286,16 +328,45 @@ function createTransactionStore() {
         // Enhance transactions with additional fields
         const enhanced = transactions.map((tx) => enhancePayment(tx, rates));
 
+        // Preserve local pending transactions that aren't yet visible in SDK list
+        const currentState = get({ subscribe });
+        const now = Date.now();
+        const PENDING_GRACE_MS = 2 * 60 * 60 * 1000; // 2 hours
+        const isUnsettled = (status?: string): boolean => {
+          const normalized = (status || "").toLowerCase();
+          return !["complete", "success", "failed", "refunded"].includes(
+            normalized,
+          );
+        };
+        const preservedPending = currentState.allTransactions.filter((tx) => {
+          if (!isUnsettled(tx.status)) return false;
+          const referenceTime =
+            typeof tx.paymentTime === "number" && tx.paymentTime > 0
+              ? tx.paymentTime * 1000
+              : now;
+          return now - referenceTime <= PENDING_GRACE_MS;
+        });
+
+        const mergedById = new Map<string, EnhancedPayment>();
+        for (const tx of enhanced) {
+          mergedById.set(tx.id, tx);
+        }
+        for (const tx of preservedPending) {
+          if (!mergedById.has(tx.id)) {
+            mergedById.set(tx.id, tx);
+          }
+        }
+        const merged = Array.from(mergedById.values());
+
         update((state) => ({
           ...state,
-          allTransactions: enhanced,
+          allTransactions: merged,
           isLoading: false,
           lastSync: Date.now(),
           fiatRates: rates,
         }));
 
         // Apply current filter (for client-side filtering of type, status, search)
-        const currentState = get({ subscribe });
         this.applyFilter(currentState.filter);
       } catch (error) {
         console.error("Failed to load transactions:", error);
@@ -374,9 +445,12 @@ function createTransactionStore() {
       updates: Partial<breezSdk.Payment>,
     ): void {
       update((state) => {
-        const allTransactions = state.allTransactions.map((tx) =>
-          tx.id === paymentId ? { ...tx, ...updates } : tx,
-        );
+        const allTransactions = state.allTransactions.map((tx) => {
+          if (tx.id !== paymentId) return tx;
+          const merged = { ...tx, ...updates } as breezSdk.Payment;
+          const enhanced = enhancePayment(merged, state.fiatRates);
+          return { ...tx, ...merged, ...enhanced };
+        });
 
         const filtered = filterTransactions(allTransactions, state.filter);
         const page = paginateTransactions(filtered, state.pagination);
@@ -653,89 +727,96 @@ export const transactionError = derived(
 // Auto-refresh transactions on SDK events
 export async function initTransactionEventHandling(): Promise<void> {
   try {
+    if (transactionEventListenerActive) {
+      return;
+    }
     // Check if SDK is connected first
     if (!walletService.isConnected()) {
       throw new Error("SDK not initialized");
     }
 
-    await walletService.addEventListener((event: breezSdk.SdkEvent) => {
-      // Handle all payment state events based on Breez SDK event flows
-      switch (event.type) {
-        // Send Payment Events (Lightning, Bitcoin, Liquid)
-        case "paymentPending":
-        case "paymentWaitingConfirmation":
-          handlePaymentUpdate(event);
-          break;
+    const listenerId = await walletService.addEventListener(
+      (event: breezSdk.SdkEvent) => {
+        // Handle all payment state events based on Breez SDK event flows
+        switch (event.type) {
+          // Send Payment Events (Lightning, Bitcoin, Liquid)
+          case "paymentPending":
+          case "paymentWaitingConfirmation":
+            handlePaymentUpdate(event);
+            break;
 
-        case "paymentSucceeded":
-          handlePaymentUpdate(event);
-          transactionStore.loadTransactions(true);
-          break;
+          case "paymentSucceeded":
+            handlePaymentUpdate(event);
+            transactionStore.loadTransactions(true);
+            break;
 
-        case "paymentFailed":
-          handlePaymentUpdate(event);
-          transactionStore.loadTransactions(true);
-          break;
+          case "paymentFailed":
+            handlePaymentUpdate(event);
+            transactionStore.loadTransactions(true);
+            break;
 
-        case "paymentRefundPending":
-          handlePaymentUpdate(event);
-          break;
+          case "paymentRefundPending":
+            handlePaymentUpdate(event);
+            break;
 
-        case "paymentRefunded":
-          handlePaymentUpdate(event);
-          transactionStore.loadTransactions(true);
-          break;
+          case "paymentRefunded":
+            handlePaymentUpdate(event);
+            transactionStore.loadTransactions(true);
+            break;
 
-        case "paymentWaitingFeeAcceptance":
-        case "paymentRefundable":
-          handlePaymentUpdate(event);
-          break;
+          case "paymentWaitingFeeAcceptance":
+          case "paymentRefundable":
+            handlePaymentUpdate(event);
+            break;
 
-        case "synced":
-          // Mark initial sync as complete
-          import("$lib/stores/wallet").then(({ walletStore }) => {
-            walletStore.update((state) => ({
-              ...state,
-              didCompleteInitialSync: true,
-            }));
-          });
-
-          // Load transactions after sync completes (with decrypted metadata)
-          transactionStore.loadTransactions(true);
-          break;
-
-        case "dataSynced":
-          const didPull = (event as any).didPullNewRecords;
-
-          // Import wallet store dynamically to avoid circular dependencies
-          import("$lib/stores/wallet").then(async ({ walletStore }) => {
-            try {
-              const info = await walletService.getWalletInfo();
+          case "synced":
+            // Mark initial sync as complete
+            import("$lib/stores/wallet").then(({ walletStore }) => {
               walletStore.update((state) => ({
                 ...state,
-                isConnecting: false,
                 didCompleteInitialSync: true,
-                info: info || state.info,
-                error: null,
               }));
-            } catch (e) {
-              console.error(
-                "[TransactionService] Failed to load wallet info after data sync:",
-                e,
-              );
-            }
-          });
+            });
 
-          // Refresh transactions to get correct payment types
-          if (didPull) {
+            // Load transactions after sync completes (with decrypted metadata)
             transactionStore.loadTransactions(true);
-          }
-          break;
+            break;
 
-        default:
-          break;
-      }
-    });
+          case "dataSynced":
+            const didPull = (event as any).didPullNewRecords;
+
+            // Import wallet store dynamically to avoid circular dependencies
+            import("$lib/stores/wallet").then(async ({ walletStore }) => {
+              try {
+                const info = await walletService.getWalletInfo();
+                walletStore.update((state) => ({
+                  ...state,
+                  isConnecting: false,
+                  didCompleteInitialSync: true,
+                  info: info || state.info,
+                  error: null,
+                }));
+              } catch (e) {
+                console.error(
+                  "[TransactionService] Failed to load wallet info after data sync:",
+                  e,
+                );
+              }
+            });
+
+            // Refresh transactions to get correct payment types
+            if (didPull) {
+              transactionStore.loadTransactions(true);
+            }
+            break;
+
+          default:
+            break;
+        }
+      },
+    );
+    transactionEventListenerId = listenerId;
+    transactionEventListenerActive = true;
   } catch (error) {
     console.error("[TransactionService] Failed to init event handling:", error);
     throw error;

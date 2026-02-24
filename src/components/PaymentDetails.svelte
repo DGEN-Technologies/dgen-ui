@@ -408,6 +408,7 @@
                   <a
                     href={lnurlInfo.successAction.url}
                     target="_blank"
+                    rel="noopener noreferrer"
                     class="link link-primary"
                   >
                     Open Success URL

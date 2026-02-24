@@ -652,10 +652,7 @@ export const register = async (
   let registrationSuccessful = false;
 
   try {
-    console.log(
-      "[Register Utils] Sending registration request for:",
-      user.username,
-    );
+    console.log("[Register Utils] Sending registration request");
     // Use the fetchFn passed from the server action which has proper context
     const response = await fetchFn("/api/backend/register", {
       method: "POST",
@@ -679,7 +676,7 @@ export const register = async (
     const result = await response.json();
     sk = result.sk;
     registrationSuccessful = true;
-    console.log("[Register Utils] Registration successful for:", user.username);
+    console.log("[Register Utils] Registration successful");
   } catch (e) {
     ({ message: error } = e as Error);
     console.log("[Register Utils] Registration failed:", error);
@@ -694,10 +691,7 @@ export const register = async (
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       await login(user, cookies, ip, fetchFn);
-      console.log(
-        "[Register Utils] Auto-login successful for new user:",
-        user.username,
-      );
+      console.log("[Register Utils] Auto-login successful for new user");
     } catch (e) {
       const { message } = e as Error;
       console.log("[Register Utils] Auto-login failed for new user:", message);
@@ -707,10 +701,7 @@ export const register = async (
         console.log("[Register Utils] Retrying auto-login after delay...");
         await new Promise((resolve) => setTimeout(resolve, 500));
         await login(user, cookies, ip, fetchFn);
-        console.log(
-          "[Register Utils] Auto-login retry successful for:",
-          user.username,
-        );
+        console.log("[Register Utils] Auto-login retry successful");
       } catch (retryError) {
         console.log("[Register Utils] Auto-login retry also failed");
         // If auto-login fails after successful registration, still show as success

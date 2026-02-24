@@ -8,6 +8,7 @@
     sendPayment,
     parseInput,
   } from "$lib/walletService";
+  import { sendGateStore } from "$lib/sendGate";
   import { ASSET_IDS } from "$lib/assets";
   import { onMount } from "svelte";
 
@@ -24,6 +25,7 @@
   let error = $state(null);
   let prepareResponse = $state(null);
   let parsedDestination = $state(null);
+  let gateWaiting = $derived($sendGateStore.status === "waiting");
 
   // Parse and prepare on mount - following misty-breez pattern
   onMount(async () => {
@@ -274,12 +276,30 @@
     </div>
     <div class="flex gap-3">
       <button type="button" class="btn flex-1" onclick={cancel}> Back </button>
+    </div>
+  {:else if gateWaiting}
+    <div class="alert alert-info">
+      <iconify-icon icon="mdi:timer-sand" width="24"></iconify-icon>
+      <span>Waiting for previous transaction to propagate…</span>
+    </div>
+    <div class="flex gap-3">
       <button
         type="button"
-        class="btn flex-1 btn-accent"
-        onclick={() => window.location.reload()}
+        class="btn flex-1"
+        onclick={cancel}
+        disabled={loading || preparing}
       >
-        Retry
+        Cancel
+      </button>
+      <button
+        type="button"
+        class="btn flex-1 {asset === 'usdt'
+          ? 'bg-green-500 hover:bg-green-600'
+          : 'btn-accent'}"
+        onclick={send}
+        disabled={true}
+      >
+        Waiting...
       </button>
     </div>
   {:else}
@@ -298,7 +318,7 @@
           ? 'bg-green-500 hover:bg-green-600'
           : 'btn-accent'}"
         onclick={send}
-        disabled={loading || preparing || !prepareResponse}
+        disabled={loading || preparing || !prepareResponse || gateWaiting}
       >
         {#if loading}
           <span class="loading loading-spinner"></span>

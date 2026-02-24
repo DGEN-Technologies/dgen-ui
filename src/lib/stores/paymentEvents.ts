@@ -31,7 +31,13 @@ export function notifyPaymentReceived(
   payment: any,
   status: PaymentStatus = "pending",
 ) {
-  console.log("[PaymentEvents] Payment received:", { payment, status });
+  if (import.meta.env.DEV) {
+    const paymentId =
+      payment?.txId || payment?.paymentHash || payment?.details?.paymentHash;
+    const idSuffix =
+      typeof paymentId === "string" ? paymentId.slice(-4) : undefined;
+    console.log("[PaymentEvents] Payment received:", { status, idSuffix });
+  }
 
   const event: PaymentEvent = {
     payment,

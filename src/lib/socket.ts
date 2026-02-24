@@ -199,9 +199,14 @@ export const messages = (data) => ({
   async "webhook-request"() {
     // Handle webhook request from Breez service for Lightning Address payments
     const { requestId, payload } = data;
-    console.log("[WebSocket] Webhook request received:", {
+    const logWebhook = (message: string, extra?: Record<string, unknown>) => {
+      if (import.meta.env.DEV) {
+        console.log(`[WebSocket] ${message}`, extra || "");
+      }
+    };
+    logWebhook("Webhook request received", {
       requestId,
-      payload,
+      template: payload?.template,
     });
 
     try {
@@ -214,7 +219,7 @@ export const messages = (data) => ({
 
       if (template === "lnurlpay_info") {
         // LNURL-Pay info request - return min/max amounts
-        console.log("[Webhook] Handling lnurlpay_info request");
+        logWebhook("Handling lnurlpay_info request");
 
         const { fetchLightningLimits } = await import("$lib/walletService");
         const limits = await fetchLightningLimits();
@@ -234,7 +239,7 @@ export const messages = (data) => ({
         });
       } else if (template === "lnurlpay_invoice") {
         // LNURL-Pay invoice request - generate invoice
-        console.log("[Webhook] Handling lnurlpay_invoice request");
+        logWebhook("Handling lnurlpay_invoice request");
 
         const amount = Math.floor(webhookData.amount / 1000); // Convert msat to sat
 
@@ -265,7 +270,9 @@ export const messages = (data) => ({
           body: JSON.stringify({ requestId, response }),
         });
       } else {
-        console.warn("[Webhook] Unknown template:", template);
+        if (import.meta.env.DEV) {
+          console.warn("[Webhook] Unknown template:", template);
+        }
       }
     } catch (error) {
       console.error("[Webhook] Error handling webhook request:", error);
@@ -306,7 +313,10 @@ export async function connect(t) {
 
   // Logging utility for debugging (only in development)
   const log = (message: string, data?: any) => {
-    if (import.meta.env.DEV || window.location.hostname === "localhost") {
+    const isLocalhost =
+      typeof window !== "undefined" &&
+      window.location?.hostname === "localhost";
+    if (import.meta.env.DEV || isLocalhost) {
       console.log(`[WebSocket] ${message}`, data || "");
     }
   };
@@ -419,5 +429,9 @@ function reconnectToWebsocket() {
   if (currentReconnectDelay < maxReconnectDelay) {
     currentReconnectDelay *= 2;
   }
-  connect(token);
+  connect(token).catch((error) => {
+    if (import.meta.env.DEV) {
+      console.warn("[WebSocket] Reconnect failed:", error);
+    }
+  });
 }
