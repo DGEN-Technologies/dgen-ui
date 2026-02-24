@@ -276,13 +276,6 @@
     </div>
     <div class="flex gap-3">
       <button type="button" class="btn flex-1" onclick={cancel}> Back </button>
-      <button
-        type="button"
-        class="btn flex-1 btn-accent"
-        onclick={() => window.location.reload()}
-      >
-        Retry
-      </button>
     </div>
   {:else if gateWaiting}
     <div class="alert alert-info">

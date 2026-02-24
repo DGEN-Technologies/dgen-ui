@@ -231,13 +231,6 @@
         <button type="button" class="btn btn-secondary" onclick={goBack}>
           Back
         </button>
-        <button
-          type="button"
-          class="btn btn-accent"
-          onclick={() => prepareOnchainPayment(0)}
-        >
-          Retry
-        </button>
       </div>
     </div>
   {:else if loading}

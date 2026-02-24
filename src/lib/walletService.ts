@@ -9,6 +9,7 @@ import { trackOutgoingTx, waitForOutgoingSlot } from "./sendGate";
 import { sha256 } from "@noble/hashes/sha256";
 import { bytesToHex } from "@noble/hashes/utils";
 import { walletUnlockLimiter, paymentLimiter } from "./security/rateLimiter";
+import { mapTxError } from "./txErrors";
 
 // Private SDK instance - not exposed outside this module
 let sdk: breezSdk.BindingLiquidSdk | null = null;
@@ -518,17 +519,23 @@ export const sendPayment = async (
 ): Promise<breezSdk.SendPaymentResponse> => {
   if (!sdk) throw new Error("SDK not initialized");
   await waitForOutgoingSlot();
-  const response = await sdk.sendPayment(params);
-  const txId = response?.payment?.txId;
-  if (typeof txId === "string" && /^[a-fA-F0-9]{64}$/.test(txId)) {
-    sdkLogger.info("SendPayment broadcast txId:", txId);
-    // Kick off fast polling immediately to reduce stale-UTXO follow-ups.
-    trackPendingTx(txId, "liquid");
-    trackOutgoingTx(txId, "liquid");
-  } else if (txId) {
-    sdkLogger.warn("SendPayment returned non-txid identifier:", txId);
+  try {
+    const response = await sdk.sendPayment(params);
+    const txId = response?.payment?.txId;
+    if (typeof txId === "string" && /^[a-fA-F0-9]{64}$/.test(txId)) {
+      sdkLogger.info("SendPayment broadcast txId:", txId);
+      // Kick off fast polling immediately to reduce stale-UTXO follow-ups.
+      trackPendingTx(txId, "liquid");
+      trackOutgoingTx(txId, "liquid");
+    } else if (txId) {
+      sdkLogger.warn("SendPayment returned non-txid identifier:", txId);
+    }
+    return response;
+  } catch (error) {
+    sdkLogger.error("SendPayment failed:", error);
+    const message = error instanceof Error ? error.message : String(error || "");
+    throw new Error(mapTxError(message, "Payment failed"));
   }
-  return response;
 };
 
 // Receiving Operations
@@ -820,16 +827,22 @@ export const lnurlPay = async (
 ): Promise<breezSdk.LnUrlPayResult> => {
   if (!sdk) throw new Error("SDK not initialized");
   await waitForOutgoingSlot();
-  const result = await sdk.lnurlPay(params);
-  const txId = result?.payment?.txId;
-  if (typeof txId === "string" && /^[a-fA-F0-9]{64}$/.test(txId)) {
-    sdkLogger.info("LnurlPay broadcast txId:", txId);
-    trackPendingTx(txId, "liquid");
-    trackOutgoingTx(txId, "liquid");
-  } else if (txId) {
-    sdkLogger.warn("LnurlPay returned non-txid identifier:", txId);
+  try {
+    const result = await sdk.lnurlPay(params);
+    const txId = result?.payment?.txId;
+    if (typeof txId === "string" && /^[a-fA-F0-9]{64}$/.test(txId)) {
+      sdkLogger.info("LnurlPay broadcast txId:", txId);
+      trackPendingTx(txId, "liquid");
+      trackOutgoingTx(txId, "liquid");
+    } else if (txId) {
+      sdkLogger.warn("LnurlPay returned non-txid identifier:", txId);
+    }
+    return result;
+  } catch (error) {
+    sdkLogger.error("LnurlPay failed:", error);
+    const message = error instanceof Error ? error.message : String(error || "");
+    throw new Error(mapTxError(message, "Payment failed"));
   }
-  return result;
 };
 
 // Lightning Address types

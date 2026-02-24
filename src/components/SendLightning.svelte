@@ -16,6 +16,7 @@
   import { t } from "$lib/translations";
   import { walletBalance } from "$lib/stores/wallet";
   import { sendGateStore } from "$lib/sendGate";
+  import { mapTxError } from "$lib/txErrors";
 
   let { payreq, rate = 0, currency = "USD" } = $props();
 
@@ -314,15 +315,7 @@
     } catch (e) {
       console.error("Payment failed:", e);
       const message = e instanceof Error ? e.message : String(e || "");
-      if (
-        message.includes("bad-txns-inputs-missingorspent") ||
-        message.includes("Failed to parse response to txid")
-      ) {
-        error =
-          "Your previous transaction is still propagating. Please wait a moment and try again.";
-      } else {
-        error = message || "Payment failed";
-      }
+      error = mapTxError(message, "Payment failed");
     } finally {
       loading = false;
     }
@@ -469,20 +462,7 @@
       {/if}
 
       <div class="space-y-3">
-        {#if error && !parsed}
-          <!-- Show retry button when parse fails -->
-          <button
-            class="btn btn-primary w-full"
-            onclick={parsePayment}
-            disabled={loading}
-          >
-            {#if loading}
-              <Spinner />
-            {:else}
-              Retry
-            {/if}
-          </button>
-        {:else if parsed && isLightningAddress && !preparedPayment}
+        {#if parsed && isLightningAddress && !preparedPayment}
           <button
             class="btn btn-primary w-full"
             onclick={prepareLightningAddressPayment}
@@ -494,7 +474,7 @@
             {#if loading}
               <Spinner />
             {:else}
-              {error ? "Retry" : "Prepare Payment"}
+              Prepare Payment
             {/if}
           </button>
         {:else if parsed}
