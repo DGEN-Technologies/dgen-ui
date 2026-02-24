@@ -56,8 +56,23 @@
   let sdkReloadCooldownTimer = null;
   let sdkDisconnectTimer = null;
 
+  const isAndroidDevice = () => {
+    if (!browser) return false;
+    const ua = navigator.userAgent || "";
+    const platform = navigator.userAgentData?.platform || "";
+    return /Android/i.test(ua) || /Android/i.test(platform);
+  };
+
   $effect(() => ($themeStore = theme));
   $effect(() => (theme = $themeStore));
+
+  $effect(() => {
+    if (!browser) return;
+    if (!user) return;
+    if (isAndroidDevice()) {
+      proMode.set(false);
+    }
+  });
 
   // Watch for user changes and trigger wallet re-initialization
   $effect(() => {

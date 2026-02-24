@@ -8,12 +8,15 @@
   import locales from "$lib/locales";
   import {
     transactionStore,
+    allTransactions,
     currentTransactionPage,
     isLoadingTransactions,
     initTransactionEventHandling,
   } from "$lib/transactionService";
   import Avatar from "$comp/Avatar.svelte";
   import { unitPreference } from "$lib/store";
+  import { walletBalance, assetBalances } from "$lib/stores/wallet";
+  import { ASSET_IDS } from "$lib/assets";
 
   let { user, initialFilter = {} } = $props();
   let locale = $derived(user ? locales[user.language] : locales["en"]);
@@ -494,6 +497,7 @@
 
   // Reactive page data
   let pageData = $derived($currentTransactionPage);
+  let allTx = $derived($allTransactions || []);
   let payments = $derived(
     pageData?.transactions
       .filter((p) => {
@@ -519,6 +523,37 @@
       })
       .map(formatPayment) || [],
   );
+  let allPayments = $derived(allTx.map(formatPayment));
+  const usdtToSats = (amountInAssetUnits) => {
+    if (!rate || rate <= 0) return 0;
+    return Math.round(amountInAssetUnits / rate);
+  };
+  let totalReceivedNonUsdtSat = $derived(
+    allPayments
+      .filter((p) => p.displayAmount > 0 && !p.isUsdt)
+      .reduce((sum, p) => sum + p.displayAmount, 0),
+  );
+  let totalReceivedUsdtSat = $derived(
+    usdtToSats(
+      allPayments
+        .filter((p) => p.displayAmount > 0 && p.isUsdt)
+        .reduce((sum, p) => sum + p.displayAmount, 0),
+    ),
+  );
+  let totalReceivedSat = $derived(
+    totalReceivedNonUsdtSat + totalReceivedUsdtSat,
+  );
+  let usdtBalanceSat = $derived(
+    ($assetBalances || []).find((b) => b.assetId === ASSET_IDS.USDT)
+      ?.balanceSat || 0,
+  );
+  let totalBalanceSat = $derived(
+    ($walletBalance || 0) + usdtToSats(usdtBalanceSat),
+  );
+  let totalSentSat = $derived(
+    Math.max(0, totalReceivedSat - totalBalanceSat),
+  );
+  let totalVolumeSat = $derived(totalReceivedSat + totalSentSat);
   let totalPages = $derived(pageData?.totalPages || 0);
   let isLoading = $derived($isLoadingTransactions);
 </script>
@@ -721,26 +756,15 @@
                 >
                   {#if unit === currency}
                     {f(
-                      (payments
-                        .filter((p) => p.displayAmount > 0 && !p.isUsdt)
-                        .reduce((sum, p) => sum + p.displayAmount, 0) /
-                        sats) *
+                      (totalReceivedSat / sats) *
                         rate,
                       currency,
                       locale,
                     )}
                   {:else if unit === "btc"}
-                    {btc(
-                      payments
-                        .filter((p) => p.displayAmount > 0 && !p.isUsdt)
-                        .reduce((sum, p) => sum + p.displayAmount, 0),
-                    )} BTC
+                    {btc(totalReceivedSat)} BTC
                   {:else}
-                    {s(
-                      payments
-                        .filter((p) => p.displayAmount > 0 && !p.isUsdt)
-                        .reduce((sum, p) => sum + p.displayAmount, 0),
-                    )} sats
+                    {s(totalReceivedSat)} sats
                   {/if}
                 </div>
               </div>
@@ -763,32 +787,15 @@
                 >
                   {#if unit === currency}
                     {f(
-                      (Math.abs(
-                        payments
-                          .filter((p) => p.displayAmount < 0 && !p.isUsdt)
-                          .reduce((sum, p) => sum + p.displayAmount, 0),
-                      ) /
-                        sats) *
+                      (totalSentSat / sats) *
                         rate,
                       currency,
                       locale,
                     )}
                   {:else if unit === "btc"}
-                    {btc(
-                      Math.abs(
-                        payments
-                          .filter((p) => p.displayAmount < 0 && !p.isUsdt)
-                          .reduce((sum, p) => sum + p.displayAmount, 0),
-                      ),
-                    )} BTC
+                    {btc(totalSentSat)} BTC
                   {:else}
-                    {s(
-                      Math.abs(
-                        payments
-                          .filter((p) => p.displayAmount < 0 && !p.isUsdt)
-                          .reduce((sum, p) => sum + p.displayAmount, 0),
-                      ),
-                    )} sats
+                    {s(totalSentSat)} sats
                   {/if}
                 </div>
               </div>
@@ -796,28 +803,35 @@
           </div>
         </div>
 
-        <button
-          class="card bg-purple-500/10 border border-purple-500/30 text-left hover:bg-purple-500/15 transition-colors"
-          onclick={() => goto("/refunds")}
-        >
+        <div class="card bg-purple-500/10 border border-purple-500/30">
           <div class="card-body p-3 sm:p-4">
             <div class="flex items-center gap-2 sm:gap-3">
               <div class="text-purple-400 flex-shrink-0">
                 <iconify-icon
-                  icon="ph:arrow-u-up-left"
+                  icon="ph:arrows-left-right-bold"
                   width="24"
                   class="sm:w-8"
                 ></iconify-icon>
               </div>
               <div class="min-w-0">
-                <div class="text-xs sm:text-sm text-white/60">Refunds</div>
+                <div class="text-xs sm:text-sm text-white/60">Total Volume</div>
                 <div class="text-base sm:text-xl font-bold text-purple-300">
-                  View
+                  {#if unit === currency}
+                    {f(
+                      (totalVolumeSat / sats) * rate,
+                      currency,
+                      locale,
+                    )}
+                  {:else if unit === "btc"}
+                    {btc(totalVolumeSat)} BTC
+                  {:else}
+                    {s(totalVolumeSat)} sats
+                  {/if}
                 </div>
               </div>
             </div>
           </div>
-        </button>
+        </div>
       </div>
     {/if}
 
