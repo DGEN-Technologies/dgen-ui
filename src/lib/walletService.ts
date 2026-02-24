@@ -30,6 +30,8 @@ let wasmInitialized = false;
 let eventListeners: Map<string, string> = new Map(); // Track listener IDs
 let currentUserId: string | null = null;
 let isConnecting = false; // Prevent concurrent connections
+const SDK_CONFIG_VERSION = 2;
+const SDK_CONFIG_VERSION_KEY = "breez_sdk_config_version";
 
 // Secure storage instance
 const secureStorage = SecureStorage.getInstance();
@@ -199,16 +201,22 @@ export const initWallet = async (
     return;
   }
 
-  // If already connected for this user, just return
-  if (sdk && currentUserId === userId) {
+  const needsConfigRefresh = (() => {
+    if (typeof window === "undefined") return false;
+    const stored = window.localStorage.getItem(SDK_CONFIG_VERSION_KEY);
+    return stored !== String(SDK_CONFIG_VERSION);
+  })();
+
+  // If already connected for this user and config is current, just return
+  if (sdk && currentUserId === userId && !needsConfigRefresh) {
     return;
   }
 
   try {
     isConnecting = true;
 
-    // Disconnect existing SDK if switching users
-    if (sdk && currentUserId !== userId) {
+    // Disconnect existing SDK if switching users or config version changed
+    if (sdk && (currentUserId !== userId || needsConfigRefresh)) {
       await disconnect();
     }
 
@@ -220,6 +228,13 @@ export const initWallet = async (
 
     // Connect to SDK with mnemonic
     await connectSdk(mnemonic);
+
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(
+        SDK_CONFIG_VERSION_KEY,
+        String(SDK_CONFIG_VERSION),
+      );
+    }
   } catch (error) {
     throw error;
   } finally {
@@ -253,38 +268,8 @@ const connectSdk = async (mnemonic: string, retryCount = 0): Promise<void> => {
     }
     config.breezApiKey = breezApiKey;
 
-    // Configure custom blockchain explorers to avoid rate limits
-    // Prefer explicit VITE_* overrides, then backend proxy, then public explorers.
-    const liquidExplorerUrl =
-      normalizeExplorerUrl(import.meta.env.VITE_LIQUID_EXPLORER_URL) ??
-      buildBackendExplorerUrl("liquid") ??
-      normalizeExplorerUrl(publicEnv.PUBLIC_LIQUID_EXPLORER);
-    const bitcoinExplorerUrl =
-      normalizeExplorerUrl(import.meta.env.VITE_BITCOIN_EXPLORER_URL) ??
-      buildBackendExplorerUrl("bitcoin") ??
-      normalizeExplorerUrl(publicEnv.PUBLIC_EXPLORER);
-
-    if (liquidExplorerUrl) {
-      sdkLogger.info("Using Liquid explorer:", liquidExplorerUrl);
-      config.liquidExplorer = {
-        type: "esplora",
-        url: liquidExplorerUrl,
-        useWaterfalls: false,
-      };
-    } else {
-      sdkLogger.warn("No Liquid explorer configured; SDK will use defaults.");
-    }
-
-    if (bitcoinExplorerUrl) {
-      sdkLogger.info("Using Bitcoin explorer:", bitcoinExplorerUrl);
-      config.bitcoinExplorer = {
-        type: "esplora",
-        url: bitcoinExplorerUrl,
-        useWaterfalls: false,
-      };
-    } else {
-      sdkLogger.warn("No Bitcoin explorer configured; SDK will use defaults.");
-    }
+    // Use SDK default explorers to keep mempool view aligned with Breez services.
+    // Custom explorers can cause input-missing errors when mempools diverge.
 
     // Note: The SDK already includes default asset metadata for LBTC and USDT on mainnet
     // Additional assets can be added here if needed
