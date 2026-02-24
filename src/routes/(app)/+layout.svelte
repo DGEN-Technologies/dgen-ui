@@ -728,7 +728,11 @@
     counter++;
     const isOpen = socket?.readyState === 1;
     let lost = !isOpen || !$last || Date.now() - $last > 30000;
-    if (lost && token) connect(token);
+    if (lost && token) {
+      connect(token).catch((error) => {
+        console.warn("[Layout] Socket reconnect failed:", error);
+      });
+    }
     if (counter > 5 && token && isOpen) {
       void send("heartbeat", token);
       counter = 0;

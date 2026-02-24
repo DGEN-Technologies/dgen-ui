@@ -87,6 +87,20 @@ const resolveExplorerOverride = (
   return buildBackendExplorerUrl(fallbackNetwork);
 };
 
+const redactUrl = (value: string): string => {
+  try {
+    const url = new URL(value);
+    return `${url.origin}/...`;
+  } catch {
+    return "<invalid-url>";
+  }
+};
+
+const summarizeOffer = (offer?: string): string => {
+  if (!offer) return "<none>";
+  return `len:${offer.length}`;
+};
+
 /**
  * Gets or generates a persistent encryption password for the user's wallet.
  * This key is:
@@ -305,13 +319,19 @@ const connectSdk = async (mnemonic: string, retryCount = 0): Promise<void> => {
     // Additional assets can be added here if needed
     // config.assetMetadata = [...(config.assetMetadata || []), { additional assets }];
 
-    // Add exponential backoff delay to help avoid blockstream.info rate limits (429 errors)
-    // This is especially important when multiple apps are running or on retries
-    const delayMs = 5000 * Math.pow(2, retryCount); // 5s, 10s, 20s
-    sdkLogger.info(
-      `Connecting to SDK (attempt ${retryCount + 1}/${maxRetries + 1}) with ${delayMs}ms delay...`,
-    );
-    await new Promise((resolve) => setTimeout(resolve, delayMs));
+    if (retryCount > 0) {
+      // Add exponential backoff delay to help avoid blockstream.info rate limits (429 errors)
+      // This is especially important when multiple apps are running or on retries
+      const delayMs = 5000 * Math.pow(2, retryCount); // 5s, 10s, 20s
+      sdkLogger.info(
+        `Connecting to SDK (attempt ${retryCount + 1}/${maxRetries + 1}) with ${delayMs}ms delay...`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    } else {
+      sdkLogger.info(
+        `Connecting to SDK (attempt ${retryCount + 1}/${maxRetries + 1})...`,
+      );
+    }
 
     // Connect to Breez network with the mnemonic directly - exactly like wasm-example-app
     sdk = await breezSdk.connect({
@@ -844,7 +864,7 @@ export const getNodeInfo = async (): Promise<breezSdk.NodeState | null> => {
 // Lightning Address / LNURL Operations
 export const registerWebhook = async (webhookUrl: string): Promise<void> => {
   if (!sdk) throw new Error("SDK not initialized");
-  sdkLogger.info("Registering webhook:", webhookUrl);
+  sdkLogger.info("Registering webhook:", redactUrl(webhookUrl));
   await sdk.registerWebhook(webhookUrl);
   sdkLogger.info("Webhook registered successfully");
 };
@@ -949,7 +969,10 @@ export const recoverLightningAddress = async (
 ): Promise<LnAddressRegistrationResult | null> => {
   if (!sdk) throw new Error("SDK not initialized");
 
-  lightningAddressLogger.info("Attempting recovery with webhook:", webhookUrl);
+  lightningAddressLogger.info(
+    "Attempting recovery with webhook:",
+    redactUrl(webhookUrl),
+  );
 
   try {
     // Get wallet info for pubkey
@@ -1107,7 +1130,7 @@ const registerLightningAddressSingle = async (
       bolt12Offer = await generateLightningAddressOffer(username);
       lightningAddressLogger.info(
         "BOLT12 offer generated:",
-        bolt12Offer.substring(0, 50) + "...",
+        summarizeOffer(bolt12Offer),
       );
     }
 

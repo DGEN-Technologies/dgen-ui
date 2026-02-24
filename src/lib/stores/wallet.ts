@@ -105,10 +105,15 @@ interface WalletState {
 
 // Polling state (defined early so lock/reset can access)
 let eventListenerActive = false;
+let eventListenerId: string | null = null;
 let pollUnsubscribe: (() => void) | null = null;
 
 // Helper to clean up polling state (used by lock/reset)
 const cleanupPolling = (): void => {
+  if (eventListenerId) {
+    void walletService.removeEventListener(eventListenerId);
+    eventListenerId = null;
+  }
   if (pollUnsubscribe) {
     pollUnsubscribe();
     pollUnsubscribe = null;
@@ -470,7 +475,7 @@ const startEventListening = async (): Promise<void> => {
 
   try {
     // addEventListener expects just the callback function, not a string first
-    await walletService.addEventListener((event: SdkEvent) => {
+    const listenerId = await walletService.addEventListener((event: SdkEvent) => {
       logSdkEvent(event);
 
       // Import paymentEvents dynamically to avoid circular dependencies
@@ -483,6 +488,7 @@ const startEventListening = async (): Promise<void> => {
             // Lightning: lockup tx broadcast, claim tx will be broadcast when confirmed or zero-conf
             // Bitcoin: lockup tx seen and amount accepted, claim tx will be broadcast when confirmed or zero-conf
             case "paymentPending":
+            {
               console.log(
                 "[WalletStore] Payment pending - lockup transaction broadcast",
               );
@@ -512,10 +518,12 @@ const startEventListening = async (): Promise<void> => {
                 );
               }
               break;
+            }
 
             // Lightning/Bitcoin: claim tx broadcast and waiting confirmation
             // Liquid: transaction seen (not yet confirmed)
             case "paymentWaitingConfirmation":
+            {
               console.log(
                 "[WalletStore] Payment waiting confirmation - claim tx broadcast",
               );
@@ -563,9 +571,11 @@ const startEventListening = async (): Promise<void> => {
                 );
               }
               break;
+            }
 
             // All methods: transaction is confirmed - payment complete!
             case "paymentSucceeded":
+            {
               // Mark tx as confirmed - can slow down polling
               if (isValidTxid(event.details?.txId)) {
                 markTxConfirmed(event.details.txId);
@@ -589,6 +599,7 @@ const startEventListening = async (): Promise<void> => {
                 );
               }
               break;
+            }
 
             // Payment failed (swap expired, fee not accepted, lockup tx failed)
             case "paymentFailed":
@@ -604,6 +615,7 @@ const startEventListening = async (): Promise<void> => {
 
             // Bitcoin only: needs fee acceptance for amountless swaps
             case "paymentWaitingFeeAcceptance":
+            {
               console.log(
                 "[WalletStore] Payment waiting fee acceptance (Bitcoin amountless swap)",
               );
@@ -619,6 +631,7 @@ const startEventListening = async (): Promise<void> => {
                 );
               }
               break;
+            }
 
             // Bitcoin only: swap failed but lockup tx was broadcast, needs refund
             case "paymentRefundable":
@@ -701,6 +714,7 @@ const startEventListening = async (): Promise<void> => {
         });
     });
 
+    eventListenerId = listenerId;
     eventListenerActive = true;
     console.log("[WalletStore] Event listening started");
 

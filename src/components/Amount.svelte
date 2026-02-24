@@ -36,7 +36,7 @@
         : "text-yellow-300",
   );
   const effectiveShowAllUnits = $derived(
-    showAllUnits || (invoiceType === types.lightning && !isUSDT),
+    !!showAllUnits && !(invoiceType === types.lightning && isUSDT),
   );
 
   // Convert satoshis/smallest units to fiat value

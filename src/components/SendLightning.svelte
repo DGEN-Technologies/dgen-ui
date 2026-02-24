@@ -38,6 +38,11 @@
   let lnUrlData = $derived(
     parsed?.type === "lnUrlPay" ? parsed.data : parsed?.lnUrlPay?.data,
   );
+  const devLog = (...args) => {
+    if (import.meta.env.DEV) {
+      console.log(...args);
+    }
+  };
 
   onMount(async () => {
     if (payreq) {
@@ -77,14 +82,13 @@
       minSendable = 0;
       maxSendable = 0;
 
-      console.log("[SendLightning] Attempting to parse:", payreq);
+      devLog("[SendLightning] Attempting to parse payment input");
 
       // Parse the payment request using browser SDK
       const result = await parseInput(payreq);
       parsed = result;
 
-      console.log("[SendLightning] Parsed result:", parsed);
-      console.log("[SendLightning] Parsed type:", parsed?.type);
+      devLog("[SendLightning] Parsed type:", parsed?.type);
 
       // Handle based on type
       if (
@@ -107,7 +111,7 @@
           maxSendable = networkMaxSat;
           amountSat = Math.max(1000, networkMinSat);
 
-          console.log(
+          devLog(
             "[SendLightning] Amountless invoice detected, amount range:",
             minSendable,
             "-",
@@ -156,13 +160,12 @@
         // Set default amount to minimum
         amountSat = minSendable;
 
-        console.log(
+        devLog(
           "[SendLightning] LNURL-Pay detected, amount range:",
           minSendable,
           "-",
           maxSendable,
         );
-        console.log("[SendLightning] LNURL data:", lnUrlData);
       } else if (parsed?.type === "bolt12Offer" || parsed?.offer) {
         // Handle BOLT12 Offer (Lightning addresses registered with Breez return this)
         isLightningAddress = true;
@@ -181,8 +184,8 @@
         // Set default amount to a reasonable value
         amountSat = Math.max(1000, networkMinSat);
 
-        console.log(
-          "[SendLightning] BOLT12 offer detected (Lightning address), amount range:",
+        devLog(
+          "[SendLightning] BOLT12 offer detected, amount range:",
           minSendable,
           "-",
           maxSendable,
@@ -192,7 +195,6 @@
       }
     } catch (e) {
       console.error("[SendLightning] Failed to parse payment:", e);
-      console.error("[SendLightning] Input that failed:", payreq);
 
       // Provide more helpful error messages
       if (e.message?.includes("Unrecognized input type")) {
@@ -230,9 +232,10 @@
     try {
       loading = true;
       error = "";
+      const safeAmountSat = Math.trunc(amountSat);
 
       // Validate amount
-      if (amountSat < minSendable || amountSat > maxSendable) {
+      if (safeAmountSat < minSendable || safeAmountSat > maxSendable) {
         error = `Amount must be between ${formatSats(minSendable)} and ${formatSats(maxSendable)} sats`;
         loading = false;
         return;
@@ -247,41 +250,35 @@
           data: lnUrlData,
           amount: {
             type: "bitcoin",
-            receiverAmountSat: amountSat,
+            receiverAmountSat: safeAmountSat,
           },
           comment: comment || undefined,
-          validateSuccessActionUrl: false,
+          validateSuccessActionUrl: true,
         };
 
         preparedPayment = await prepareLnurlPay(prepareRequest);
-        console.log("[SendLightning] LNURL payment prepared:", preparedPayment);
+        devLog("[SendLightning] LNURL payment prepared");
       } else if (isAmountlessInvoice && parsed?.invoice) {
         preparedPayment = await prepareSendPayment({
           destination: parsed.invoice.bolt11,
           amount: {
             type: "bitcoin",
-            receiverAmountSat: amountSat,
+            receiverAmountSat: safeAmountSat,
           },
         });
-        console.log(
-          "[SendLightning] Amountless invoice prepared:",
-          preparedPayment,
-        );
+        devLog("[SendLightning] Amountless invoice prepared");
       } else if (parsed.type === "bolt12Offer" || parsed.offer) {
         // Prepare BOLT12 payment
         const prepareRequest = {
           destination: parsed.offer.offer,
           amount: {
             type: "bitcoin",
-            receiverAmountSat: amountSat,
+            receiverAmountSat: safeAmountSat,
           },
         };
 
         preparedPayment = await prepareSendPayment(prepareRequest);
-        console.log(
-          "[SendLightning] BOLT12 payment prepared:",
-          preparedPayment,
-        );
+        devLog("[SendLightning] BOLT12 payment prepared");
       }
     } catch (e) {
       console.error("Failed to prepare payment:", e);
@@ -338,7 +335,7 @@
           prepareResponse: preparedPayment,
         };
         result = await lnurlPay(lnurlPayRequest);
-        console.log("[SendLightning] LNURL payment result:", result);
+        devLog("[SendLightning] LNURL payment sent");
 
         // Navigate to success page
         if (result?.payment?.txId) {
@@ -352,7 +349,7 @@
           prepareResponse: preparedPayment,
         };
         result = await sendPayment(sendRequest);
-        console.log("[SendLightning] Payment result:", result);
+        devLog("[SendLightning] Lightning payment sent");
 
         // Navigate to success page using txId or paymentHash
         const paymentId =

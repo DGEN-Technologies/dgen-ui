@@ -16,7 +16,7 @@
   let { user } = data;
   const rawAddress = $page.params?.address ?? "";
   let address = normalizeAddressInput(rawAddress);
-  let addressError = $derived(() => {
+  let addressError = $derived.by(() => {
     if (!rawAddress || !address) return "Missing destination address";
     if (!isValidAddressFormat(rawAddress)) return "Invalid address format";
     return "";

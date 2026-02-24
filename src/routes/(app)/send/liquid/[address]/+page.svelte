@@ -18,7 +18,7 @@
   let { user } = data;
   const rawAddress = $page.params?.address ?? "";
   let address = normalizeAddressInput(rawAddress);
-  let addressError = $derived(() => {
+  let addressError = $derived.by(() => {
     if (!rawAddress || !address) return "Missing destination address";
     if (!isValidAddressFormat(rawAddress)) return "Invalid address format";
     return "";
@@ -105,7 +105,7 @@
 
   // Get balance from wallet store based on asset type
   let balances = $derived($assetBalances || []);
-  let balance = $derived(() => {
+  let balance = $derived.by(() => {
     if (asset === "usdt") {
       const usdtBal = balances.find((b) => b.assetId === ASSET_IDS.USDT);
       return usdtBal?.balanceSat || 0;

@@ -445,9 +445,12 @@ function createTransactionStore() {
       updates: Partial<breezSdk.Payment>,
     ): void {
       update((state) => {
-        const allTransactions = state.allTransactions.map((tx) =>
-          tx.id === paymentId ? { ...tx, ...updates } : tx,
-        );
+        const allTransactions = state.allTransactions.map((tx) => {
+          if (tx.id !== paymentId) return tx;
+          const merged = { ...tx, ...updates } as breezSdk.Payment;
+          const enhanced = enhancePayment(merged, state.fiatRates);
+          return { ...tx, ...merged, ...enhanced };
+        });
 
         const filtered = filterTransactions(allTransactions, state.filter);
         const page = paginateTransactions(filtered, state.pagination);
