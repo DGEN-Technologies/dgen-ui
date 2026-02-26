@@ -95,13 +95,8 @@
         throw new Error("Invalid address format");
       }
 
-      // Convert amount from satoshis to asset units
-      // For LBTC: 1 BTC = 100,000,000 sats, so divide by 100000000
-      // For USDT: amount is already in smallest units (same as sats precision)
-      const receiverAmount =
-        selectedAsset === ASSET_IDS.USDT
-          ? amount / 100000000 // USDT uses same precision as BTC
-          : amount / 100000000; // LBTC is BTC on Liquid
+      // Both LBTC and USDT use 8 decimal places (satoshi precision)
+      const receiverAmount = amount / 100000000;
 
       prepareResponse = await prepareSendAsset({
         destination: normalizedDestination,

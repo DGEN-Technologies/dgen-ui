@@ -1,5 +1,5 @@
 <script>
-  import { onMount } from "svelte";
+  import { onDestroy, onMount } from "svelte";
   import {
     parseInput,
     prepareSendPayment,
@@ -24,6 +24,7 @@
   let loading = $state(false);
   let paymentStartTime = $state(null);
   let pendingTimeoutWarning = $state(false);
+  let pendingWarningTimerId = $state(null);
   let parsed = $state(null);
   let error = $state("");
   let preparedPayment = $state(null);
@@ -49,6 +50,13 @@
       // Wait for SDK to be initialized
       await waitForSDK();
       await parsePayment();
+    }
+  });
+
+  onDestroy(() => {
+    if (pendingWarningTimerId) {
+      clearTimeout(pendingWarningTimerId);
+      pendingWarningTimerId = null;
     }
   });
 
@@ -314,7 +322,10 @@
       paymentStartTime = Date.now();
       pendingTimeoutWarning = false;
       // Start timeout check for pending payment
-      setTimeout(
+      if (pendingWarningTimerId) {
+        clearTimeout(pendingWarningTimerId);
+      }
+      pendingWarningTimerId = setTimeout(
         () => {
           if (
             loading &&
@@ -366,6 +377,10 @@
       error = mapTxError(message, "Payment failed");
     } finally {
       loading = false;
+      if (pendingWarningTimerId) {
+        clearTimeout(pendingWarningTimerId);
+        pendingWarningTimerId = null;
+      }
     }
   }
 

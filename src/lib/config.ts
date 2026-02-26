@@ -41,27 +41,31 @@ export async function loadRuntimeConfig(): Promise<Config> {
   try {
     // Fetch fresh config from server
     const response = await fetch("/api/config");
-    if (response.ok) {
-      const data = await response.json();
-
-      // Update store
-      runtimeConfig.set(data);
-
-      // Cache the result
-      try {
-        sessionStorage.setItem(
-          CONFIG_CACHE_KEY,
-          JSON.stringify({
-            data,
-            timestamp: Date.now(),
-          }),
-        );
-      } catch (e) {
-        // Ignore cache errors
-      }
-
-      return data;
+    if (!response.ok) {
+      console.error(
+        `Failed to load runtime config: ${response.status} ${response.statusText}`,
+      );
+      return {};
     }
+    const data = await response.json();
+
+    // Update store
+    runtimeConfig.set(data);
+
+    // Cache the result
+    try {
+      sessionStorage.setItem(
+        CONFIG_CACHE_KEY,
+        JSON.stringify({
+          data,
+          timestamp: Date.now(),
+        }),
+      );
+    } catch (e) {
+      // Ignore cache errors
+    }
+
+    return data;
   } catch (error) {
     console.error("Failed to load runtime config:", error);
   }

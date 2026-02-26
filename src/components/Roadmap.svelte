@@ -109,10 +109,14 @@
                     <div
                       class={`inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r ${item.color} text-black font-bold mb-4`}
                     >
-                      <iconify-icon icon={item.icon} width="20"></iconify-icon>
+                      <iconify-icon
+                        icon={item.icon}
+                        width="20"
+                        aria-hidden="true"
+                      ></iconify-icon>
                       <span>{item.phase}</span>
                       {#if item.status === "in-progress"}
-                        <span class="animate-pulse">🔥</span>
+                        <span class="animate-pulse" aria-hidden="true">🔥</span>
                       {/if}
                     </div>
 
@@ -133,6 +137,7 @@
                               ? "text-green-400"
                               : "text-white/40"}
                             width="20"
+                            aria-hidden="true"
                           ></iconify-icon>
                           <span>{listItem}</span>
                         </li>
