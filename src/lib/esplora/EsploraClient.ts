@@ -120,13 +120,25 @@ const isValidBlech32Address = (address: string): boolean => {
   const decoders = getBlech32Decoders();
   for (const decoder of decoders) {
     try {
-      if (decoder.decode.length >= 2) {
-        decoder.decode(normalized, 2048);
-      } else {
-        decoder.decode(normalized);
+      const hasEncoding =
+        "BLECH32" in (decoder as any) || "BLECH32M" in (decoder as any);
+      if (hasEncoding) {
+        const enc = (decoder as any).BLECH32 ?? (decoder as any).BLECH32M;
+        decoder.decode(normalized, enc);
+        return true;
       }
+      decoder.decode(normalized, 2048);
       return true;
-    } catch {}
+    } catch {
+      try {
+        if ("BLECH32M" in (decoder as any)) {
+          decoder.decode(normalized, (decoder as any).BLECH32M);
+          return true;
+        }
+        decoder.decode(normalized);
+        return true;
+      } catch {}
+    }
   }
   return false;
 };

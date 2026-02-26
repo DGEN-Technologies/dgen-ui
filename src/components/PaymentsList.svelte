@@ -528,15 +528,19 @@
     if (!rate || rate <= 0) return 0;
     return Math.round(amountInAssetUnits / rate);
   };
+  const isSettled = (status) => {
+    const normalized = (status || "").toLowerCase();
+    return normalized === "complete" || normalized === "success";
+  };
   let totalReceivedNonUsdtSat = $derived(
     allPayments
-      .filter((p) => p.displayAmount > 0 && !p.isUsdt)
+      .filter((p) => isSettled(p.status) && p.displayAmount > 0 && !p.isUsdt)
       .reduce((sum, p) => sum + p.displayAmount, 0),
   );
   let totalReceivedUsdtSat = $derived(
     usdtToSats(
       allPayments
-        .filter((p) => p.displayAmount > 0 && p.isUsdt)
+        .filter((p) => isSettled(p.status) && p.displayAmount > 0 && p.isUsdt)
         .reduce((sum, p) => sum + p.displayAmount, 0),
     ),
   );

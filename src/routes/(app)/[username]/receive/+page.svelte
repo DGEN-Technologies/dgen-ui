@@ -44,6 +44,7 @@
   } from "$lib/stores/lightningAddress";
   import { walletStore, transactions } from "$lib/stores/wallet";
   import { paymentReceived } from "$lib/stores/paymentEvents";
+  import { ASSET_IDS } from "$lib/assets";
   import { PUBLIC_DGEN_URL } from "$env/static/public";
 
   let { data } = $props();
@@ -481,8 +482,7 @@
           // Receiving USDT
           // For Liquid assets, payerAmount is OPTIONAL
           // If not specified, it creates an amountless BIP21 URI
-          const usdtAssetId =
-            "ce091c998b83c78bb71a632313ba3760f1763d9cfcffae02258ffa9865a37bd2";
+          const usdtAssetId = ASSET_IDS.USDT;
 
           prepareRequest = {
             paymentMethod: "liquidAddress",
@@ -494,17 +494,14 @@
           };
         } else {
           // Receiving LBTC (default)
-          // For LBTC, payerAmountSat is OPTIONAL
-          // If not specified, it creates an address that can receive any amount
+          // For LBTC, payerAmount is OPTIONAL; use asset type to force Liquid address.
           prepareRequest = {
             paymentMethod: "liquidAddress",
-            amount:
-              amount && amount > 0
-                ? {
-                    type: "bitcoin", // For LBTC
-                    payerAmountSat: amount,
-                  }
-                : undefined, // Don't pass amount object at all - generates plain address
+            amount: {
+              type: "asset",
+              assetId: ASSET_IDS.LBTC,
+              ...(amount && amount > 0 && { payerAmount: amount }),
+            },
           };
         }
 

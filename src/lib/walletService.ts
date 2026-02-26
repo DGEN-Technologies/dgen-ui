@@ -34,7 +34,7 @@ let wasmInitialized = false;
 let eventListeners: Map<string, string> = new Map(); // Track listener IDs
 let currentUserId: string | null = null;
 let isConnecting = false; // Prevent concurrent connections
-const SDK_CONFIG_VERSION = 4;
+const SDK_CONFIG_VERSION = 5;
 const SDK_CONFIG_VERSION_KEY = "breez_sdk_config_version";
 
 // Secure storage instance
@@ -45,14 +45,8 @@ const normalizeExplorerUrl = (value?: string): string | null => {
   const trimmed = value.trim();
   if (!trimmed) return null;
 
-  const base =
-    publicEnv.PUBLIC_DGEN_URL ||
-    (typeof window !== "undefined"
-      ? window.location.origin
-      : "http://localhost");
-
   try {
-    const parsed = new URL(trimmed, base);
+    const parsed = new URL(trimmed);
     const isLocalhost =
       parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1";
     if (parsed.protocol !== "https:" && !isLocalhost) {
@@ -66,7 +60,9 @@ const normalizeExplorerUrl = (value?: string): string | null => {
   }
 };
 
-const buildBackendExplorerUrl = (networkPath: string): string | null => {
+const buildBackendExplorerUrl = (
+  networkPath: "bitcoin" | "liquid",
+): string | null => {
   const base = publicEnv.PUBLIC_DGEN_URL;
   if (!base) return null;
   try {
@@ -652,19 +648,7 @@ export const recommendedFees = async (): Promise<breezSdk.RecommendedFees> => {
 // Refund operations (Bitcoin on-chain swaps)
 export const listRefundables = async (): Promise<breezSdk.RefundableSwap[]> => {
   if (!sdk) throw new Error("SDK not initialized");
-  try {
-    return await sdk.listRefundables();
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    if (
-      message.includes("Failed to fetch") ||
-      message.includes("Request(request::Error")
-    ) {
-      sdkLogger.warn("Refundables fetch failed; treating as empty.", error);
-      return [];
-    }
-    throw error;
-  }
+  return await sdk.listRefundables();
 };
 
 export const prepareRefund = async (

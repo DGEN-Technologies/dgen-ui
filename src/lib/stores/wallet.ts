@@ -108,6 +108,7 @@ interface WalletState {
 let eventListenerActive = false;
 let eventListenerId: string | null = null;
 let pollUnsubscribe: (() => void) | null = null;
+let pollingInterval: ReturnType<typeof setInterval> | null = null;
 
 // Helper to clean up polling state (used by lock/reset)
 const cleanupPolling = (): void => {
@@ -118,6 +119,10 @@ const cleanupPolling = (): void => {
   if (pollUnsubscribe) {
     pollUnsubscribe();
     pollUnsubscribe = null;
+  }
+  if (pollingInterval) {
+    clearInterval(pollingInterval);
+    pollingInterval = null;
   }
   stopPolling();
   clearTrackedTxs();
@@ -735,6 +740,22 @@ const startEventListening = async (): Promise<void> => {
       // Start the poll manager
       startPolling();
       console.log("[WalletStore] Registered with PollManager");
+    }
+
+    // Start polling fallback (60s interval like misty-breez) to avoid missing events
+    if (!pollingInterval && typeof window !== "undefined") {
+      pollingInterval = setInterval(async () => {
+        try {
+          if (!document.hidden && walletService.isConnected()) {
+            console.log("[WalletStore] Polling refresh (60s fallback)");
+            await walletStore.refresh();
+            await transactions.refresh();
+          }
+        } catch (error) {
+          console.error("[WalletStore] Polling refresh failed:", error);
+        }
+      }, 60000);
+      console.log("[WalletStore] Polling fallback started (60s interval)");
     }
   } catch (error) {
     console.error("[WalletStore] Failed to start event listening:", error);

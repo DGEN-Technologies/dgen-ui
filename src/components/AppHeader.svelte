@@ -1,7 +1,7 @@
 <script>
   import { env as publicEnv } from "$env/dynamic/public";
+  import { browser } from "$app/environment";
   import { banner, theme, newPayment } from "$lib/store";
-  import { goto } from "$app/navigation";
   import { getImageUrl } from "$lib/utils";
   import Avatar from "$comp/Avatar.svelte";
   import Menu from "$comp/Menu.svelte";
@@ -48,6 +48,7 @@
       href: `/${user?.username}`,
       icon: "ph:house-bold",
       label: "HOME",
+      reload: true,
     },
     {
       href: `/${user?.username}/receive`,
@@ -71,6 +72,12 @@
     //   label: "Logout",
     // },
   ]);
+
+  const handleHomeClick = (event, href) => {
+    if (!browser) return;
+    event.preventDefault();
+    window.location.assign(href);
+  };
 
   let opacity = $derived((href) =>
     $page.url.pathname === href
@@ -96,8 +103,14 @@
       class="flex justify-end items-center space-x-2 sm:space-x-4 p-3 sm:p-5 pr-2 sm:pr-5"
     >
       {#if user}
-        {#each links as { href, icon, flip, label }}
-          <a {href} data-sveltekit-preload-data="off">
+        {#each links as { href, icon, flip, label, reload }}
+          <a
+            {href}
+            data-sveltekit-preload-data="off"
+            onclick={reload
+              ? (event) => handleHomeClick(event, href)
+              : undefined}
+          >
             <button
               class="btn-menu {opacity(href)} flex-col gap-1"
               aria-label={label}

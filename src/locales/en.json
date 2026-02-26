@@ -537,7 +537,7 @@
     "dontDeposit": "Please don't deposit other Liquid assets",
     "failed": "Failed",
     "refund": "Refund Payment",
-    "refundAvailable": "This payment failed and can be refunded",
+    "refundAvailable": "Some payments failed and can be refunded",
     "refundDescription": "This on-chain payment failed and the funds can be refunded to your Bitcoin address.",
     "refundDetails": "Refund Details",
     "refundTo": "Refund to Bitcoin address",
