@@ -2,10 +2,7 @@ import adapter from "@sveltejs/adapter-netlify";
 import { vitePreprocess } from "@sveltejs/vite-plugin-svelte";
 
 const isProd = process.env.NODE_ENV === "production";
-const styleSrc = ["self", "https://fonts.googleapis.com"];
-if (!isProd) {
-  styleSrc.push("unsafe-inline");
-}
+const styleSrc = ["self", "https://fonts.googleapis.com", "unsafe-inline"];
 const imgSrc = ["self", "data:", "https:"];
 if (!isProd) {
   imgSrc.push("http://localhost:*");

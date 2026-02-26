@@ -19,8 +19,12 @@
     proMode.update((v) => {
       const next = !v;
       if (browser) {
-        sessionStorage.setItem("proModeOverride", next ? "on" : "off");
-        localStorage.setItem("proModeUserSet", "true");
+        try {
+          sessionStorage.setItem("proModeOverride", next ? "on" : "off");
+          localStorage.setItem("proModeUserSet", "true");
+        } catch (err) {
+          console.warn("[ProModeToggle] Storage unavailable:", err);
+        }
       }
       return next;
     });

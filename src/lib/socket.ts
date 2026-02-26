@@ -190,10 +190,11 @@ export const messages = (data) => ({
     invalidate("app:user");
     invalidate("app:wallet");
 
-    // Log for debugging
-    console.log(
-      `[WebSocket] Balance update received: ${balanceSat} sats (pending send: ${pendingSendSat}, pending receive: ${pendingReceiveSat})`,
-    );
+    if (import.meta.env.DEV) {
+      console.log(
+        `[WebSocket] Balance update received: ${balanceSat} sats (pending send: ${pendingSendSat}, pending receive: ${pendingReceiveSat})`,
+      );
+    }
   },
 
   async "webhook-request"() {

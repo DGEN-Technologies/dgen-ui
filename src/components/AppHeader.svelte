@@ -122,31 +122,30 @@
       {/if}
     </nav>
     <!-- DGEN Card -->
-    {#if DGENCardUrl}
-      <div class="mr-2 sm:mr-5 flex justify-end">
-        <a
-          href={DGENCardUrl}
-          target="_blank"
-          class="inline-flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 rounded-xl bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-2 border-blue-500/30"
-        >
-          <div>
-            <iconify-icon
-              icon="ph:credit-card-bold"
-              class="text-blue-400"
-              width="16"
-            ></iconify-icon>
-          </div>
-          <div class="flex flex-col items-center">
-            <span class="text-xs sm:text-sm font-semibold text-blue-300"
-              >DGEN Card is live</span
-            >
-            <span class="text-[7px] sm:text-xs font-semibold text-blue-300"
-              >(click here to see it)</span
-            >
-          </div>
-        </a>
-      </div>
-    {/if}
+    <div class="mr-2 sm:mr-5 flex justify-end">
+      <a
+        href={DGENCardUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 rounded-xl bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-2 border-blue-500/30"
+      >
+        <div>
+          <iconify-icon
+            icon="ph:credit-card-bold"
+            class="text-blue-400"
+            width="16"
+          ></iconify-icon>
+        </div>
+        <div class="flex flex-col items-center">
+          <span class="text-xs sm:text-sm font-semibold text-blue-300"
+            >DGEN Card is live</span
+          >
+          <span class="text-[7px] sm:text-xs font-semibold text-blue-300"
+            >(click here to see it)</span
+          >
+        </div>
+      </a>
+    </div>
     {#if subject}
       <div
         class="absolute md:w-[64px] md:mx-auto lg:left-[154px] xl:left-[194px] left-[calc(50vw-64px)] -bottom-[64px] z-30"

@@ -90,7 +90,7 @@ class TransactionCache {
           tx.id ||
           tx.paymentHash ||
           tx.details?.paymentHash ||
-          `payment_${Date.now()}_${Math.random()}`,
+          `payment_${(tx as any).paymentTime ?? (tx as any).timestamp ?? 0}_${tx.amountSat}_${tx.paymentType}`,
       };
       store.put(txWithId);
     }
@@ -179,11 +179,11 @@ class TransactionCache {
             results = results.filter((tx) => tx.paymentTime <= endTime);
           }
 
-          if (filter.minAmount) {
+          if (filter.minAmount !== undefined) {
             results = results.filter((tx) => tx.amountSat >= filter.minAmount);
           }
 
-          if (filter.maxAmount) {
+          if (filter.maxAmount !== undefined) {
             results = results.filter((tx) => tx.amountSat <= filter.maxAmount);
           }
 
@@ -421,6 +421,9 @@ function createTransactionStore() {
         // Mark as pending if optimistic
         if (optimistic) {
           enhanced.status = "pending";
+          enhanced.statusColor = getStatusColor("pending");
+          enhanced.statusIcon = getStatusIcon("pending");
+          enhanced.isRefundable = false;
         }
 
         const allTransactions = [enhanced, ...state.allTransactions];
@@ -596,11 +599,11 @@ function filterTransactions(
     filtered = filtered.filter((tx) => tx.paymentTime <= endTime);
   }
 
-  if (filter.minAmount) {
+  if (filter.minAmount !== undefined) {
     filtered = filtered.filter((tx) => tx.amountSat >= filter.minAmount);
   }
 
-  if (filter.maxAmount) {
+  if (filter.maxAmount !== undefined) {
     filtered = filtered.filter((tx) => tx.amountSat <= filter.maxAmount);
   }
 
@@ -782,7 +785,7 @@ export async function initTransactionEventHandling(): Promise<void> {
             transactionStore.loadTransactions(true);
             break;
 
-          case "dataSynced":
+          case "dataSynced": {
             const didPull = (event as any).didPullNewRecords;
 
             // Import wallet store dynamically to avoid circular dependencies
@@ -809,6 +812,7 @@ export async function initTransactionEventHandling(): Promise<void> {
               transactionStore.loadTransactions(true);
             }
             break;
+          }
 
           default:
             break;

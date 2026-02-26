@@ -51,9 +51,9 @@
               Breez
             </h3>
             <p class="text-xs sm:text-sm text-white/70 leading-relaxed">
-              Non-custodial infrastructure providers with a focus is on
-              empowering developers to bring self-sovereign Bitcoin
-              functionality to global users.
+              Non-custodial infrastructure providers with a focus on empowering
+              developers to bring self-sovereign Bitcoin functionality to global
+              users.
             </p>
           </div>
         </div>
@@ -78,7 +78,7 @@
             <img
               src="/PrivKey_logo.png"
               alt="PrivKey"
-              class="rounded-xl sm:rounded-2xl"
+              class="w-full h-full object-contain rounded-xl sm:rounded-2xl"
             />
           </div>
 

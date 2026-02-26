@@ -92,7 +92,11 @@
           const targetOrigin = originCandidates.find((origin) =>
             allowedOrigins.includes(origin),
           );
-          if (targetOrigin) {
+          if (!targetOrigin) {
+            console.warn(
+              "[AppForm] Opener origin not allowlisted; skipping postMessage",
+            );
+          } else {
             window.opener.postMessage(msg, targetOrigin);
           }
         }
