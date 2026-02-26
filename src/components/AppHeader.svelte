@@ -107,7 +107,9 @@
           <a
             {href}
             data-sveltekit-preload-data="off"
-            onclick={reload ? (event) => handleHomeClick(event, href) : undefined}
+            onclick={reload
+              ? (event) => handleHomeClick(event, href)
+              : undefined}
           >
             <button
               class="btn-menu {opacity(href)} flex-col gap-1"
