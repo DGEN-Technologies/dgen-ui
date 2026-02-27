@@ -1,7 +1,8 @@
 <script lang="ts">
   import { run } from "svelte/legacy";
   import { browser } from "$app/environment";
-  import { PUBLIC_DOMAIN, PUBLIC_WIDGET_API_BASE } from "$env/static/public";
+  import { env as publicEnv } from "$env/dynamic/public";
+  import { PUBLIC_DOMAIN } from "$env/static/public";
   import "../app-modern.css";
   import { loading, t } from "$lib/translations";
   import { onMount } from "svelte";
@@ -33,6 +34,23 @@
 
   onMount(() => {
     if (!browser) return;
+
+    // Avoid noisy SSL errors from old SW registrations on localhost dev
+    if (
+      import.meta.env.DEV &&
+      (window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1") &&
+      "serviceWorker" in navigator
+    ) {
+      navigator.serviceWorker
+        .getRegistrations()
+        .then((registrations) => {
+          for (const registration of registrations) {
+            registration.unregister().catch(() => {});
+          }
+        })
+        .catch(() => {});
+    }
 
     // Force render after 2 seconds to prevent white screen issues
     // This ensures the app always loads even if translations are stuck
@@ -135,8 +153,8 @@
 {/if}
 
 <!-- Chat Widget - loads after initial render -->
-{#if showChatWidget}
-  <ChatWidget apiBase={PUBLIC_WIDGET_API_BASE} {userId} />
+{#if showChatWidget && publicEnv.PUBLIC_WIDGET_API_BASE}
+  <ChatWidget apiBase={publicEnv.PUBLIC_WIDGET_API_BASE} {userId} />
 {/if}
 
 <style global>

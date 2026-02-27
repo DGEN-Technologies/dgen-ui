@@ -1,19 +1,28 @@
 <script>
-  import { tick, onMount } from "svelte";
+  import { onMount } from "svelte";
   import { t } from "$lib/translations";
-  import Icon from "$comp/Icon.svelte";
   import Numpad from "$comp/Numpad.svelte";
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
   import { rate } from "$lib/store";
-  import { loc, fail, s, focus } from "$lib/utils";
-  import { assetBalances, walletBalance } from "$lib/stores/wallet";
+  import { loc, fail, focus } from "$lib/utils";
+  import { assetBalances } from "$lib/stores/wallet";
   import { ASSET_IDS } from "$lib/assets";
+  import {
+    isValidAddressFormat,
+    normalizeAddressInput,
+  } from "$lib/esplora/EsploraClient";
 
   let { data } = $props();
 
   let { user } = data;
-  let { address } = $page.params;
+  const rawAddress = $page.params?.address ?? "";
+  let address = normalizeAddressInput(rawAddress);
+  let addressError = $derived.by(() => {
+    if (!rawAddress || !address) return "Missing destination address";
+    if (!isValidAddressFormat(rawAddress)) return "Invalid address format";
+    return "";
+  });
   let { currency, username } = user;
   let locale = loc(user);
 
@@ -27,6 +36,11 @@
 
   onMount(async () => {
     try {
+      if (!rawAddress || addressError) {
+        isLoadingSDK = false;
+        return;
+      }
+
       // Wait for SDK to be ready
       const { isConnected, parseInput } = await import("$lib/walletService");
 
@@ -45,7 +59,7 @@
         return;
       }
 
-      parsedInput = await parseInput(address);
+      parsedInput = await parseInput(rawAddress.trim());
 
       console.log("[Send Liquid] Full parsed input:", parsedInput);
       console.log("[Send Liquid] Parsed input type:", parsedInput?.type);
@@ -74,7 +88,9 @@
 
           // Auto-navigate to confirmation if amount is present
           if (autoAmount > 0) {
-            goto(`/send/liquid/${address}/${autoAmount}?asset=${asset}`);
+            goto(
+              `/send/liquid/${encodeURIComponent(rawAddress)}/${autoAmount}?asset=${asset}`,
+            );
           }
         } else {
           console.log("[Send Liquid] No embedded amount found in BIP21");
@@ -89,7 +105,7 @@
 
   // Get balance from wallet store based on asset type
   let balances = $derived($assetBalances || []);
-  let balance = $derived(() => {
+  let balance = $derived.by(() => {
     if (asset === "usdt") {
       const usdtBal = balances.find((b) => b.assetId === ASSET_IDS.USDT);
       return usdtBal?.balanceSat || 0;
@@ -105,23 +121,6 @@
     fiat = $state();
   $effect(() => ($rate = data.rate));
   $effect(() => (amount = a));
-
-  let setMax = async (e) => {
-    e.preventDefault();
-    fiat = false;
-
-    // For USDT, we need to handle the balance differently since Numpad expects
-    // the amount in smallest units, but for USDT we show it as decimal
-    if (asset === "usdt") {
-      // Set the amount in smallest units (same as balance)
-      amount = balance();
-    } else {
-      amount = balance();
-    }
-
-    await tick();
-    submit.click();
-  };
 </script>
 
 <div class="container px-4 max-w-xl mx-auto space-y-5 text-center">
@@ -140,7 +139,10 @@
 
   <h1 class="text-3xl md:text-4xl font-semibold mb-2">Send via Liquid</h1>
 
-  <div class="text-xl text-secondary break-all">{address}</div>
+  <div class="text-xs sm:text-sm text-secondary break-all">{address}</div>
+  {#if addressError}
+    <div class="text-xs sm:text-sm text-red-400">{addressError}</div>
+  {/if}
 
   {#if isLoadingSDK}
     <!-- Loading State -->
@@ -204,22 +206,10 @@
       {locale}
       skipBalanceCheck={true}
       isUSDT={asset === "usdt"}
+      compactClear
     />
 
     <div class="flex justify-center gap-2">
-      <button
-        type="button"
-        class="btn !w-auto grow"
-        onclick={setMax}
-        onkeydown={setMax}
-      >
-        {#if asset === "usdt"}
-          Max {(balance() / 100000000).toFixed(2)} USDT
-        {:else}
-          Max ⚡️{s(balance())}
-        {/if}
-      </button>
-
       <button
         use:focus
         bind:this={submit}
@@ -227,8 +217,11 @@
         class="btn !w-auto grow {asset === 'usdt'
           ? 'bg-green-500 hover:bg-green-600 text-white border-green-500'
           : 'bg-orange-500 hover:bg-orange-600 text-white border-orange-500'}"
-        disabled={!amount || amount <= 0}
-        onclick={() => goto(`/send/liquid/${address}/${amount}?asset=${asset}`)}
+        disabled={!amount || amount <= 0 || !!addressError}
+        onclick={() =>
+          goto(
+            `/send/liquid/${encodeURIComponent(rawAddress)}/${amount}?asset=${asset}`,
+          )}
       >
         {$t("payments.next")}
       </button>

@@ -1,3 +1,4 @@
+import { TERMS_VERSION } from "$lib/termsVersion";
 import { fd, register } from "$lib/utils";
 import { redirect } from "@sveltejs/kit";
 
@@ -28,7 +29,14 @@ export const actions = {
   default: async ({ cookies, request, fetch }) => {
     const ip = request.headers.get("cf-connecting-ip");
     const form = await fd(request);
-    const { picture, username, password, confirm } = form;
+    const {
+      picture,
+      username,
+      password,
+      confirm,
+      termsAccepted,
+      termsVersion,
+    } = form;
     let { loginRedirect } = form;
     if (loginRedirect === "undefined") loginRedirect = undefined;
 
@@ -41,8 +49,26 @@ export const actions = {
       return { status: 400, error: "Passwords don't match" };
     }
 
+    const accepted =
+      termsAccepted === true ||
+      termsAccepted === "true" ||
+      termsAccepted === "on" ||
+      termsAccepted === "1";
+    if (!accepted || termsVersion !== TERMS_VERSION) {
+      return {
+        status: 400,
+        error: "You must accept the latest Terms to create an account.",
+      };
+    }
+
     console.log("[Register Action] Starting registration for:", username);
-    const user = { picture, username, password };
+    const user = {
+      picture,
+      username,
+      password,
+      termsVersion,
+      termsAcceptedAt: new Date().toISOString(),
+    };
     const result = await register(user, ip, cookies, loginRedirect, fetch);
 
     // If registration failed, return the error

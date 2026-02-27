@@ -63,6 +63,7 @@
       {locale}
       bind:rate={$rate}
       submit={next}
+      compactClear
     />
     <button type="submit" class="btn" bind:this={next}
       >{$t("payments.next")}</button

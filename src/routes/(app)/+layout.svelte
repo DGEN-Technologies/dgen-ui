@@ -50,13 +50,34 @@
   let isSwitchingUsers = $state(false); // Flag to hide stale data during user switch
   let isAcquiringLock = $state(false); // Track if we're currently trying to acquire lock
   let showTabLockBanner = $state(false); // Control banner visibility
+  let sdkSuspended = false;
+  let sdkResumeInFlight = false;
+  let sdkReloadCooldownUntil = 0;
+  let sdkReloadCooldownTimer = null;
+  let sdkDisconnectTimer = null;
+
+  const isAndroidDevice = () => {
+    if (!browser) return false;
+    const ua = navigator.userAgent || "";
+    const platform = navigator.userAgentData?.platform || "";
+    return /Android/i.test(ua) || /Android/i.test(platform);
+  };
 
   $effect(() => ($themeStore = theme));
   $effect(() => (theme = $themeStore));
 
+  $effect(() => {
+    if (!browser) return;
+    if (!user) return;
+    if (isAndroidDevice()) {
+      proMode.set(false);
+    }
+  });
+
   // Watch for user changes and trigger wallet re-initialization
   $effect(() => {
     if (!browser || !browserCompatible) return;
+    if (document.hidden || sdkSuspended) return;
 
     const userId = user?.id || user?.username;
     if (!userId) return;
@@ -88,6 +109,7 @@
 
   const initializeBrowserWallet = async () => {
     if (!user || !browserCompatible) return;
+    if (document.hidden) return;
 
     const userId = user.id || user.username;
 
@@ -314,10 +336,7 @@
 
     // Already has Lightning Address - skip
     if (user.lightningAddress) {
-      console.log(
-        "[Layout] User already has Lightning Address:",
-        user.lightningAddress,
-      );
+      console.log("[Layout] User already has Lightning Address");
       lnAddressStore.initialize(
         user.lnurl,
         user.lightningAddress,
@@ -359,10 +378,7 @@
       );
 
       if (recovered && recovered.lightningAddress) {
-        console.log(
-          "[Layout] Recovered existing address:",
-          recovered.lightningAddress,
-        );
+        console.log("[Layout] Recovered existing address");
 
         lnAddressStore.setSuccess(
           recovered.lnurl,
@@ -392,10 +408,7 @@
       // No existing address for this seed
       // Clear stale database address if one exists (from previous seed)
       if (user.lightningAddress) {
-        console.log(
-          "[Layout] Clearing stale database address:",
-          user.lightningAddress,
-        );
+        console.log("[Layout] Clearing stale database address");
         const { post } = await import("$lib/utils");
         await post("/user", {
           lightningAddress: null,
@@ -412,7 +425,7 @@
 
       // Use formatted username from user account
       const baseUsername = walletService.formatUsername(user.username);
-      console.log("[Layout] Auto-registering with username:", baseUsername);
+      console.log("[Layout] Auto-registering with formatted username");
 
       // registerLightningAddress now includes automatic retry with discriminators
       const result = await walletService.registerLightningAddress(
@@ -420,19 +433,11 @@
         webhookUrl.toString(),
       );
 
-      console.log(
-        "[Layout] Auto-registration successful:",
-        result.lightningAddress,
-      );
+      console.log("[Layout] Auto-registration successful");
 
       // Log if username was modified with discriminator
       if (result.usernameModified) {
-        console.log(
-          "[Layout] Username was modified from",
-          result.requestedUsername,
-          "to",
-          result.actualUsername,
-        );
+        console.log("[Layout] Username was modified during registration");
       }
 
       lnAddressStore.setSuccess(
@@ -534,6 +539,7 @@
 
       checkSocket();
       $pin = Cookies.get("pin");
+      document.addEventListener("visibilitychange", handleVisibilityForSdk);
 
       // Enable NFC scanning for mobile devices
       if (window.NDEFReader) {
@@ -608,12 +614,116 @@
   let checkTimer,
     counter = 0;
 
+  const handleVisibilityForSdk = async () => {
+    if (!browser) return;
+    if (!user || !browserCompatible) return;
+
+    const walletService = await import("$lib/walletService");
+
+    if (document.hidden) {
+      if (sdkSuspended) return;
+      if (!walletService.isConnected()) {
+        sdkSuspended = true;
+        walletInitialized = false;
+        walletEventListenerId = null;
+        return;
+      }
+      if (sdkDisconnectTimer) return;
+
+      sdkDisconnectTimer = setTimeout(async () => {
+        sdkDisconnectTimer = null;
+        if (!document.hidden) return;
+
+        sdkSuspended = true;
+        try {
+          await walletService.disconnect();
+        } catch (error) {
+          console.warn("[Layout] Failed to disconnect SDK on hide:", error);
+        }
+
+        walletEventListenerId = null;
+        walletInitialized = false;
+
+        try {
+          const { walletStore, transactions } = await import(
+            "$lib/stores/wallet"
+          );
+          walletStore.reset();
+          transactions.reset();
+        } catch (error) {
+          console.warn(
+            "[Layout] Failed to reset wallet stores on hide:",
+            error,
+          );
+        }
+      }, 30000);
+
+      return;
+    }
+
+    if (sdkDisconnectTimer) {
+      clearTimeout(sdkDisconnectTimer);
+      sdkDisconnectTimer = null;
+    }
+
+    if (!sdkSuspended || sdkResumeInFlight) return;
+    sdkResumeInFlight = true;
+    let resumeSucceeded = false;
+    try {
+      await initializeBrowserWallet();
+      const walletService = await import("$lib/walletService");
+      if (!walletService.isConnected()) {
+        const now = Date.now();
+        if (now >= sdkReloadCooldownUntil) {
+          sdkReloadCooldownUntil = now + 30000;
+          if (sdkReloadCooldownTimer) {
+            clearTimeout(sdkReloadCooldownTimer);
+          }
+          sdkReloadCooldownTimer = setTimeout(() => {
+            sdkReloadCooldownTimer = null;
+            sdkReloadCooldownUntil = 0;
+          }, 30000);
+          resumeSucceeded = true;
+          window.location.reload();
+        }
+        return;
+      }
+      resumeSucceeded = true;
+    } catch (error) {
+      console.warn("[Layout] Failed to resume SDK on show:", error);
+      const now = Date.now();
+      if (now >= sdkReloadCooldownUntil) {
+        sdkReloadCooldownUntil = now + 30000;
+        if (sdkReloadCooldownTimer) {
+          clearTimeout(sdkReloadCooldownTimer);
+        }
+        sdkReloadCooldownTimer = setTimeout(() => {
+          sdkReloadCooldownTimer = null;
+          sdkReloadCooldownUntil = 0;
+        }, 30000);
+        resumeSucceeded = true;
+        window.location.reload();
+        return;
+      }
+    } finally {
+      sdkResumeInFlight = false;
+      if (resumeSucceeded) {
+        sdkSuspended = false;
+      }
+    }
+  };
+
   let checkSocket = () => {
     counter++;
-    let lost = socket?.readyState !== 1 || !$last || Date.now() - $last > 30000;
-    if (lost && token) connect(token);
-    if (counter > 5 && token) {
-      send("heartbeat", token);
+    const isOpen = socket?.readyState === 1;
+    let lost = !isOpen || !$last || Date.now() - $last > 30000;
+    if (lost && token) {
+      connect(token).catch((error) => {
+        console.warn("[Layout] Socket reconnect failed:", error);
+      });
+    }
+    if (counter > 5 && token && isOpen) {
+      void send("heartbeat", token);
       counter = 0;
     }
 
@@ -622,6 +732,18 @@
 
   onDestroy(async () => {
     if (browser) {
+      if (syncDebounceTimer) {
+        clearTimeout(syncDebounceTimer);
+        syncDebounceTimer = null;
+      }
+      if (sdkDisconnectTimer) {
+        clearTimeout(sdkDisconnectTimer);
+        sdkDisconnectTimer = null;
+      }
+      if (sdkReloadCooldownTimer) {
+        clearTimeout(sdkReloadCooldownTimer);
+        sdkReloadCooldownTimer = null;
+      }
       close();
       clearTimeout(checkTimer);
 
@@ -638,6 +760,8 @@
           console.error("[Layout] Failed to remove event listener:", e);
         }
       }
+
+      document.removeEventListener("visibilitychange", handleVisibilityForSdk);
     }
   });
 </script>
@@ -736,7 +860,7 @@
   <div class="absolute inset-0 cyber-grid opacity-20"></div>
 
   <!-- Lightning Bolts (Pro Mode Only) -->
-  {#if $proMode}
+  {#if browser && $proMode}
     <div class="lightning-container">
       {#each Array.from({ length: 6 }) as _, i}
         <div
@@ -755,15 +879,17 @@
   {/if}
 
   <!-- Particle System -->
-  <div class="particles">
-    {#each Array.from({ length: $proMode ? 16 : 12 }) as _, i}
-      <div
-        class="particle"
-        style="left: {Math.random() * 100}%; animation-delay: {Math.random() *
-          20}s; animation-duration: {15 + Math.random() * 10}s"
-      ></div>
-    {/each}
-  </div>
+  {#if browser}
+    <div class="particles">
+      {#each Array.from({ length: $proMode ? 16 : 12 }) as _, i}
+        <div
+          class="particle"
+          style="left: {Math.random() * 100}%; animation-delay: {Math.random() *
+            20}s; animation-duration: {15 + Math.random() * 10}s"
+        ></div>
+      {/each}
+    </div>
+  {/if}
 </div>
 
 <div

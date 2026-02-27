@@ -79,17 +79,19 @@
             Bitcoin on-chain payments require network fees
           {/if}
         </p>
-        <div
-          class="mt-3 flex items-center justify-center gap-2 text-yellow-300/80 text-base sm:text-lg"
-        >
-          <iconify-icon
-            noobserver
-            icon="ph:warning-bold"
-            width="18"
-            class="text-yellow-400"
-          ></iconify-icon>
-          <span>Amounts outside this range will not work</span>
-        </div>
+        {#if hasOnchainMin || hasOnchainMax}
+          <div
+            class="mt-3 flex items-center justify-center gap-2 text-yellow-300/80 text-base sm:text-lg"
+          >
+            <iconify-icon
+              noobserver
+              icon="ph:warning-bold"
+              width="18"
+              class="text-yellow-400"
+            ></iconify-icon>
+            <span>Amounts outside this range will not work</span>
+          </div>
+        {/if}
       </div>
     </div>
   </div>

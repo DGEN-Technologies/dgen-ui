@@ -1,12 +1,16 @@
-import { error } from "@sveltejs/kit";
-import { PUBLIC_DGEN_URL } from "$env/static/public";
+import { error, isHttpError } from "@sveltejs/kit";
+import { env } from "$env/dynamic/public";
 
 // Proxy uploads to backend to avoid CORS issues in production
-const BACKEND_URL = PUBLIC_DGEN_URL || "http://localhost:3119";
+const BACKEND_URL = env.PUBLIC_DGEN_URL || "http://localhost:3119";
 
 export async function POST({ params, request, cookies }) {
   try {
     const { type } = params;
+    const allowedTypes = new Set(["avatar", "banner", "item", "picture"]);
+    if (!allowedTypes.has(type)) {
+      throw error(400, "Invalid upload type");
+    }
     const url = `${BACKEND_URL}/upload/${type}`;
 
     // Get the authorization header or token from cookies
@@ -31,7 +35,11 @@ export async function POST({ params, request, cookies }) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw error(response.status, errorText);
+      console.warn("[Upload Proxy] Backend error:", {
+        status: response.status,
+        body: errorText,
+      });
+      throw error(response.status, "Upload failed");
     }
 
     const result = await response.text();
@@ -44,18 +52,49 @@ export async function POST({ params, request, cookies }) {
       },
     });
   } catch (err: any) {
-    console.error(`Upload proxy error:`, err);
-    const message = err?.body?.message || err?.message || JSON.stringify(err);
-    throw error(500, `Upload failed: ${message}`);
+    console.error("[Upload Proxy] Request failed:", err);
+    if (isHttpError(err)) {
+      throw err;
+    }
+    throw error(500, "Upload failed");
   }
 }
 
 // Handle preflight requests
-export async function OPTIONS() {
+const resolveAllowedOrigins = (requestUrl: URL): Set<string> => {
+  const origins = new Set<string>();
+  origins.add(`${requestUrl.protocol}//${requestUrl.host}`);
+  const addOrigin = (value: string | undefined) => {
+    if (!value) return;
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    try {
+      origins.add(new URL(trimmed).origin);
+      return;
+    } catch {}
+    for (const candidate of [`https://${trimmed}`, `http://${trimmed}`]) {
+      try {
+        origins.add(new URL(candidate).origin);
+      } catch {}
+    }
+  };
+  addOrigin(env.PUBLIC_DOMAIN);
+  addOrigin(env.PUBLIC_DGEN_URL);
+  return origins;
+};
+
+export async function OPTIONS({ request }) {
+  const requestUrl = new URL(request.url);
+  const allowedOrigins = resolveAllowedOrigins(requestUrl);
+  const origin = request.headers.get("origin");
+  const allowOrigin =
+    origin && allowedOrigins.has(origin)
+      ? origin
+      : `${requestUrl.protocol}//${requestUrl.host}`;
   return new Response(null, {
     status: 204,
     headers: {
-      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Origin": allowOrigin,
       "Access-Control-Allow-Methods": "POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization",
     },

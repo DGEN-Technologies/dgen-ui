@@ -35,13 +35,14 @@
         Refund on-chain deposits that fell below the network minimum.
       </p>
     </div>
-    <!-- <button
-     // KEEPING THIS BUTTON TO SUPPORT TESTING FOR NOW
+    <button
       class="btn btn-primary btn-sm w-full sm:w-auto"
+      disabled={$refundablesStore.loading}
+      aria-busy={$refundablesStore.loading}
       onclick={() => refresh({ rescan: true })}
     >
       Rescan
-    </button> -->
+    </button>
   </div>
 
   {#if $refundablesStore.loading}

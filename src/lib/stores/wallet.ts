@@ -1,6 +1,16 @@
 import { writable, derived, get } from "svelte/store";
 import * as walletService from "../walletService";
 import { sessionManager } from "../security/sessionManager";
+import {
+  startPolling,
+  stopPolling,
+  onRefresh,
+  trackPendingTx,
+  trackConfirmingTx,
+  markTxConfirmed,
+  clearTrackedTxs,
+} from "../esplora/PollManager";
+import { trackOutgoingTx } from "../sendGate";
 
 // Define interfaces locally to avoid import issues
 interface GetInfoResponse {
@@ -32,6 +42,49 @@ interface SdkEvent {
   details?: any;
 }
 
+const isValidTxid = (value?: string): value is string =>
+  !!value && /^[a-fA-F0-9]{64}$/.test(value);
+
+const logInvalidTxid = (txId: string, details?: { type?: string }): void => {
+  const txidLength = typeof txId === "string" ? txId.length : 0;
+  const type = details?.type ?? "unknown";
+  if (details?.type === "lightning") {
+    console.info(
+      "[WalletStore] Ignoring non-txid identifier from lightning event",
+      { type, txidLength },
+    );
+    return;
+  }
+  console.warn("[WalletStore] Invalid txId detected", { type, txidLength });
+};
+
+const SAFE_ERROR_MESSAGES = new Set(["Password required to clear mnemonic"]);
+
+const getSafeErrorMessage = (error: unknown, fallback: string): string => {
+  if (error instanceof Error && SAFE_ERROR_MESSAGES.has(error.message)) {
+    return error.message;
+  }
+  return fallback;
+};
+
+const logWalletError = (context: string, error: unknown): void => {
+  console.error(`[WalletStore] ${context}:`, error);
+};
+
+const logSdkEvent = (event: SdkEvent): void => {
+  const details = event.details;
+  const txIdLength =
+    typeof details?.txId === "string" ? details.txId.length : 0;
+  const safeDetails = details
+    ? {
+        paymentType: details.paymentType,
+        status: details.status,
+        txIdLength,
+      }
+    : undefined;
+  console.log("[WalletStore] Event received:", event.type, safeDetails);
+};
+
 interface Payment {
   id: string;
   paymentType: string;
@@ -50,6 +103,32 @@ interface WalletState {
   info: GetInfoResponse | null;
   error: string | null;
 }
+
+// Polling state (defined early so lock/reset can access)
+let eventListenerActive = false;
+let eventListenerId: string | null = null;
+let pollUnsubscribe: (() => void) | null = null;
+let pollingInterval: ReturnType<typeof setInterval> | null = null;
+
+// Helper to clean up polling state (used by lock/reset)
+const cleanupPolling = (): void => {
+  if (eventListenerId) {
+    void walletService.removeEventListener(eventListenerId);
+    eventListenerId = null;
+  }
+  if (pollUnsubscribe) {
+    pollUnsubscribe();
+    pollUnsubscribe = null;
+  }
+  if (pollingInterval) {
+    clearInterval(pollingInterval);
+    pollingInterval = null;
+  }
+  stopPolling();
+  clearTrackedTxs();
+  eventListenerActive = false;
+  console.log("[WalletStore] Polling cleanup complete");
+};
 
 // Create reactive wallet state
 const createWalletState = (mnemonicStore?: any, passwordStore?: any) => {
@@ -106,10 +185,11 @@ const createWalletState = (mnemonicStore?: any, passwordStore?: any) => {
         // Start event listening
         await startEventListening();
       } catch (error) {
-        const errorMessage =
-          error instanceof Error
-            ? error.message
-            : "Failed to initialize wallet store";
+        const errorMessage = getSafeErrorMessage(
+          error,
+          "Failed to initialize wallet store",
+        );
+        logWalletError("Init failed", error);
         update((state) => ({
           ...state,
           isUnlocked: false,
@@ -136,9 +216,15 @@ const createWalletState = (mnemonicStore?: any, passwordStore?: any) => {
         if (passwordStore) {
           passwordStore.set(undefined);
         }
+
+        // Stop polling when wallet is locked
+        cleanupPolling();
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Failed to lock wallet";
+        const errorMessage = getSafeErrorMessage(
+          error,
+          "Failed to lock wallet",
+        );
+        logWalletError("Lock failed", error);
         update((state) => ({ ...state, error: errorMessage }));
         throw error;
       }
@@ -168,8 +254,11 @@ const createWalletState = (mnemonicStore?: any, passwordStore?: any) => {
         // Start event listening
         await startEventListening();
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Failed to unlock wallet";
+        const errorMessage = getSafeErrorMessage(
+          error,
+          "Failed to unlock wallet",
+        );
+        logWalletError("Unlock failed", error);
         update((state) => ({
           ...state,
           isUnlocked: false,
@@ -199,8 +288,11 @@ const createWalletState = (mnemonicStore?: any, passwordStore?: any) => {
         if (mnemonicStore) {
           mnemonicStore.set(null);
         }
-        const errorMessage =
-          error instanceof Error ? error.message : "Failed to save mnemonic";
+        const errorMessage = getSafeErrorMessage(
+          error,
+          "Failed to save mnemonic",
+        );
+        logWalletError("Save mnemonic failed", error);
         update((state) => ({ ...state, error: errorMessage }));
         throw error;
       }
@@ -229,8 +321,11 @@ const createWalletState = (mnemonicStore?: any, passwordStore?: any) => {
           mnemonicStore.set(null);
         }
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Failed to clear mnemonic";
+        const errorMessage = getSafeErrorMessage(
+          error,
+          "Failed to clear mnemonic",
+        );
+        logWalletError("Clear mnemonic failed", error);
         update((state) => ({ ...state, error: errorMessage }));
         throw error;
       }
@@ -249,8 +344,11 @@ const createWalletState = (mnemonicStore?: any, passwordStore?: any) => {
           return { ...state, info: newInfo, error: null };
         });
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Failed to refresh wallet";
+        const errorMessage = getSafeErrorMessage(
+          error,
+          "Failed to refresh wallet",
+        );
+        logWalletError("Refresh failed", error);
         update((state) => ({ ...state, error: errorMessage }));
         throw error;
       }
@@ -264,8 +362,11 @@ const createWalletState = (mnemonicStore?: any, passwordStore?: any) => {
         // Just refresh our local state
         await this.refresh();
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Failed to refresh wallet";
+        const errorMessage = getSafeErrorMessage(
+          error,
+          "Failed to refresh wallet",
+        );
+        logWalletError("Sync failed", error);
         update((state) => ({ ...state, error: errorMessage }));
         throw error;
       }
@@ -278,6 +379,9 @@ const createWalletState = (mnemonicStore?: any, passwordStore?: any) => {
 
     // Reset wallet store to initial state (for logout)
     reset(): void {
+      // Stop polling when wallet is reset
+      cleanupPolling();
+
       set({
         isUnlocked: false,
         isInitialized: false,
@@ -372,224 +476,251 @@ const createTransactionsStore = () => {
 
 export const transactions = createTransactionsStore();
 
-// Event handling
-let eventListenerActive = false;
-let pollingInterval: ReturnType<typeof setInterval> | null = null;
-
 const startEventListening = async (): Promise<void> => {
   if (eventListenerActive) return;
 
   try {
+    const refreshRefundables = async () => {
+      try {
+        const { refundablesStore } = await import("$lib/stores/refundables");
+        refundablesStore.refresh();
+      } catch (error) {
+        console.error(
+          "[WalletStore] Failed to import refundables store:",
+          error,
+        );
+      }
+    };
     // addEventListener expects just the callback function, not a string first
-    await walletService.addEventListener((event: SdkEvent) => {
-      console.log("[WalletStore] Event received:", event.type, event);
+    const listenerId = await walletService.addEventListener(
+      (event: SdkEvent) => {
+        logSdkEvent(event);
 
-      // Import paymentEvents dynamically to avoid circular dependencies
-      import("./paymentEvents")
-        .then(({ notifyPaymentReceived }) => {
-          // Handle all payment state events
-          switch (event.type) {
-            // ===== INCOMING PAYMENT EVENTS (Lightning/Bitcoin/Liquid) =====
+        // Import paymentEvents dynamically to avoid circular dependencies
+        import("./paymentEvents")
+          .then(({ notifyPaymentReceived }) => {
+            // Handle all payment state events
+            switch (event.type) {
+              // ===== INCOMING PAYMENT EVENTS (Lightning/Bitcoin/Liquid) =====
 
-            // Lightning: lockup tx broadcast, claim tx will be broadcast when confirmed or zero-conf
-            // Bitcoin: lockup tx seen and amount accepted, claim tx will be broadcast when confirmed or zero-conf
-            case "paymentPending":
-              console.log(
-                "[WalletStore] Payment pending - lockup transaction broadcast",
-              );
-              walletStore.refresh();
-              transactions.refresh();
-              // Only notify if initial sync is complete (prevents showing stale pending payments)
-              const currentState = get(walletStore);
-              if (event.details && currentState.didCompleteInitialSync) {
-                // Only show "Payment Received" notification for incoming payments
-                if (event.details.paymentType === "receive") {
-                  notifyPaymentReceived(event.details, "pending");
-                } else {
-                  console.log("[WalletStore] Outgoing payment pending");
-                }
-              } else {
+              // Lightning: lockup tx broadcast, claim tx will be broadcast when confirmed or zero-conf
+              // Bitcoin: lockup tx seen and amount accepted, claim tx will be broadcast when confirmed or zero-conf
+              case "paymentPending": {
                 console.log(
-                  "[WalletStore] Skipping notification - waiting for initial sync",
+                  "[WalletStore] Payment pending - lockup transaction broadcast",
                 );
-              }
-              break;
-
-            // Lightning/Bitcoin: claim tx broadcast and waiting confirmation
-            // Liquid: transaction seen (not yet confirmed)
-            case "paymentWaitingConfirmation":
-              console.log(
-                "[WalletStore] Payment waiting confirmation - claim tx broadcast",
-              );
-              walletStore.refresh();
-              transactions.refresh();
-              // Only show notifications and navigate after initial sync is complete
-              const stateConfirmed = get(walletStore);
-              if (event.details && stateConfirmed.didCompleteInitialSync) {
-                // Only show "Payment Received" feedback for incoming payments
-                if (event.details.paymentType === "receive") {
-                  // Show successful payment feedback (as per Breez SDK UX guide)
-                  notifyPaymentReceived(event.details, "confirmed");
-
-                  // Navigate to success screen after short delay
-                  // Import goto dynamically to avoid circular dependencies
-                  import("$app/navigation")
-                    .then(({ goto }) => {
-                      setTimeout(() => {
-                        goto("/payment-received");
-                      }, 1000); // 1 second delay to let the payment event propagate
-                    })
-                    .catch((error) => {
-                      console.error(
-                        "[WalletStore] Failed to import navigation module:",
-                        error,
-                      );
-                    });
+                // Track pending tx for fast polling (Breez SDK uses Liquid network)
+                if (isValidTxid(event.details?.txId)) {
+                  trackPendingTx(event.details.txId, "liquid");
+                  if (event.details?.paymentType === "send") {
+                    trackOutgoingTx(event.details.txId, "liquid");
+                  }
+                } else if (event.details?.txId) {
+                  logInvalidTxid(event.details.txId, event.details);
+                }
+                walletStore.refresh();
+                transactions.refresh();
+                // Only notify if initial sync is complete (prevents showing stale pending payments)
+                const currentState = get(walletStore);
+                if (event.details && currentState.didCompleteInitialSync) {
+                  // Only show "Payment Received" notification for incoming payments
+                  if (event.details.paymentType === "receive") {
+                    notifyPaymentReceived(event.details, "pending");
+                  } else {
+                    console.log("[WalletStore] Outgoing payment pending");
+                  }
                 } else {
                   console.log(
-                    "[WalletStore] Outgoing payment waiting confirmation",
+                    "[WalletStore] Skipping notification - waiting for initial sync",
                   );
                 }
-              } else {
-                console.log(
-                  "[WalletStore] Skipping notification - waiting for initial sync",
-                );
+                break;
               }
-              break;
 
-            // All methods: transaction is confirmed - payment complete!
-            case "paymentSucceeded":
-              walletStore.refresh();
-              transactions.refresh();
-              // Only notify after initial sync is complete
-              const stateComplete = get(walletStore);
-              if (event.details && stateComplete.didCompleteInitialSync) {
-                // Only show "Payment Received" notification for incoming payments
-                if (event.details.paymentType === "receive") {
-                  notifyPaymentReceived(event.details, "complete");
+              // Lightning/Bitcoin: claim tx broadcast and waiting confirmation
+              // Liquid: transaction seen (not yet confirmed)
+              case "paymentWaitingConfirmation": {
+                console.log(
+                  "[WalletStore] Payment waiting confirmation - claim tx broadcast",
+                );
+                // Move from pending to confirming for normal polling (Breez SDK uses Liquid network)
+                if (isValidTxid(event.details?.txId)) {
+                  trackConfirmingTx(event.details.txId, "liquid");
+                  if (event.details?.paymentType === "send") {
+                    trackOutgoingTx(event.details.txId, "liquid");
+                  }
+                } else if (event.details?.txId) {
+                  logInvalidTxid(event.details.txId, event.details);
+                }
+                walletStore.refresh();
+                transactions.refresh();
+                // Only show notifications and navigate after initial sync is complete
+                const stateConfirmed = get(walletStore);
+                if (event.details && stateConfirmed.didCompleteInitialSync) {
+                  // Only show "Payment Received" feedback for incoming payments
+                  if (event.details.paymentType === "receive") {
+                    // Show successful payment feedback (as per Breez SDK UX guide)
+                    notifyPaymentReceived(event.details, "confirmed");
+
+                    // Navigate to success screen after short delay
+                    // Import goto dynamically to avoid circular dependencies
+                    import("$app/navigation")
+                      .then(({ goto }) => {
+                        setTimeout(() => {
+                          goto("/payment-received");
+                        }, 1000); // 1 second delay to let the payment event propagate
+                      })
+                      .catch((error) => {
+                        console.error(
+                          "[WalletStore] Failed to import navigation module:",
+                          error,
+                        );
+                      });
+                  } else {
+                    console.log(
+                      "[WalletStore] Outgoing payment waiting confirmation",
+                    );
+                  }
                 } else {
-                  console.log("[WalletStore] Outgoing payment succeeded");
+                  console.log(
+                    "[WalletStore] Skipping notification - waiting for initial sync",
+                  );
                 }
-              } else {
-                console.log(
-                  "[WalletStore] Skipping notification - waiting for initial sync",
-                );
+                break;
               }
-              break;
 
-            // Payment failed (swap expired, fee not accepted, lockup tx failed)
-            case "paymentFailed":
-              walletStore.refresh();
-              transactions.refresh();
-              break;
-
-            // Bitcoin only: needs fee acceptance for amountless swaps
-            case "paymentWaitingFeeAcceptance":
-              console.log(
-                "[WalletStore] Payment waiting fee acceptance (Bitcoin amountless swap)",
-              );
-              walletStore.refresh();
-              transactions.refresh();
-              // Only notify after initial sync is complete
-              const stateFee = get(walletStore);
-              if (event.details && stateFee.didCompleteInitialSync) {
-                notifyPaymentReceived(event.details, "fee_acceptance");
-              } else {
-                console.log(
-                  "[WalletStore] Skipping notification - waiting for initial sync",
-                );
+              // All methods: transaction is confirmed - payment complete!
+              case "paymentSucceeded": {
+                // Mark tx as confirmed - can slow down polling
+                if (isValidTxid(event.details?.txId)) {
+                  markTxConfirmed(event.details.txId);
+                } else if (event.details?.txId) {
+                  logInvalidTxid(event.details.txId, event.details);
+                }
+                walletStore.refresh();
+                transactions.refresh();
+                // Only notify after initial sync is complete
+                const stateComplete = get(walletStore);
+                if (event.details && stateComplete.didCompleteInitialSync) {
+                  // Only show "Payment Received" notification for incoming payments
+                  if (event.details.paymentType === "receive") {
+                    notifyPaymentReceived(event.details, "complete");
+                  } else {
+                    console.log("[WalletStore] Outgoing payment succeeded");
+                  }
+                } else {
+                  console.log(
+                    "[WalletStore] Skipping notification - waiting for initial sync",
+                  );
+                }
+                break;
               }
-              break;
 
-            // Bitcoin only: swap failed but lockup tx was broadcast, needs refund
-            case "paymentRefundable":
-              console.log(
-                "[WalletStore] Payment refundable - Bitcoin lockup needs refund",
-              );
-              walletStore.refresh();
-              transactions.refresh();
-              import("$lib/stores/refundables")
-                .then(({ refundablesStore }) => {
-                  refundablesStore.refresh();
-                })
-                .catch((error) => {
-                  console.error(
-                    "[WalletStore] Failed to import refundables store:",
-                    error,
+              // Payment failed (swap expired, fee not accepted, lockup tx failed)
+              case "paymentFailed":
+                // Clear tracking for failed tx
+                if (isValidTxid(event.details?.txId)) {
+                  markTxConfirmed(event.details.txId);
+                } else if (event.details?.txId) {
+                  logInvalidTxid(event.details.txId, event.details);
+                }
+                walletStore.refresh();
+                transactions.refresh();
+                break;
+
+              // Bitcoin only: needs fee acceptance for amountless swaps
+              case "paymentWaitingFeeAcceptance": {
+                console.log(
+                  "[WalletStore] Payment waiting fee acceptance (Bitcoin amountless swap)",
+                );
+                walletStore.refresh();
+                transactions.refresh();
+                // Only notify after initial sync is complete
+                const stateFee = get(walletStore);
+                if (event.details && stateFee.didCompleteInitialSync) {
+                  notifyPaymentReceived(event.details, "fee_acceptance");
+                } else {
+                  console.log(
+                    "[WalletStore] Skipping notification - waiting for initial sync",
                   );
-                });
-              break;
+                }
+                break;
+              }
 
-            // Refund Events
-            case "paymentRefundPending":
-              console.log("[WalletStore] Payment refund pending");
-              walletStore.refresh();
-              transactions.refresh();
-              import("$lib/stores/refundables")
-                .then(({ refundablesStore }) => {
-                  refundablesStore.refresh();
-                })
-                .catch((error) => {
-                  console.error(
-                    "[WalletStore] Failed to import refundables store:",
-                    error,
-                  );
-                });
-              break;
+              // Bitcoin only: swap failed but lockup tx was broadcast, needs refund
+              case "paymentRefundable":
+                console.log(
+                  "[WalletStore] Payment refundable - Bitcoin lockup needs refund",
+                );
+                walletStore.refresh();
+                transactions.refresh();
+                refreshRefundables();
+                break;
 
-            case "paymentRefunded":
-              console.log("[WalletStore] Payment refunded");
-              walletStore.refresh();
-              transactions.refresh();
-              import("$lib/stores/refundables")
-                .then(({ refundablesStore }) => {
-                  refundablesStore.refresh();
-                })
-                .catch((error) => {
-                  console.error(
-                    "[WalletStore] Failed to import refundables store:",
-                    error,
-                  );
-                });
-              break;
+              // Refund Events
+              case "paymentRefundPending":
+                console.log("[WalletStore] Payment refund pending");
+                walletStore.refresh();
+                transactions.refresh();
+                refreshRefundables();
+                break;
 
-            // Sync Events
-            case "synced":
-              walletStore.update((state) => ({
-                ...state,
-                didCompleteInitialSync: true,
-              }));
-              walletStore.refresh();
-              transactions.refresh();
-              import("$lib/stores/refundables")
-                .then(({ refundablesStore }) => {
-                  refundablesStore.refresh();
-                })
-                .catch((error) => {
-                  console.error(
-                    "[WalletStore] Failed to import refundables store:",
-                    error,
-                  );
-                });
-              break;
+              case "paymentRefunded":
+                console.log("[WalletStore] Payment refunded");
+                walletStore.refresh();
+                transactions.refresh();
+                refreshRefundables();
+                break;
 
-            default:
-              console.log("[WalletStore] Unhandled event:", event.type);
-          }
-        })
-        .catch((err) => {
-          console.error("[WalletStore] Failed to import paymentEvents:", err);
-        });
-    });
+              // Sync Events
+              case "synced":
+                walletStore.update((state) => ({
+                  ...state,
+                  didCompleteInitialSync: true,
+                }));
+                walletStore.refresh();
+                transactions.refresh();
+                refreshRefundables();
+                break;
 
+              default:
+                console.log("[WalletStore] Unhandled event:", event.type);
+            }
+          })
+          .catch((err) => {
+            console.error("[WalletStore] Failed to import paymentEvents:", err);
+          });
+      },
+    );
+
+    eventListenerId = listenerId;
     eventListenerActive = true;
     console.log("[WalletStore] Event listening started");
 
-    // Start polling fallback (60s interval like misty-breez)
+    // Register with PollManager for coordinated polling
+    if (!pollUnsubscribe && typeof window !== "undefined") {
+      pollUnsubscribe = onRefresh(async () => {
+        try {
+          // Only refresh if SDK is connected
+          if (walletService.isConnected()) {
+            console.log("[WalletStore] PollManager refresh");
+            await walletStore.refresh();
+            await transactions.refresh();
+          }
+        } catch (error) {
+          console.error("[WalletStore] PollManager refresh failed:", error);
+        }
+      });
+
+      // Start the poll manager
+      startPolling();
+      console.log("[WalletStore] Registered with PollManager");
+    }
+
+    // Start polling fallback (60s interval like misty-breez) to avoid missing events
     if (!pollingInterval && typeof window !== "undefined") {
       pollingInterval = setInterval(async () => {
         try {
-          // Only refresh if page is visible and SDK is connected
           if (!document.hidden && walletService.isConnected()) {
             console.log("[WalletStore] Polling refresh (60s fallback)");
             await walletStore.refresh();
@@ -598,8 +729,8 @@ const startEventListening = async (): Promise<void> => {
         } catch (error) {
           console.error("[WalletStore] Polling refresh failed:", error);
         }
-      }, 60000); // 60 seconds
-      console.log("[WalletStore] Polling started (60s interval)");
+      }, 60000);
+      console.log("[WalletStore] Polling fallback started (60s interval)");
     }
   } catch (error) {
     console.error("[WalletStore] Failed to start event listening:", error);

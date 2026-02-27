@@ -2,29 +2,15 @@
   import { invalidate } from "$app/navigation";
   import { untrack } from "svelte";
   import handler from "$lib/handler";
-  import { onDestroy, onMount } from "svelte";
   import { t } from "$lib/translations";
   import { goto, invalidateAll } from "$app/navigation";
   import { pin } from "$lib/store";
   import { enhance } from "$app/forms";
   import Amount from "$comp/Amount.svelte";
   import Avatar from "$comp/Avatar.svelte";
-  import Icon from "$comp/Icon.svelte";
   import Numpad from "$comp/Numpad.svelte";
   import Spinner from "$comp/Spinner.svelte";
-  import { page } from "$app/stores";
-  import {
-    btc,
-    sat,
-    post,
-    back,
-    f,
-    toFiat,
-    s,
-    sats,
-    focus,
-    loc,
-  } from "$lib/utils";
+  import { btc, sat, post, f, sats, focus, loc } from "$lib/utils";
   import { walletBalance } from "$lib/stores/wallet";
   let { data, form } = $props();
 
@@ -36,7 +22,12 @@
   let locale = $derived(loc(user));
   let { amount } = $state(form || invoice);
 
-  let rate = $derived(invoice.rate * (data.rate / data.invoiceRate));
+  const safeRate = Number.isFinite(data.rate) && data.rate > 0 ? data.rate : 1;
+  const safeInvoiceRate =
+    Number.isFinite(data.invoiceRate) && data.invoiceRate > 0
+      ? data.invoiceRate
+      : safeRate;
+  let rate = $derived(invoice.rate * (safeRate / safeInvoiceRate));
 
   let a = $state(),
     af = $state(),
@@ -104,12 +95,6 @@
   // 		}
   // 	}
   // });
-
-  let setMax = (e) => {
-    e.preventDefault();
-    fiat = false;
-    amount = balance;
-  };
 </script>
 
 {#if form?.message}
@@ -165,6 +150,7 @@
       {currency}
       {rate}
       {submit}
+      compactClear
     />
   {/if}
 
@@ -190,13 +176,6 @@
           {/if}
         </button>
       {:else}
-        <button
-          type="button"
-          class="btn !w-auto grow"
-          onclick={setMax}
-          onkeydown={setMax}>Max ⚡️{s(balance)}</button
-        >
-
         <button
           bind:this={submit}
           type="button"

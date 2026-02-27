@@ -37,7 +37,7 @@
 
       // Get password from session token
       const { getWalletPassword } = walletService;
-      const userPassword = getWalletPassword(userId);
+      const userPassword = await getWalletPassword(userId);
 
       if (!userPassword) {
         fail("Session expired. Please log in again.");

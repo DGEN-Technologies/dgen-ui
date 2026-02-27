@@ -8,12 +8,15 @@
   import locales from "$lib/locales";
   import {
     transactionStore,
+    allTransactions,
     currentTransactionPage,
     isLoadingTransactions,
     initTransactionEventHandling,
   } from "$lib/transactionService";
   import Avatar from "$comp/Avatar.svelte";
   import { unitPreference } from "$lib/store";
+  import { walletBalance, assetBalances } from "$lib/stores/wallet";
+  import { ASSET_IDS } from "$lib/assets";
 
   let { user, initialFilter = {} } = $props();
   let locale = $derived(user ? locales[user.language] : locales["en"]);
@@ -35,12 +38,6 @@
 
   // Loading states
   let isInitialLoad = $state(true);
-
-  // Virtual scrolling for performance
-  let visibleStart = $state(0);
-  let visibleEnd = $state(50);
-  let containerHeight = $state(0);
-  let scrollTop = $state(0);
 
   // Initialize on mount
   onMount(async () => {
@@ -110,22 +107,8 @@
 
     isInitialLoad = false;
 
-    // Set up auto-refresh every 30 seconds - silently in background
-    const refreshInterval = setInterval(async () => {
-      if (!document.hidden) {
-        try {
-          const { isConnected } = await import("$lib/walletService");
-          if (isConnected()) {
-            // Refresh silently without showing notification
-            await transactionStore.loadTransactions(true);
-          }
-        } catch (error) {
-          console.warn("[PaymentsList] Error during auto-refresh:", error);
-        }
-      }
-    }, 30000);
-
-    return () => clearInterval(refreshInterval);
+    // Note: Auto-refresh is now handled by PollManager in wallet.ts
+    // No need for component-level polling - reduces duplicate API calls
   });
 
   // Apply filters when they change
@@ -344,18 +327,13 @@
     };
   };
 
-  // Handle virtual scrolling
-  const handleScroll = (event) => {
-    const { scrollTop, scrollHeight, clientHeight } = event.target;
-    const scrollPercentage = scrollTop / (scrollHeight - clientHeight);
-
-    // Update visible range based on scroll position
-    const totalItems = $currentTransactionPage?.totalCount || 0;
-    const itemHeight = 80; // Approximate height of each item
-    const visibleItems = Math.ceil(clientHeight / itemHeight);
-
-    visibleStart = Math.floor(scrollPercentage * (totalItems - visibleItems));
-    visibleEnd = visibleStart + visibleItems + 5; // Buffer for smooth scrolling
+  const escapeCsvCell = (value) => {
+    if (value === null || value === undefined) return "";
+    const text = String(value);
+    const isNumeric = typeof value === "number";
+    const hardened =
+      !isNumeric && /^[\s]*[=+\-@|!]/.test(text) ? `'${text}` : text;
+    return hardened.replace(/"/g, '""');
   };
 
   // Export to CSV - Export ALL transactions, not just current page
@@ -492,8 +470,8 @@
         amount,
         fee,
         netAmount,
-        fiatAmount.toFixed(2),
-        (tx.details?.description || tx.description || "").replace(/"/g, '""'),
+        Number(fiatAmount.toFixed(2)),
+        tx.details?.description || tx.description || "",
         tx.details?.paymentHash || tx.paymentHash || "",
         tx.details?.preimage || "",
         tx.details?.destination || "",
@@ -502,7 +480,7 @@
     });
 
     const csv = [headers, ...rows]
-      .map((row) => row.map((cell) => `"${cell}"`).join(","))
+      .map((row) => row.map((cell) => `"${escapeCsvCell(cell)}"`).join(","))
       .join("\n");
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -519,9 +497,18 @@
 
   // Reactive page data
   let pageData = $derived($currentTransactionPage);
+  let allTx = $derived($allTransactions || []);
   let payments = $derived(
     pageData?.transactions
       .filter((p) => {
+        const normalizedStatus = (p.status || "").toLowerCase();
+        const isUnsettled =
+          normalizedStatus &&
+          !["complete", "success", "failed", "refunded"].includes(
+            normalizedStatus,
+          );
+        if (isUnsettled) return true;
+
         // Filter out transactions with 0 or very small amounts
         // Check both the original amountSat and any USDT amounts
         if (
@@ -535,6 +522,43 @@
         return p.amountSat > 0;
       })
       .map(formatPayment) || [],
+  );
+  let allPayments = $derived(allTx.map(formatPayment));
+  const usdtToSats = (amountInAssetUnits) => {
+    if (!rate || rate <= 0) return 0;
+    return Math.round(amountInAssetUnits / rate);
+  };
+  const isSettled = (status) => {
+    const normalized = (status || "").toLowerCase();
+    return normalized === "complete" || normalized === "success";
+  };
+  let totalReceivedNonUsdtSat = $derived(
+    allPayments
+      .filter((p) => isSettled(p.status) && p.displayAmount > 0 && !p.isUsdt)
+      .reduce((sum, p) => sum + p.displayAmount, 0),
+  );
+  let totalReceivedUsdtSat = $derived(
+    usdtToSats(
+      allPayments
+        .filter((p) => isSettled(p.status) && p.displayAmount > 0 && p.isUsdt)
+        .reduce((sum, p) => sum + p.displayAmount, 0),
+    ),
+  );
+  let totalReceivedSat = $derived(
+    totalReceivedNonUsdtSat + totalReceivedUsdtSat,
+  );
+  let usdtBalanceSat = $derived(
+    ($assetBalances || []).find((b) => b.assetId === ASSET_IDS.USDT)
+      ?.balanceSat || 0,
+  );
+  let totalBalanceSat = $derived(
+    ($walletBalance || 0) + usdtToSats(usdtBalanceSat),
+  );
+  let totalSentSat = $derived(
+    Math.max(0, totalReceivedSat - totalBalanceSat), // Approx: uses received minus balance to avoid per-tx summation; can drift with refunds/fees.
+  );
+  let totalVolumeSat = $derived(
+    totalReceivedSat + totalSentSat, // Approx: inherits totalSentSat limitations (refunds/fees/complex ledger).
   );
   let totalPages = $derived(pageData?.totalPages || 0);
   let isLoading = $derived($isLoadingTransactions);
@@ -737,27 +761,11 @@
                   class="text-base sm:text-xl font-bold text-green-400 truncate"
                 >
                   {#if unit === currency}
-                    {f(
-                      (payments
-                        .filter((p) => p.displayAmount > 0 && !p.isUsdt)
-                        .reduce((sum, p) => sum + p.displayAmount, 0) /
-                        sats) *
-                        rate,
-                      currency,
-                      locale,
-                    )}
+                    {f((totalReceivedSat / sats) * rate, currency, locale)}
                   {:else if unit === "btc"}
-                    {btc(
-                      payments
-                        .filter((p) => p.displayAmount > 0 && !p.isUsdt)
-                        .reduce((sum, p) => sum + p.displayAmount, 0),
-                    )} BTC
+                    {btc(totalReceivedSat)} BTC
                   {:else}
-                    {s(
-                      payments
-                        .filter((p) => p.displayAmount > 0 && !p.isUsdt)
-                        .reduce((sum, p) => sum + p.displayAmount, 0),
-                    )} sats
+                    {s(totalReceivedSat)} sats
                   {/if}
                 </div>
               </div>
@@ -779,33 +787,11 @@
                   class="text-base sm:text-xl font-bold text-red-400 truncate"
                 >
                   {#if unit === currency}
-                    {f(
-                      (Math.abs(
-                        payments
-                          .filter((p) => p.displayAmount < 0 && !p.isUsdt)
-                          .reduce((sum, p) => sum + p.displayAmount, 0),
-                      ) /
-                        sats) *
-                        rate,
-                      currency,
-                      locale,
-                    )}
+                    {f((totalSentSat / sats) * rate, currency, locale)}
                   {:else if unit === "btc"}
-                    {btc(
-                      Math.abs(
-                        payments
-                          .filter((p) => p.displayAmount < 0 && !p.isUsdt)
-                          .reduce((sum, p) => sum + p.displayAmount, 0),
-                      ),
-                    )} BTC
+                    {btc(totalSentSat)} BTC
                   {:else}
-                    {s(
-                      Math.abs(
-                        payments
-                          .filter((p) => p.displayAmount < 0 && !p.isUsdt)
-                          .reduce((sum, p) => sum + p.displayAmount, 0),
-                      ),
-                    )} sats
+                    {s(totalSentSat)} sats
                   {/if}
                 </div>
               </div>
@@ -813,28 +799,31 @@
           </div>
         </div>
 
-        <button
-          class="card bg-purple-500/10 border border-purple-500/30 text-left hover:bg-purple-500/15 transition-colors"
-          onclick={() => goto("/refunds")}
-        >
+        <div class="card bg-purple-500/10 border border-purple-500/30">
           <div class="card-body p-3 sm:p-4">
             <div class="flex items-center gap-2 sm:gap-3">
               <div class="text-purple-400 flex-shrink-0">
                 <iconify-icon
-                  icon="ph:arrow-u-up-left"
+                  icon="ph:arrows-left-right-bold"
                   width="24"
                   class="sm:w-8"
                 ></iconify-icon>
               </div>
               <div class="min-w-0">
-                <div class="text-xs sm:text-sm text-white/60">Refunds</div>
+                <div class="text-xs sm:text-sm text-white/60">Total Volume</div>
                 <div class="text-base sm:text-xl font-bold text-purple-300">
-                  View
+                  {#if unit === currency}
+                    {f((totalVolumeSat / sats) * rate, currency, locale)}
+                  {:else if unit === "btc"}
+                    {btc(totalVolumeSat)} BTC
+                  {:else}
+                    {s(totalVolumeSat)} sats
+                  {/if}
                 </div>
               </div>
             </div>
           </div>
-        </button>
+        </div>
       </div>
     {/if}
 
@@ -919,13 +908,18 @@
                   Your transaction history will appear here
                 {/if}
               </p>
+              <button
+                class="btn btn-primary btn-sm mt-4"
+                onclick={() => transactionStore.loadTransactions(true)}
+              >
+                Reload
+              </button>
             </div>
           </div>
         {:else}
-          <!-- Transaction Items with Virtual Scrolling -->
+          <!-- Transaction Items -->
           <div
             class="divide-y divide-white/5 max-h-[600px] overflow-y-auto transaction-scroll"
-            onscroll={handleScroll}
           >
             {#each payments as payment, i}
               <div

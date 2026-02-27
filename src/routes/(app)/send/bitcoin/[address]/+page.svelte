@@ -1,20 +1,26 @@
 <script>
-  import { tick } from "svelte";
   import { t } from "$lib/translations";
-  import Icon from "$comp/Icon.svelte";
   import Numpad from "$comp/Numpad.svelte";
   import { page } from "$app/stores";
   import { rate } from "$lib/store";
-  import { loc, fail, s, focus } from "$lib/utils";
+  import { loc, focus } from "$lib/utils";
   import { walletBalance } from "$lib/stores/wallet";
   import { goto } from "$app/navigation";
+  import {
+    isValidAddressFormat,
+    normalizeAddressInput,
+  } from "$lib/esplora/EsploraClient";
 
   let { data } = $props();
 
   let { user } = data;
-  let { address } = $page.params;
-  // Clean up the address - remove any trailing whitespace or newlines
-  address = address.trim();
+  const rawAddress = $page.params?.address ?? "";
+  let address = normalizeAddressInput(rawAddress);
+  let addressError = $derived.by(() => {
+    if (!rawAddress || !address) return "Missing destination address";
+    if (!isValidAddressFormat(rawAddress)) return "Invalid address format";
+    return "";
+  });
   let { currency, username } = user;
   let locale = loc(user);
 
@@ -30,14 +36,6 @@
     fiat = $state();
   $effect(() => ($rate = data.rate));
   $effect(() => (amount = a));
-
-  let setMax = async (e) => {
-    e.preventDefault();
-    fiat = false;
-    amount = $walletBalance;
-    await tick();
-    submit.click();
-  };
 </script>
 
 <div class="container px-4 max-w-xl mx-auto space-y-5 text-center">
@@ -56,7 +54,10 @@
 
   <h1 class="text-3xl md:text-4xl font-semibold mb-2">{$t("payments.send")}</h1>
 
-  <div class="text-xl text-secondary break-all">{address}</div>
+  <div class="text-xs sm:text-sm text-secondary break-all">{address}</div>
+  {#if addressError}
+    <div class="text-xs sm:text-sm text-red-400">{addressError}</div>
+  {/if}
 
   <Numpad
     bind:amount={a}
@@ -67,16 +68,10 @@
     {locale}
     skipBalanceCheck={true}
     minAmount={MIN_ONCHAIN_SATS}
+    compactClear
   />
 
   <div class="flex justify-center gap-2">
-    <button
-      type="button"
-      class="btn !w-auto grow"
-      onclick={setMax}
-      onkeydown={setMax}>Max ⚡️{s($walletBalance)}</button
-    >
-
     <form
       action={`/send/bitcoin/${encodeURIComponent(address)}/${amount}/`}
       class="contents"
@@ -86,7 +81,7 @@
         bind:this={submit}
         type="submit"
         class="btn !w-auto grow btn-accent"
-        disabled={!a || a <= 0}
+        disabled={!a || a <= 0 || !!addressError}
       >
         {$t("payments.next")}
       </button>

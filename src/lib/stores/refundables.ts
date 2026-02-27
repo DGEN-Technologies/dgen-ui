@@ -21,6 +21,7 @@ const initialState: RefundablesState = {
 const { subscribe, set } = writable<RefundablesState>(initialState);
 
 const refresh = async (options: { rescan?: boolean } = {}): Promise<void> => {
+  let autoRescanAttempted = false;
   set({ ...initialState, loading: true });
 
   try {
@@ -31,18 +32,34 @@ const refresh = async (options: { rescan?: boolean } = {}): Promise<void> => {
     }
 
     if (options.rescan) {
-      await rescanOnchainSwaps();
+      try {
+        await rescanOnchainSwaps();
+        autoRescanAttempted = true;
+      } catch (error) {
+        console.warn("[RefundablesStore] Rescan failed:", error);
+      }
     }
 
-    const refundables = await listRefundables();
+    let refundables = await listRefundables();
+    if (refundables.length === 0 && !autoRescanAttempted) {
+      try {
+        await rescanOnchainSwaps();
+        autoRescanAttempted = true;
+      } catch (error) {
+        console.warn("[RefundablesStore] Auto rescan failed:", error);
+      }
+      refundables = await listRefundables();
+    }
+
     const sortedRefundables = [...refundables].sort(
       (a, b) => Number(b.timestamp || 0) - Number(a.timestamp || 0),
     );
 
     set({ items: sortedRefundables, loading: false, error: null });
   } catch (error) {
+    console.error("[RefundablesStore] Failed to refresh:", error);
     const message = error instanceof Error ? error.message : String(error);
-    set({ ...initialState, error: message });
+    set({ ...initialState, error: message || "Failed to load refundables" });
   }
 };
 

@@ -9,7 +9,12 @@
   import { assetBalances } from "$lib/stores/wallet";
   import Numpad from "./Numpad.svelte";
   import getRates from "$lib/rates";
+  import { sendGateStore } from "$lib/sendGate";
   import { onMount } from "svelte";
+  import {
+    isValidAddressFormat,
+    normalizeAddressInput,
+  } from "$lib/esplora/EsploraClient";
 
   let { onSuccess, onCancel, currency = "USD" } = $props();
 
@@ -26,6 +31,7 @@
   let fromAsset = $state("");
   let rate = $state(0);
   let submit = $state();
+  let gateWaiting = $derived($sendGateStore.status === "waiting");
 
   // Fetch rates on mount
   onMount(async () => {
@@ -81,16 +87,19 @@
         throw new Error("Please enter a destination address");
       }
 
-      // Convert amount from satoshis to asset units
-      // For LBTC: 1 BTC = 100,000,000 sats, so divide by 100000000
-      // For USDT: amount is already in smallest units (same as sats precision)
-      const receiverAmount =
-        selectedAsset === ASSET_IDS.USDT
-          ? amount / 100000000 // USDT uses same precision as BTC
-          : amount / 100000000; // LBTC is BTC on Liquid
+      const normalizedDestination = normalizeAddressInput(destination);
+      if (!normalizedDestination) {
+        throw new Error("Please enter a destination address");
+      }
+      if (!isValidAddressFormat(normalizedDestination)) {
+        throw new Error("Invalid address format");
+      }
+
+      // Both LBTC and USDT use 8 decimal places (satoshi precision)
+      const receiverAmount = amount / 100000000;
 
       prepareResponse = await prepareSendAsset({
-        destination,
+        destination: normalizedDestination,
         toAsset: selectedAsset,
         receiverAmount,
         estimateAssetFees,
@@ -252,6 +261,12 @@
           <span>{error}</span>
         </div>
       {/if}
+      {#if gateWaiting}
+        <div class="alert alert-info">
+          <iconify-icon icon="mdi:timer-sand" width="24"></iconify-icon>
+          <span>Waiting for previous transaction to propagate…</span>
+        </div>
+      {/if}
 
       <div class="flex gap-3">
         <button
@@ -352,13 +367,19 @@
           <span>{error}</span>
         </div>
       {/if}
+      {#if gateWaiting}
+        <div class="alert alert-info">
+          <iconify-icon icon="mdi:timer-sand" width="24"></iconify-icon>
+          <span>Waiting for previous transaction to propagate…</span>
+        </div>
+      {/if}
 
       <div class="flex gap-3">
         <button class="btn btn-ghost flex-1" onclick={reset}> Back </button>
         <button
           class="btn btn-primary flex-1"
           onclick={confirmSend}
-          disabled={isSending}
+          disabled={isSending || gateWaiting}
         >
           {#if isSending}
             <span class="loading loading-spinner"></span>

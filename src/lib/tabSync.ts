@@ -29,17 +29,58 @@ export class TabSyncService {
 
   private messageHandlers: Set<(message: TabSyncMessage) => void> = new Set();
 
+  private safeGetItem(key: string): string | null {
+    try {
+      return localStorage.getItem(key);
+    } catch (err) {
+      console.warn("[TabSync] localStorage unavailable:", err);
+      return null;
+    }
+  }
+
+  private safeSetItem(key: string, value: string): boolean {
+    try {
+      localStorage.setItem(key, value);
+      return true;
+    } catch (err) {
+      console.warn("[TabSync] localStorage unavailable:", err);
+      return false;
+    }
+  }
+
+  private safeRemoveItem(key: string): void {
+    try {
+      localStorage.removeItem(key);
+    } catch (err) {
+      console.warn("[TabSync] localStorage unavailable:", err);
+    }
+  }
+
+  private safeGetSessionItem(key: string): string | null {
+    try {
+      return sessionStorage.getItem(key);
+    } catch (err) {
+      console.warn("[TabSync] sessionStorage unavailable:", err);
+      return null;
+    }
+  }
+
+  private safeSetSessionItem(key: string, value: string): void {
+    try {
+      sessionStorage.setItem(key, value);
+    } catch (err) {
+      console.warn("[TabSync] sessionStorage unavailable:", err);
+    }
+  }
+
   private constructor() {
     // Use sessionStorage to maintain stable tab ID across page refreshes
     // sessionStorage persists across refreshes but clears when tab closes
     const TAB_ID_KEY = "breez_tab_id";
     let storedTabId: string | null = null;
 
-    if (
-      typeof window !== "undefined" &&
-      typeof sessionStorage !== "undefined"
-    ) {
-      storedTabId = sessionStorage.getItem(TAB_ID_KEY);
+    if (typeof window !== "undefined") {
+      storedTabId = this.safeGetSessionItem(TAB_ID_KEY);
     }
 
     if (storedTabId) {
@@ -51,11 +92,8 @@ export class TabSyncService {
     } else {
       // Generate new tab ID for new tab
       this.tabId = `tab_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      if (
-        typeof window !== "undefined" &&
-        typeof sessionStorage !== "undefined"
-      ) {
-        sessionStorage.setItem(TAB_ID_KEY, this.tabId);
+      if (typeof window !== "undefined") {
+        this.safeSetSessionItem(TAB_ID_KEY, this.tabId);
       }
       console.log(`[TabSync] Generated new tab ID: ${this.tabId}`);
     }
@@ -112,10 +150,10 @@ export class TabSyncService {
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       const now = Date.now();
-      const existingLock = localStorage.getItem(this.LOCK_KEY);
-      const lockHolder = localStorage.getItem(this.LOCK_HOLDER_KEY);
+      const existingLock = this.safeGetItem(this.LOCK_KEY);
+      const lockHolder = this.safeGetItem(this.LOCK_HOLDER_KEY);
       const lastHeartbeat = parseInt(
-        localStorage.getItem(this.HEARTBEAT_KEY) || "0",
+        this.safeGetItem(this.HEARTBEAT_KEY) || "0",
       );
 
       // Check if this tab already owns the lock (refresh scenario)
@@ -155,9 +193,15 @@ export class TabSyncService {
       }
 
       // Acquire lock
-      localStorage.setItem(this.LOCK_KEY, now.toString());
-      localStorage.setItem(this.LOCK_HOLDER_KEY, this.tabId);
-      localStorage.setItem(this.HEARTBEAT_KEY, now.toString());
+      const lockOk = this.safeSetItem(this.LOCK_KEY, now.toString());
+      const holderOk = this.safeSetItem(this.LOCK_HOLDER_KEY, this.tabId);
+      const heartbeatOk = this.safeSetItem(this.HEARTBEAT_KEY, now.toString());
+      if (!lockOk || !holderOk || !heartbeatOk) {
+        console.warn("[TabSync] Failed to persist lock state");
+        this.clearStaleLock();
+        this.hasWalletLock = false;
+        return false;
+      }
       this.hasWalletLock = true;
       this.lastHeartbeat = now;
 
@@ -178,9 +222,9 @@ export class TabSyncService {
    * Clear stale lock from localStorage
    */
   private clearStaleLock(): void {
-    localStorage.removeItem(this.LOCK_KEY);
-    localStorage.removeItem(this.LOCK_HOLDER_KEY);
-    localStorage.removeItem(this.HEARTBEAT_KEY);
+    this.safeRemoveItem(this.LOCK_KEY);
+    this.safeRemoveItem(this.LOCK_HOLDER_KEY);
+    this.safeRemoveItem(this.HEARTBEAT_KEY);
     console.log(`[TabSync] Cleared stale lock`);
   }
 
@@ -190,9 +234,9 @@ export class TabSyncService {
   releaseWalletLock(): void {
     if (!this.hasWalletLock) return;
 
-    localStorage.removeItem(this.LOCK_KEY);
-    localStorage.removeItem(this.LOCK_HOLDER_KEY);
-    localStorage.removeItem(this.HEARTBEAT_KEY);
+    this.safeRemoveItem(this.LOCK_KEY);
+    this.safeRemoveItem(this.LOCK_HOLDER_KEY);
+    this.safeRemoveItem(this.HEARTBEAT_KEY);
     this.hasWalletLock = false;
 
     if (this.heartbeatInterval) {
@@ -226,10 +270,8 @@ export class TabSyncService {
   isLocked(): boolean {
     if (typeof window === "undefined") return false;
 
-    const existingLock = localStorage.getItem(this.LOCK_KEY);
-    const lastHeartbeat = parseInt(
-      localStorage.getItem(this.HEARTBEAT_KEY) || "0",
-    );
+    const existingLock = this.safeGetItem(this.LOCK_KEY);
+    const lastHeartbeat = parseInt(this.safeGetItem(this.HEARTBEAT_KEY) || "0");
     const now = Date.now();
 
     if (!existingLock) return false;
@@ -248,7 +290,7 @@ export class TabSyncService {
    */
   getLockHolder(): string | null {
     if (typeof window === "undefined") return null;
-    return localStorage.getItem(this.LOCK_HOLDER_KEY);
+    return this.safeGetItem(this.LOCK_HOLDER_KEY);
   }
 
   /**
@@ -269,9 +311,15 @@ export class TabSyncService {
 
     // Acquire lock without retries (we just cleared it)
     const now = Date.now();
-    localStorage.setItem(this.LOCK_KEY, now.toString());
-    localStorage.setItem(this.LOCK_HOLDER_KEY, this.tabId);
-    localStorage.setItem(this.HEARTBEAT_KEY, now.toString());
+    const lockOk = this.safeSetItem(this.LOCK_KEY, now.toString());
+    const holderOk = this.safeSetItem(this.LOCK_HOLDER_KEY, this.tabId);
+    const heartbeatOk = this.safeSetItem(this.HEARTBEAT_KEY, now.toString());
+    if (!lockOk || !holderOk || !heartbeatOk) {
+      console.warn("[TabSync] Failed to persist lock state");
+      this.clearStaleLock();
+      this.hasWalletLock = false;
+      return false;
+    }
     this.hasWalletLock = true;
     this.lastHeartbeat = now;
 
@@ -291,9 +339,7 @@ export class TabSyncService {
   isActiveTabAlive(): boolean {
     if (typeof window === "undefined") return false;
 
-    const lastHeartbeat = parseInt(
-      localStorage.getItem(this.HEARTBEAT_KEY) || "0",
-    );
+    const lastHeartbeat = parseInt(this.safeGetItem(this.HEARTBEAT_KEY) || "0");
     const now = Date.now();
 
     // Consider tab alive if heartbeat is within the last 2 intervals
@@ -312,8 +358,8 @@ export class TabSyncService {
       return { holder: null, time: null, isAlive: false };
     }
 
-    const holder = localStorage.getItem(this.LOCK_HOLDER_KEY);
-    const lockKey = localStorage.getItem(this.LOCK_KEY);
+    const holder = this.safeGetItem(this.LOCK_HOLDER_KEY);
+    const lockKey = this.safeGetItem(this.LOCK_KEY);
     const time = lockKey ? parseInt(lockKey) : null;
     const isAlive = this.isActiveTabAlive();
 
@@ -385,8 +431,20 @@ export class TabSyncService {
     this.heartbeatInterval = window.setInterval(() => {
       if (this.hasWalletLock) {
         const now = Date.now();
-        localStorage.setItem(this.HEARTBEAT_KEY, now.toString());
-        localStorage.setItem(this.LOCK_KEY, now.toString());
+        const heartbeatOk = this.safeSetItem(
+          this.HEARTBEAT_KEY,
+          now.toString(),
+        );
+        const lockOk = this.safeSetItem(this.LOCK_KEY, now.toString());
+        if (!heartbeatOk || !lockOk) {
+          console.warn("[TabSync] Failed to refresh lock heartbeat");
+          this.hasWalletLock = false;
+          if (this.heartbeatInterval) {
+            clearInterval(this.heartbeatInterval);
+            this.heartbeatInterval = null;
+          }
+          return;
+        }
         this.lastHeartbeat = now;
       }
     }, this.HEARTBEAT_INTERVAL);

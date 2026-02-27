@@ -44,6 +44,34 @@ const persistLocal = (key, defaultValue: any = undefined) => {
   return s;
 };
 
+const persistLocalValue = (key, defaultValue: any = undefined) => {
+  let initialValue = defaultValue;
+  if (browser) {
+    const stored = localStorage.getItem(key);
+    if (stored !== null && stored !== "undefined") {
+      try {
+        initialValue = JSON.parse(stored);
+      } catch {
+        initialValue = defaultValue;
+      }
+    }
+  }
+  const s = writable(initialValue);
+
+  s.subscribe((v) => {
+    try {
+      if (browser) {
+        localStorage.setItem(key, JSON.stringify(v));
+      }
+    } catch (e) {
+      console.log("problem setting key", v);
+      console.log(e);
+    }
+  });
+
+  return s;
+};
+
 export const account = writable();
 export const amountPrompt = persistLocal("amountPrompt", false);
 export const avatar = writable();
@@ -79,4 +107,4 @@ export const nfcEnabled = writable(false);
 export const showQr = persistLocal("showQr", true);
 export const save = writable();
 // PRO mode for animations - defaults to false for reduced animations
-export const proMode = persistLocal("proMode", false);
+export const proMode = persistLocalValue("proMode", false);

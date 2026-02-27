@@ -875,7 +875,7 @@
     >
       <iconify-icon icon="ph:key-bold" width="22" class="lg:w-32"
       ></iconify-icon>
-      Wallet Recovery
+      Wallet & Recovery
     </h2>
     <p class="text-white/60 text-xs sm:text-sm lg:text-sm">
       Manage your wallet seed phrase and recovery options
@@ -1714,6 +1714,56 @@
             {/if}
           </div>
         {/if}
+      </div>
+    </div>
+  </div>
+
+  <!-- Review Refundables -->
+  <div
+    class="premium-card backdrop-blur-xl bg-white/5 border-2 border-white/10 hover:border-blue-500/40 transition-all duration-500 animate-scaleIn p-3 lg:p-6"
+    style="animation-delay: 0.25s;"
+  >
+    <div class="flex flex-col sm:flex-row items-start gap-2 lg:gap-4">
+      <div
+        class="p-2 lg:p-3 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-600 shadow-lg shadow-blue-500/30 flex-shrink-0"
+      >
+        <iconify-icon
+          icon="ph:currency-btc-bold"
+          class="text-white flex-shrink-0"
+          width="20"
+          height="20"
+          style="min-width: 20px; min-height: 20px;"
+        ></iconify-icon>
+      </div>
+      <div class="flex-1 min-w-0 w-full">
+        <h3
+          class="text-base sm:text-lg lg:text-xl font-bold gradient-text mb-1 lg:mb-2"
+        >
+          Review Any Refundables
+        </h3>
+        <p class="text-white/60 mb-2 lg:mb-4 text-xs sm:text-sm">
+          Sent funds that did not get registered, or tried to top up a
+          below-limit transaction with the same address, or had anyone send you
+          funds to a stale address? Look for them here to try and recover.
+        </p>
+
+        <a
+          href="/refunds"
+          class="w-full sm:w-auto px-3 lg:px-6 py-2 lg:py-3 rounded-2xl font-semibold text-xs sm:text-sm lg:text-base transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center justify-center gap-2"
+          style="background: linear-gradient(135deg, #3B82F6 0%, #06B6D4 100%); color: white;"
+        >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+            style="background: linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%);"
+          ></div>
+          <iconify-icon
+            noobserver
+            icon="ph:currency-btc-bold"
+            width="16"
+            class="relative z-10 group-hover:rotate-12 transition-transform duration-500 flex-shrink-0 lg:w-5"
+          ></iconify-icon>
+          <span class="relative z-10">Check Refundables</span>
+        </a>
       </div>
     </div>
   </div>

@@ -25,6 +25,20 @@
   // Track if we've already fetched data for this session
   let hasFetchedData = false;
 
+  const normalizePurchaseError = (err, fallback) => {
+    const message =
+      err instanceof Error ? err.message : typeof err === "string" ? err : "";
+    let errorMsg = message || fallback;
+    if (
+      errorMsg.includes("TimedOut") ||
+      errorMsg.includes("Could not contact servers") ||
+      errorMsg.includes("error sending request")
+    ) {
+      errorMsg = "Network timeout. Please check your connection and try again.";
+    }
+    return errorMsg;
+  };
+
   // Check if SDK is initialized (following Balance component pattern)
   $: sdkInitialized = $walletInfo !== null;
 
@@ -85,7 +99,9 @@
       hasFetchedData = true;
     } catch (e) {
       console.error("[BuyBitcoin] Error fetching data:", e);
-      error = e.message || "Failed to load Bitcoin price and limits";
+      const message =
+        e instanceof Error ? e.message : typeof e === "string" ? e : "";
+      error = message || "Failed to load Bitcoin price and limits";
       // Mark as fetched even on error to prevent infinite retry loop
       hasFetchedData = true;
     } finally {
@@ -170,19 +186,7 @@
       step = "review";
     } catch (e) {
       console.error("[BuyBitcoin] Error:", e);
-
-      // Parse error message for better UX
-      let errorMsg = e.message || "Failed to prepare Bitcoin purchase";
-      if (
-        errorMsg.includes("TimedOut") ||
-        errorMsg.includes("Could not contact servers") ||
-        errorMsg.includes("error sending request")
-      ) {
-        errorMsg =
-          "Network timeout. Please check your connection and try again.";
-      }
-
-      error = errorMsg;
+      error = normalizePurchaseError(e, "Failed to prepare Bitcoin purchase");
       loading = false;
     } finally {
       isProcessing = false;
@@ -223,19 +227,7 @@
       }
     } catch (e) {
       console.error("[BuyBitcoin] Error:", e);
-
-      // Parse error message for better UX
-      let errorMsg = e.message || "Failed to initiate Bitcoin purchase";
-      if (
-        errorMsg.includes("TimedOut") ||
-        errorMsg.includes("Could not contact servers") ||
-        errorMsg.includes("error sending request")
-      ) {
-        errorMsg =
-          "Network timeout. Please check your connection and try again.";
-      }
-
-      error = errorMsg;
+      error = normalizePurchaseError(e, "Failed to initiate Bitcoin purchase");
     } finally {
       loading = false;
     }

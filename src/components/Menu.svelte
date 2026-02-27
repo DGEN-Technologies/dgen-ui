@@ -1,4 +1,6 @@
 <script>
+  import { browser } from "$app/environment";
+  import { onMount } from "svelte";
   import { theme } from "$lib/store";
   import DarkToggle from "$comp/DarkToggle.svelte";
   import ProModeToggle from "$comp/ProModeToggle.svelte";
@@ -7,6 +9,7 @@
 
   let dark = () => ($theme = $theme === "dark" ? "light" : "dark");
   let showMenu = $state(false);
+  let isAndroid = $state(false);
 
   let menuButtons = [
     { key: "nav.settings", icon: "ph:gear-bold", href: `/settings` },
@@ -24,6 +27,13 @@
 
   let hideMenu = () => (showMenu = false);
   let toggleMenu = () => (showMenu = !showMenu);
+
+  onMount(() => {
+    if (!browser) return;
+    const ua = navigator.userAgent || "";
+    const platform = navigator.userAgentData?.platform || "";
+    isAndroid = /Android/i.test(ua) || /Android/i.test(platform);
+  });
 </script>
 
 <div>
@@ -77,10 +87,12 @@
         {/each}
       </ul>
       <hr class="my-4 dark:border-white/20 border-gray-300" />
-      <!-- PRO MODE toggle for all users -->
-      <div class="mb-4">
-        <ProModeToggle />
-      </div>
+      <!-- PRO MODE toggle for all users (except Android) -->
+      {#if !isAndroid}
+        <div class="mb-4">
+          <ProModeToggle />
+        </div>
+      {/if}
       <a href="/?stay=true" class="hover:opacity-80 transition-opacity"
         ><div class="text-xl font-bold dark:text-white text-gray-800">
           Website Home Page

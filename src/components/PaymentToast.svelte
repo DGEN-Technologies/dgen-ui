@@ -93,7 +93,7 @@
       activeToastId = toast.push({
         msg: `${config.emoji} ${config.title}: ${amountSats.toLocaleString()} sats`,
         theme: {
-          "--toastBackground": `linear-gradient(135deg, ${config.color.split(" ")[0].replace("from-", "var(--color-")}), ${config.color.split(" ")[1].replace("to-", "var(--color-")}))`,
+          "--toastBackground": `linear-gradient(135deg, var(--color-${config.color.split(" ")[0].replace("from-", "")}), var(--color-${config.color.split(" ")[1].replace("to-", "")}))`,
           "--toastColor": "white",
           "--toastBarBackground": "rgba(255, 255, 255, 0.5)",
         },

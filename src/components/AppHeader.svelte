@@ -1,8 +1,7 @@
 <script>
-  import { PUBLIC_DGEN_URL } from "$env/static/public";
   import { env as publicEnv } from "$env/dynamic/public";
+  import { browser } from "$app/environment";
   import { banner, theme, newPayment } from "$lib/store";
-  import { goto } from "$app/navigation";
   import { getImageUrl } from "$lib/utils";
   import Avatar from "$comp/Avatar.svelte";
   import Menu from "$comp/Menu.svelte";
@@ -26,7 +25,8 @@
 
   // Convert relative URLs to full backend URLs for production compatibility
   let bg = $derived(bannerUrl ? `url(${getImageUrl(bannerUrl)})` : null);
-  const isValidMastercardUrl = (url) => {
+  const DEFAULT_CARD_URL = "https://card.dgentech.io";
+  const isValidDGENCardUrl = (url) => {
     try {
       const parsed = new URL(url);
       const allowedHosts = new Set(["card.dgentech.io", "dgentech.io"]);
@@ -35,17 +35,20 @@
       return false;
     }
   };
-  let mastercardUrl = $derived(
-    isValidMastercardUrl(publicEnv.PUBLIC_MASTERCARD_IS_LIVE_URL || "")
-      ? publicEnv.PUBLIC_MASTERCARD_IS_LIVE_URL
-      : "",
-  );
+  let DGENCardUrl = $derived.by(() => {
+    const configured = publicEnv.PUBLIC_DGENCARD_IS_LIVE_URL || "";
+    if (isValidDGENCardUrl(configured)) {
+      return configured;
+    }
+    return DEFAULT_CARD_URL;
+  });
 
   const links = $derived([
     {
       href: `/${user?.username}`,
       icon: "ph:house-bold",
       label: "HOME",
+      reload: true,
     },
     {
       href: `/${user?.username}/receive`,
@@ -69,6 +72,21 @@
     //   label: "Logout",
     // },
   ]);
+
+  const handleHomeClick = (event, href) => {
+    if (!browser) return;
+    if (
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return;
+    }
+    event.preventDefault();
+    window.location.assign(href);
+  };
 
   let opacity = $derived((href) =>
     $page.url.pathname === href
@@ -94,19 +112,22 @@
       class="flex justify-end items-center space-x-2 sm:space-x-4 p-3 sm:p-5 pr-2 sm:pr-5"
     >
       {#if user}
-        {#each links as { href, icon, flip, label }}
-          <a {href} data-sveltekit-preload-data="off">
-            <button
-              class="btn-menu {opacity(href)} flex-col gap-1"
-              aria-label={label}
+        {#each links as { href, icon, flip, label, reload }}
+          <a
+            {href}
+            class="btn-menu {opacity(href)} flex-col gap-1"
+            aria-label={label}
+            data-sveltekit-preload-data="off"
+            onclick={reload
+              ? (event) => handleHomeClick(event, href)
+              : undefined}
+          >
+            <iconify-icon noobserver {icon} width={w > 640 ? 32 : 24} {flip}
+            ></iconify-icon>
+            <span
+              class="hidden md:block text-xs font-semibold whitespace-nowrap"
+              >{label}</span
             >
-              <iconify-icon noobserver {icon} width={w > 640 ? 32 : 24} {flip}
-              ></iconify-icon>
-              <span
-                class="hidden md:block text-xs font-semibold whitespace-nowrap"
-                >{label}</span
-              >
-            </button>
           </a>
         {/each}
         <Menu {opacity} {user} t={$t} {w} />
@@ -119,32 +140,31 @@
         </a>
       {/if}
     </nav>
-    <!-- DGEN Mastercard -->
-    {#if mastercardUrl}
-      <div class="mr-2 sm:mr-5 flex justify-end">
-        <a
-          href={mastercardUrl}
-          target="_blank"
-          class="inline-flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 rounded-xl bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-2 border-blue-500/30"
-        >
-          <div>
-            <iconify-icon
-              icon="ph:credit-card-bold"
-              class="text-blue-400"
-              width="16"
-            ></iconify-icon>
-          </div>
-          <div class="flex flex-col items-center">
-            <span class="text-xs sm:text-sm font-semibold text-blue-300"
-              >DGEN Mastercard is live</span
-            >
-            <span class="text-[7px] sm:text-xs font-semibold text-blue-300"
-              >(click here to see it)</span
-            >
-          </div>
-        </a>
-      </div>
-    {/if}
+    <!-- DGEN Card -->
+    <div class="mr-2 sm:mr-5 flex justify-end">
+      <a
+        href={DGENCardUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 rounded-xl bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-2 border-blue-500/30"
+      >
+        <div>
+          <iconify-icon
+            icon="ph:credit-card-bold"
+            class="text-blue-400"
+            width="16"
+          ></iconify-icon>
+        </div>
+        <div class="flex flex-col items-center">
+          <span class="text-xs sm:text-sm font-semibold text-blue-300"
+            >DGEN Card is live</span
+          >
+          <span class="text-[7px] sm:text-xs font-semibold text-blue-300"
+            >(click here to see it)</span
+          >
+        </div>
+      </a>
+    </div>
     {#if subject}
       <div
         class="absolute md:w-[64px] md:mx-auto lg:left-[154px] xl:left-[194px] left-[calc(50vw-64px)] -bottom-[64px] z-30"

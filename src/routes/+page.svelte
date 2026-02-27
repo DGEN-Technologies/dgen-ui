@@ -10,6 +10,7 @@
   import Footer from "$comp/Footer.svelte";
 
   import { locale, t } from "$lib/translations";
+  import { browser } from "$app/environment";
   import { onDestroy, onMount, tick } from "svelte";
   import { proMode } from "$lib/store";
 
@@ -19,8 +20,42 @@
   let howItWorks = $state();
   let roadmap = $state();
   let about = $state();
+  let reduceFx = $state(false);
 
   onMount(() => {
+    if (browser) {
+      let storageReadOk = false;
+      let userSetRaw: string | null = null;
+      try {
+        userSetRaw = localStorage.getItem("proModeUserSet");
+        storageReadOk = true;
+      } catch (err) {
+        console.warn("[Landing] localStorage unavailable:", err);
+      }
+      if (storageReadOk && userSetRaw !== "true") {
+        proMode.set(true);
+      }
+
+      let ua = "";
+      let platform = "";
+      try {
+        ua = navigator.userAgent || "";
+        platform = navigator.userAgentData?.platform || "";
+      } catch (err) {
+        console.warn("[Landing] navigator metadata unavailable:", err);
+      }
+
+      let prefersReduced = false;
+      try {
+        prefersReduced =
+          window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ===
+          true;
+      } catch (err) {
+        console.warn("[Landing] matchMedia unavailable:", err);
+      }
+      reduceFx = prefersReduced;
+    }
+
     // Bind section elements after components are mounted
     setTimeout(() => {
       howItWorks = document.getElementById("howItWorks");
@@ -35,21 +70,23 @@
 <div class="relative landing-page-content">
   <!-- Lightning Bolts (Pro Mode Only) - Landing Page -->
   {#if $proMode}
-    <div class="lightning-container-landing">
-      {#each Array.from({ length: 6 }) as _, i}
-        <div
-          class="lightning-bolt"
-          style="left: {10 + i * 15}%; animation-delay: {i * 3 +
-            Math.random() * 2}s; animation-duration: {2 + Math.random()}s"
-        >
-          <iconify-icon
-            icon="ph:lightning-fill"
-            width="24"
-            class="text-cyan-400"
-          ></iconify-icon>
-        </div>
-      {/each}
-    </div>
+    {#if !reduceFx}
+      <div class="lightning-container-landing">
+        {#each Array.from({ length: 6 }) as _, i}
+          <div
+            class="lightning-bolt"
+            style="left: {10 + i * 15}%; animation-delay: {i * 3 +
+              Math.random() * 2}s; animation-duration: {2 + Math.random()}s"
+          >
+            <iconify-icon
+              icon="ph:lightning-fill"
+              width="24"
+              class="text-cyan-400"
+            ></iconify-icon>
+          </div>
+        {/each}
+      </div>
+    {/if}
   {/if}
 
   <!-- Hero Section with turquoise cloud background -->

@@ -17,6 +17,7 @@
     skipBalanceCheck = false,
     isUSDT = false,
     minAmount = 0, // Optional: minimum sats to display warning
+    compactClear = false,
   } = $props();
 
   // ---- Simple state ----
@@ -520,7 +521,9 @@
     <!-- Clear button (full width) -->
     <button
       type="button"
-      class="btn w-full bg-red-500/10 hover:bg-red-500/20 text-red-400"
+      class="btn w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 {compactClear
+        ? '!text-xs sm:!text-sm !py-2 sm:!py-2.5 !min-h-0'
+        : ''}"
       onclick={() => handleInput("clear")}
     >
       Clear
