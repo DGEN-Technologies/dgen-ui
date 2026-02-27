@@ -3,6 +3,7 @@ class SecureSessionManager {
   private passwordCache: Map<string, string> = new Map();
   private lockTimers: Map<string, number> = new Map();
   private readonly LOCK_TIMEOUT = 15 * 60 * 1000; // 15 minutes
+  private visibilityTimeout: number | null = null;
 
   private constructor() {
     // Clear on page unload
@@ -13,7 +14,13 @@ class SecureSessionManager {
       document.addEventListener("visibilitychange", () => {
         if (document.hidden) {
           // Start aggressive timeout when tab hidden
-          setTimeout(() => this.clearAll(), 5 * 60 * 1000); // 5 min
+          this.visibilityTimeout = window.setTimeout(
+            () => this.clearAll(),
+            5 * 60 * 1000,
+          ); // 5 min
+        } else if (this.visibilityTimeout) {
+          clearTimeout(this.visibilityTimeout);
+          this.visibilityTimeout = null;
         }
       });
     }

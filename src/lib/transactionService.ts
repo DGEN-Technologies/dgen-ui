@@ -494,12 +494,13 @@ function createTransactionStore() {
 
       // Update or add transaction
       const currentState = get({ subscribe });
+      const paymentId = getPaymentId(payment);
       const existing = currentState.allTransactions.find(
-        (tx) => tx.id === payment.id,
+        (tx) => tx.id === paymentId,
       );
 
       if (existing) {
-        this.updateTransaction(payment.id, payment);
+        this.updateTransaction(paymentId, payment);
       } else {
         this.addTransaction(payment);
       }
@@ -524,6 +525,16 @@ function createTransactionStore() {
 }
 
 // Helper functions
+function getPaymentId(payment: breezSdk.Payment): string {
+  return (
+    payment.id ||
+    (payment as any).txId ||
+    (payment as any).paymentHash ||
+    payment.details?.paymentHash ||
+    `payment_${(payment as any).paymentTime ?? (payment as any).timestamp ?? 0}_${payment.amountSat}_${payment.paymentType}`
+  );
+}
+
 function enhancePayment(
   payment: breezSdk.Payment,
   fiatRates: Map<string, number>,
@@ -534,12 +545,7 @@ function enhancePayment(
 
   // Create a deterministic ID based on payment data
   // Priority: txId > paymentHash > details.paymentHash > deterministic fallback
-  let id = payment.txId || payment.paymentHash || payment.details?.paymentHash;
-
-  // If still no ID (rare case), create deterministic ID from payment data
-  if (!id) {
-    id = `payment_${paymentTime}_${payment.amountSat}_${payment.paymentType}`;
-  }
+  const id = getPaymentId(payment);
 
   const status = resolvePaymentStatus(payment) ?? payment.status;
 

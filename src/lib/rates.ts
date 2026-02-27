@@ -49,6 +49,7 @@ export default async function getRates(fetchFn = fetch, url?: any) {
       console.error("[Rates] Failed to fetch from both SDK and server:", error);
       // Keep stale rates if both fail
       rates = rates || {};
+      last = Date.now();
     }
   }
 

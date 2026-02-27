@@ -241,7 +241,7 @@
         <!-- Install App Button - Top Position (Android or iOS) -->
         {#if showInstallButton && !isStandalone && ($installPrompt || isIOS || isAndroid)}
           <button
-            class="w-full max-w-md mx-auto px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-base rounded-2xl font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center justify-center gap-2 animate-pulse-soft"
+            class="w-full max-w-md mx-auto px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-base rounded-2xl font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group flex items-center justify-center gap-2 animate-pulse-soft"
             style="background: linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%); color: white;"
             onclick={() => {
               if ($installPrompt) {

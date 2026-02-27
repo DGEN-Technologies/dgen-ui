@@ -60,13 +60,18 @@ export default async (s, host) => {
 
         case "bolt11": {
           // Check if this is an invoice in our database first
+          let foundInvoice = null;
           try {
-            invoice = await get(`/invoice/${t}`);
-            if (invoice?.user?.username === "mint")
-              throw new Error("mint payment");
-            redirect(307, `/invoice/${invoice.id}`);
+            foundInvoice = await get(`/invoice/${t}`);
+            if (foundInvoice?.user?.username === "mint") {
+              foundInvoice = null;
+            }
           } catch (e) {
-            // Not in our DB, proceed with payment
+            // Not in our DB
+          }
+          if (foundInvoice) {
+            redirect(307, `/invoice/${foundInvoice.id}`);
+          } else {
             redirect(307, `/send/lightning/${t}`);
           }
           break;

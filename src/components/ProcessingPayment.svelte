@@ -28,7 +28,16 @@
   >("processing");
   let statusMessage = $state("Processing payment...");
   let eventListenerId = $state<string | null>(null);
-  let timeoutId: ReturnType<typeof setTimeout>;
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  let pendingTimeouts: ReturnType<typeof setTimeout>[] = [];
+
+  function scheduleTimeout(callback: () => void, delay: number): void {
+    const id = setTimeout(() => {
+      pendingTimeouts = pendingTimeouts.filter((t) => t !== id);
+      callback();
+    }, delay);
+    pendingTimeouts = [...pendingTimeouts, id];
+  }
 
   // Payment state tracking
   const TIMEOUT_DURATION = 30000; // 30 seconds
@@ -63,6 +72,11 @@
     // Clear timeout
     if (timeoutId) {
       clearTimeout(timeoutId);
+    }
+
+    if (pendingTimeouts.length) {
+      pendingTimeouts.forEach(clearTimeout);
+      pendingTimeouts = [];
     }
   });
 
@@ -105,7 +119,7 @@
 
         // For Liquid payments, this is essentially success
         if (paymentType === "liquid") {
-          setTimeout(() => handleSuccess(payment), 1000);
+          scheduleTimeout(() => handleSuccess(payment), 1000);
         }
         break;
 
@@ -125,7 +139,7 @@
       case "paymentRefunded":
         currentState = "success";
         statusMessage = "Payment refunded successfully";
-        setTimeout(() => {
+        scheduleTimeout(() => {
           onSuccess?.(payment);
           onClose?.();
         }, 2000);
@@ -143,7 +157,7 @@
     }
 
     // Auto-close after showing success
-    setTimeout(() => {
+    scheduleTimeout(() => {
       if (payment) {
         onSuccess?.(payment);
       }
@@ -160,7 +174,7 @@
       clearTimeout(timeoutId);
     }
 
-    setTimeout(() => {
+    scheduleTimeout(() => {
       onFailure?.(error);
       onClose?.();
     }, 2000);
