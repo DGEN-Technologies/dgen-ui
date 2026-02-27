@@ -170,12 +170,13 @@
     pendingSubmit = false;
   };
 
-  const acceptTerms = () => {
+  const acceptTerms = async () => {
     termsAccepted = true;
     showTerms = false;
 
     if (pendingSubmit && formElement) {
       pendingSubmit = false;
+      await tick();
       formElement.requestSubmit();
     }
   };
