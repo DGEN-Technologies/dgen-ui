@@ -263,9 +263,7 @@ export class TabSyncService {
     if (typeof window === "undefined") return false;
 
     const existingLock = this.safeGetItem(this.LOCK_KEY);
-    const lastHeartbeat = parseInt(
-      this.safeGetItem(this.HEARTBEAT_KEY) || "0",
-    );
+    const lastHeartbeat = parseInt(this.safeGetItem(this.HEARTBEAT_KEY) || "0");
     const now = Date.now();
 
     if (!existingLock) return false;
@@ -327,9 +325,7 @@ export class TabSyncService {
   isActiveTabAlive(): boolean {
     if (typeof window === "undefined") return false;
 
-    const lastHeartbeat = parseInt(
-      this.safeGetItem(this.HEARTBEAT_KEY) || "0",
-    );
+    const lastHeartbeat = parseInt(this.safeGetItem(this.HEARTBEAT_KEY) || "0");
     const now = Date.now();
 
     // Consider tab alive if heartbeat is within the last 2 intervals
