@@ -554,8 +554,12 @@
   let totalBalanceSat = $derived(
     ($walletBalance || 0) + usdtToSats(usdtBalanceSat),
   );
-  let totalSentSat = $derived(Math.max(0, totalReceivedSat - totalBalanceSat));
-  let totalVolumeSat = $derived(totalReceivedSat + totalSentSat);
+  let totalSentSat = $derived(
+    Math.max(0, totalReceivedSat - totalBalanceSat), // Approx: uses received minus balance to avoid per-tx summation; can drift with refunds/fees.
+  );
+  let totalVolumeSat = $derived(
+    totalReceivedSat + totalSentSat, // Approx: inherits totalSentSat limitations (refunds/fees/complex ledger).
+  );
   let totalPages = $derived(pageData?.totalPages || 0);
   let isLoading = $derived($isLoadingTransactions);
 </script>

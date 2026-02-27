@@ -1,5 +1,5 @@
 import { error, json } from "@sveltejs/kit";
-import { isAllowedLnurlHost } from "$lib/lnurlSecurity";
+import { isAllowedLnurlHost } from "$lib/server/lnurlSecurity";
 
 const ADDRESS_RE = /^([a-z0-9._-]+)@([a-z0-9.-]+)$/i;
 

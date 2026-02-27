@@ -127,14 +127,46 @@ const resolveIpAddresses = async (
   return Array.from(addresses);
 };
 
+const resolveSystemIpAddresses = async (
+  hostname: string,
+): Promise<string[]> => {
+  try {
+    const { execSync } = await import("node:child_process");
+    const output = execSync(`getent ahosts ${hostname}`, {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+    const addresses = output
+      .split("\n")
+      .map((line) => line.trim().split(/\s+/)[0])
+      .filter((addr) => addr && isIpLiteral(addr));
+    return Array.from(new Set(addresses));
+  } catch (error) {
+    console.warn("[LNURL] System DNS lookup failed:", error);
+    return [];
+  }
+};
+
 const resolvesToPrivateIp = async (
   hostname: string,
   fetchFn: typeof fetch,
 ): Promise<boolean> => {
   try {
-    const addresses = await resolveIpAddresses(hostname, fetchFn);
-    if (addresses.length === 0) return true;
-    return addresses.some((address) => isPrivateIp(address));
+    const [dohAddresses, systemAddresses] = await Promise.all([
+      resolveIpAddresses(hostname, fetchFn),
+      resolveSystemIpAddresses(hostname),
+    ]);
+    if (systemAddresses.length === 0) return true;
+    if (systemAddresses.some((address) => isPrivateIp(address))) return true;
+
+    if (dohAddresses.length > 0) {
+      const dohSet = new Set(dohAddresses);
+      if (systemAddresses.some((address) => !dohSet.has(address))) {
+        return true;
+      }
+    }
+
+    return false;
   } catch {
     return true;
   }

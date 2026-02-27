@@ -30,6 +30,7 @@
   let eventListenerId = $state<string | null>(null);
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
   let pendingTimeouts: ReturnType<typeof setTimeout>[] = [];
+  let hasSettled = $state(false);
 
   function scheduleTimeout(callback: () => void, delay: number): void {
     const id = setTimeout(() => {
@@ -37,6 +38,23 @@
       callback();
     }, delay);
     pendingTimeouts = [...pendingTimeouts, id];
+  }
+
+  function clearPendingTimeouts(): void {
+    if (!pendingTimeouts.length) return;
+    pendingTimeouts.forEach(clearTimeout);
+    pendingTimeouts = [];
+  }
+
+  function markSettled(): boolean {
+    if (hasSettled) return true;
+    hasSettled = true;
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      timeoutId = null;
+    }
+    clearPendingTimeouts();
+    return false;
   }
 
   // Payment state tracking
@@ -73,11 +91,7 @@
     if (timeoutId) {
       clearTimeout(timeoutId);
     }
-
-    if (pendingTimeouts.length) {
-      pendingTimeouts.forEach(clearTimeout);
-      pendingTimeouts = [];
-    }
+    clearPendingTimeouts();
   });
 
   function handlePaymentEvent(event: SdkEvent): void {
@@ -137,6 +151,7 @@
         break;
 
       case "paymentRefunded":
+        if (markSettled()) return;
         currentState = "success";
         statusMessage = "Payment refunded successfully";
         scheduleTimeout(() => {
@@ -148,13 +163,9 @@
   }
 
   function handleSuccess(payment?: Payment): void {
+    if (markSettled()) return;
     currentState = "success";
     statusMessage = isSend ? "Payment sent!" : "Payment received!";
-
-    // Clear timeout
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
 
     // Auto-close after showing success
     scheduleTimeout(() => {
@@ -166,13 +177,9 @@
   }
 
   function handleFailure(error: any): void {
+    if (markSettled()) return;
     currentState = "failed";
     statusMessage = typeof error === "string" ? error : "Payment failed";
-
-    // Clear timeout
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
 
     scheduleTimeout(() => {
       onFailure?.(error);

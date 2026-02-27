@@ -6,6 +6,7 @@
   import Account from "$comp/Account.svelte";
   import Balance from "$comp/Balance.svelte";
   import BuyBitcoin from "$comp/BuyBitcoin.svelte";
+  import InstallInstructionsModal from "$comp/InstallInstructionsModal.svelte";
   import RefundablesBanner from "$comp/RefundablesBanner.svelte";
   import { refundablesStore } from "$lib/stores/refundables";
   import { t } from "$lib/translations";
@@ -104,20 +105,42 @@
     return `install-prompt-${suffix}-${base}`;
   };
 
+  const safeGetInstallValue = (key, fallback = null) => {
+    if (!browser || typeof localStorage === "undefined") return fallback;
+    try {
+      const value = localStorage.getItem(key);
+      return value === null ? fallback : value;
+    } catch (error) {
+      console.warn("[Install] Storage unavailable:", error);
+      return fallback;
+    }
+  };
+
+  const safeSetInstallValue = (key, value) => {
+    if (!browser || typeof localStorage === "undefined") return false;
+    try {
+      localStorage.setItem(key, value);
+      return true;
+    } catch (error) {
+      console.warn("[Install] Storage unavailable:", error);
+      return false;
+    }
+  };
+
   const syncInstallVisibility = () => {
     if (!browser || !user) return;
     const dismissedKey = getInstallStorageKey("dismissals");
     const hiddenKey = getInstallStorageKey("hidden-until");
     const installedKey = getInstallStorageKey("installed");
     const storedDismissals = Number.parseInt(
-      localStorage.getItem(dismissedKey) || "0",
+      safeGetInstallValue(dismissedKey, "0"),
       10,
     );
     const storedHiddenUntil = Number.parseInt(
-      localStorage.getItem(hiddenKey) || "0",
+      safeGetInstallValue(hiddenKey, "0"),
       10,
     );
-    const isInstalled = localStorage.getItem(installedKey) === "true";
+    const isInstalled = safeGetInstallValue(installedKey, "false") === "true";
     installDismissals = Number.isNaN(storedDismissals) ? 0 : storedDismissals;
     installHiddenUntil = Number.isNaN(storedHiddenUntil)
       ? 0
@@ -133,11 +156,11 @@
     const hiddenKey = getInstallStorageKey("hidden-until");
     const nextDismissals = installDismissals + 1;
     installDismissals = nextDismissals;
-    localStorage.setItem(dismissedKey, String(nextDismissals));
+    safeSetInstallValue(dismissedKey, String(nextDismissals));
     if (nextDismissals >= INSTALL_DISMISS_LIMIT) {
       const hideUntil = Date.now() + INSTALL_HIDE_MS;
       installHiddenUntil = hideUntil;
-      localStorage.setItem(hiddenKey, String(hideUntil));
+      safeSetInstallValue(hiddenKey, String(hideUntil));
       showInstallButton = false;
     }
   };
@@ -145,7 +168,7 @@
   const markInstallAccepted = () => {
     if (!browser || !user) return;
     const installedKey = getInstallStorageKey("installed");
-    localStorage.setItem(installedKey, "true");
+    safeSetInstallValue(installedKey, "true");
     showInstallButton = false;
   };
 
@@ -545,109 +568,43 @@
 <!-- Buy Bitcoin Modal - Rendered at page level -->
 <BuyBitcoin bind:show={showBuyBitcoin} />
 
-<!-- iOS Install Instructions Modal -->
-{#if showIOSInstructions}
-  <div
-    class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-    onclick={closeIOSInstructions}
-  >
-    <div
-      class="glass p-6 rounded-3xl border-2 border-blue-500/50 bg-gradient-to-br from-blue-500/20 to-purple-500/20 max-w-md w-full animate-scaleIn"
-      onclick={(e) => e.stopPropagation()}
-    >
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-xl font-bold text-white flex items-center gap-2">
-          <iconify-icon icon="ph:info-bold" width="24" class="text-blue-400"
-          ></iconify-icon>
-          Add Shortcut to Homescreen
-        </h3>
-        <button
-          onclick={closeIOSInstructions}
-          class="p-2 hover:bg-white/10 rounded-lg transition-all"
-        >
-          <iconify-icon icon="ph:x-bold" width="24" class="text-white/60"
-          ></iconify-icon>
-        </button>
-      </div>
+<InstallInstructionsModal
+  open={showIOSInstructions}
+  title="Add Shortcut to Homescreen"
+  onClose={closeIOSInstructions}
+>
+  <p class="text-sm">
+    This is not needed to use the app, but if you want to add it as a button to
+    your home screen, do the following:
+  </p>
 
-      <div class="space-y-4 text-white/80">
-        <p class="text-sm">
-          This is not needed to use the app, but if you want to add it as a
-          button to your home screen, do the following:
-        </p>
+  <ol class="space-y-2 text-sm">
+    <li>1 - Tap the menu button on your browser's taskbar.</li>
+    <li>2 - Then tap "Add to Home Screen" or "Install App"</li>
+    <li>
+      3 - The app should show up on your home screen beside your other apps.
+    </li>
+  </ol>
+</InstallInstructionsModal>
 
-        <ol class="space-y-2 text-sm">
-          <li>1 - Tap the menu button on your browser's taskbar.</li>
-          <li>2 - Then tap "Add to Home Screen" or "Install App"</li>
-          <li>
-            3 - The app should show up on your home screen beside your other
-            apps.
-          </li>
-        </ol>
+<InstallInstructionsModal
+  open={showAndroidInstructions}
+  title="Add Shortcut to Homescreen"
+  onClose={closeAndroidInstructions}
+>
+  <p class="text-sm">
+    This is not needed to use the app, but if you want to add it as a button to
+    your home screen, do the following:
+  </p>
 
-        <button
-          onclick={closeIOSInstructions}
-          class="w-full mt-4 px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105"
-          style="background: linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%); color: white;"
-        >
-          Got it!
-        </button>
-      </div>
-    </div>
-  </div>
-{/if}
-
-<!-- Android Install Instructions Modal -->
-{#if showAndroidInstructions}
-  <div
-    class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-    onclick={closeAndroidInstructions}
-  >
-    <div
-      class="glass p-6 rounded-3xl border-2 border-blue-500/50 bg-gradient-to-br from-blue-500/20 to-purple-500/20 max-w-md w-full animate-scaleIn"
-      onclick={(e) => e.stopPropagation()}
-    >
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-xl font-bold text-white flex items-center gap-2">
-          <iconify-icon icon="ph:info-bold" width="24" class="text-blue-400"
-          ></iconify-icon>
-          Add Shortcut to Homescreen
-        </h3>
-        <button
-          onclick={closeAndroidInstructions}
-          class="p-2 hover:bg-white/10 rounded-lg transition-all"
-        >
-          <iconify-icon icon="ph:x-bold" width="24" class="text-white/60"
-          ></iconify-icon>
-        </button>
-      </div>
-
-      <div class="space-y-4 text-white/80">
-        <p class="text-sm">
-          This is not needed to use the app, but if you want to add it as a
-          button to your home screen, do the following:
-        </p>
-
-        <ol class="space-y-2 text-sm">
-          <li>1 - Tap the menu button on your browser's taskbar.</li>
-          <li>2 - Then tap "Add to Home Screen" or "Install App"</li>
-          <li>
-            3 - The app should show up on your home screen beside your other
-            apps.
-          </li>
-        </ol>
-
-        <button
-          onclick={closeAndroidInstructions}
-          class="w-full mt-4 px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105"
-          style="background: linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%); color: white;"
-        >
-          Got it!
-        </button>
-      </div>
-    </div>
-  </div>
-{/if}
+  <ol class="space-y-2 text-sm">
+    <li>1 - Tap the menu button on your browser's taskbar.</li>
+    <li>2 - Then tap "Add to Home Screen" or "Install App"</li>
+    <li>
+      3 - The app should show up on your home screen beside your other apps.
+    </li>
+  </ol>
+</InstallInstructionsModal>
 
 <style>
   @keyframes pulse-soft {

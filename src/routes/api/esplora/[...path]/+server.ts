@@ -226,11 +226,24 @@ async function handleRequest(
         ? undefined
         : await request.arrayBuffer();
 
-    const response = await fetch(url, {
-      method,
-      headers,
-      body,
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        method,
+        headers,
+        body,
+        signal: controller.signal,
+      });
+    } catch (fetchError: any) {
+      if (fetchError?.name === "AbortError") {
+        throw error(504, "Esplora proxy request timed out");
+      }
+      throw fetchError;
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     return new Response(response.body, {
       status: response.status,

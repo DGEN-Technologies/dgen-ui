@@ -108,7 +108,7 @@
         created_at: Date.now(),
         content: "",
         tags: [
-          ["u", `${PUBLIC_DGEN_URL}/api/nostrAuth`],
+          ["u", `${publicDgenUrl}/api/nostrAuth`],
           ["method", "POST"],
           ["challenge", user.challenge],
         ],
@@ -257,13 +257,20 @@
   }
   $effect(() => form?.success && throttledSuccess());
   $effect(() => {
-    if (!form?.message) return;
-    if (form.message.startsWith("Pin")) return;
-    console.warn("[Settings] Unhandled form message:", form.message);
+    const message = form?.message;
+    if (!message) return;
+    if (typeof message !== "string") {
+      console.warn("[Settings] Unhandled form message:", message);
+      fail(safeT("error.message", "Something went wrong"));
+      return;
+    }
+    if (message.startsWith("Pin")) return;
+    console.warn("[Settings] Unhandled form message:", message);
     fail(safeT("error.message", "Something went wrong"));
   });
   $effect(() => {
-    if (form?.message?.startsWith("Pin")) {
+    const message = form?.message;
+    if (typeof message === "string" && message.startsWith("Pin")) {
       fail("Wrong pin, try again");
       $pin = "";
     }
