@@ -336,10 +336,7 @@
 
     // Already has Lightning Address - skip
     if (user.lightningAddress) {
-      console.log(
-        "[Layout] User already has Lightning Address:",
-        user.lightningAddress,
-      );
+      console.log("[Layout] User already has Lightning Address");
       lnAddressStore.initialize(
         user.lnurl,
         user.lightningAddress,
@@ -381,10 +378,7 @@
       );
 
       if (recovered && recovered.lightningAddress) {
-        console.log(
-          "[Layout] Recovered existing address:",
-          recovered.lightningAddress,
-        );
+        console.log("[Layout] Recovered existing address");
 
         lnAddressStore.setSuccess(
           recovered.lnurl,
@@ -414,10 +408,7 @@
       // No existing address for this seed
       // Clear stale database address if one exists (from previous seed)
       if (user.lightningAddress) {
-        console.log(
-          "[Layout] Clearing stale database address:",
-          user.lightningAddress,
-        );
+        console.log("[Layout] Clearing stale database address");
         const { post } = await import("$lib/utils");
         await post("/user", {
           lightningAddress: null,
@@ -434,7 +425,7 @@
 
       // Use formatted username from user account
       const baseUsername = walletService.formatUsername(user.username);
-      console.log("[Layout] Auto-registering with username:", baseUsername);
+      console.log("[Layout] Auto-registering with formatted username");
 
       // registerLightningAddress now includes automatic retry with discriminators
       const result = await walletService.registerLightningAddress(
@@ -442,19 +433,11 @@
         webhookUrl.toString(),
       );
 
-      console.log(
-        "[Layout] Auto-registration successful:",
-        result.lightningAddress,
-      );
+      console.log("[Layout] Auto-registration successful");
 
       // Log if username was modified with discriminator
       if (result.usernameModified) {
-        console.log(
-          "[Layout] Username was modified from",
-          result.requestedUsername,
-          "to",
-          result.actualUsername,
-        );
+        console.log("[Layout] Username was modified during registration");
       }
 
       lnAddressStore.setSuccess(
@@ -743,6 +726,18 @@
 
   onDestroy(async () => {
     if (browser) {
+      if (syncDebounceTimer) {
+        clearTimeout(syncDebounceTimer);
+        syncDebounceTimer = null;
+      }
+      if (sdkDisconnectTimer) {
+        clearTimeout(sdkDisconnectTimer);
+        sdkDisconnectTimer = null;
+      }
+      if (sdkReloadCooldownTimer) {
+        clearTimeout(sdkReloadCooldownTimer);
+        sdkReloadCooldownTimer = null;
+      }
       close();
       clearTimeout(checkTimer);
 
@@ -859,7 +854,7 @@
   <div class="absolute inset-0 cyber-grid opacity-20"></div>
 
   <!-- Lightning Bolts (Pro Mode Only) -->
-  {#if $proMode}
+  {#if browser && $proMode}
     <div class="lightning-container">
       {#each Array.from({ length: 6 }) as _, i}
         <div
@@ -878,15 +873,17 @@
   {/if}
 
   <!-- Particle System -->
-  <div class="particles">
-    {#each Array.from({ length: $proMode ? 16 : 12 }) as _, i}
-      <div
-        class="particle"
-        style="left: {Math.random() * 100}%; animation-delay: {Math.random() *
-          20}s; animation-duration: {15 + Math.random() * 10}s"
-      ></div>
-    {/each}
-  </div>
+  {#if browser}
+    <div class="particles">
+      {#each Array.from({ length: $proMode ? 16 : 12 }) as _, i}
+        <div
+          class="particle"
+          style="left: {Math.random() * 100}%; animation-delay: {Math.random() *
+            20}s; animation-duration: {15 + Math.random() * 10}s"
+        ></div>
+      {/each}
+    </div>
+  {/if}
 </div>
 
 <div

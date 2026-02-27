@@ -85,7 +85,9 @@
       hasFetchedData = true;
     } catch (e) {
       console.error("[BuyBitcoin] Error fetching data:", e);
-      error = e.message || "Failed to load Bitcoin price and limits";
+      const message =
+        e instanceof Error ? e.message : typeof e === "string" ? e : "";
+      error = message || "Failed to load Bitcoin price and limits";
       // Mark as fetched even on error to prevent infinite retry loop
       hasFetchedData = true;
     } finally {
@@ -170,9 +172,11 @@
       step = "review";
     } catch (e) {
       console.error("[BuyBitcoin] Error:", e);
+      const message =
+        e instanceof Error ? e.message : typeof e === "string" ? e : "";
 
       // Parse error message for better UX
-      let errorMsg = e.message || "Failed to prepare Bitcoin purchase";
+      let errorMsg = message || "Failed to prepare Bitcoin purchase";
       if (
         errorMsg.includes("TimedOut") ||
         errorMsg.includes("Could not contact servers") ||
@@ -223,9 +227,11 @@
       }
     } catch (e) {
       console.error("[BuyBitcoin] Error:", e);
+      const message =
+        e instanceof Error ? e.message : typeof e === "string" ? e : "";
 
       // Parse error message for better UX
-      let errorMsg = e.message || "Failed to initiate Bitcoin purchase";
+      let errorMsg = message || "Failed to initiate Bitcoin purchase";
       if (
         errorMsg.includes("TimedOut") ||
         errorMsg.includes("Could not contact servers") ||
