@@ -125,10 +125,12 @@ class TransactionCache {
       const index = store.index("paymentTime");
       let deleted = 0;
       const request = index.openCursor();
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error || request.error);
+      tx.onabort = () => reject(tx.error || request.error);
       request.onsuccess = () => {
         const cursor = request.result;
         if (!cursor || deleted >= toDelete) {
-          resolve();
           return;
         }
         store.delete(cursor.primaryKey);
@@ -340,10 +342,18 @@ function createTransactionStore() {
         };
         const preservedPending = currentState.allTransactions.filter((tx) => {
           if (!isUnsettled(tx.status)) return false;
-          const referenceTime =
+          const paymentTimeMs =
             typeof tx.paymentTime === "number" && tx.paymentTime > 0
               ? tx.paymentTime * 1000
-              : now;
+              : 0;
+          const createdAt = (tx as any).createdAt;
+          const createdAtMs =
+            typeof createdAt === "number" && createdAt > 0
+              ? createdAt > 1e12
+                ? createdAt
+                : createdAt * 1000
+              : 0;
+          const referenceTime = paymentTimeMs || createdAtMs || 0;
           return now - referenceTime <= PENDING_GRACE_MS;
         });
 

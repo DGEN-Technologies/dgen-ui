@@ -812,6 +812,7 @@ button:focus-visible {
 
   main:not(.pro-mode) * {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }

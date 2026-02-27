@@ -668,6 +668,7 @@
 
     if (!sdkSuspended || sdkResumeInFlight) return;
     sdkResumeInFlight = true;
+    let resumeSucceeded = false;
     try {
       await initializeBrowserWallet();
       const walletService = await import("$lib/walletService");
@@ -682,10 +683,12 @@
             sdkReloadCooldownTimer = null;
             sdkReloadCooldownUntil = 0;
           }, 30000);
+          resumeSucceeded = true;
           window.location.reload();
         }
         return;
       }
+      resumeSucceeded = true;
     } catch (error) {
       console.warn("[Layout] Failed to resume SDK on show:", error);
       const now = Date.now();
@@ -698,12 +701,15 @@
           sdkReloadCooldownTimer = null;
           sdkReloadCooldownUntil = 0;
         }, 30000);
+        resumeSucceeded = true;
         window.location.reload();
         return;
       }
     } finally {
       sdkResumeInFlight = false;
-      sdkSuspended = false;
+      if (resumeSucceeded) {
+        sdkSuspended = false;
+      }
     }
   };
 

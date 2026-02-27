@@ -1,5 +1,5 @@
 import { error } from "@sveltejs/kit";
-import { isAllowedLnurlHost } from "$lib/lnurlSecurity";
+import { isAllowedLnurlHost } from "$lib/server/lnurlSecurity";
 
 const isAbortError = (err: unknown): boolean => {
   return (

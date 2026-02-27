@@ -8,6 +8,15 @@ if (!isProd) {
   imgSrc.push("http://localhost:*");
 }
 
+const widgetApiBase =
+  process.env.PUBLIC_WIDGET_API_BASE ||
+  "https://widget2agent-657488364208.asia-southeast1.run.app";
+if (!process.env.PUBLIC_WIDGET_API_BASE) {
+  console.warn(
+    "[CSP] PUBLIC_WIDGET_API_BASE missing; falling back to default widget URL",
+  );
+}
+
 const connectSrc = [
   "self",
   "https://*.railway.app",
@@ -29,11 +38,7 @@ const connectSrc = [
   "https://api.simplesvg.com",
   "https://api.unisvg.com",
   "data:",
-  // NOTE: PUBLIC_WIDGET_API_BASE in .env must match this URL.
-  // If the chatbot backend URL changes, update BOTH:
-  // 1) .env(PUBLIC_WIDGET_API_BASE)
-  // 2) This connect-src entry
-  "https://widget2agent-657488364208.asia-southeast1.run.app",
+  widgetApiBase,
 ];
 if (!isProd) {
   connectSrc.push(
@@ -79,7 +84,7 @@ const config = {
         "frame-src": ["self", "https://swapspace.co/"],
         // Security: Require HTTPS for all requests (upgrade insecure)
         // Disabled in development to allow localhost HTTP
-        "upgrade-insecure-requests": process.env.NODE_ENV === "production",
+        "upgrade-insecure-requests": isProd,
       },
     },
   },

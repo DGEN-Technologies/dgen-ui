@@ -1178,10 +1178,16 @@ const registerLightningAddressSingle = async (
       }
 
       // Log full error for debugging, throw generic message
-      lightningAddressLogger.error(
-        `Breez registration failed: ${response.status}`,
-        errorText,
-      );
+      const requestId =
+        response.headers.get("request-id") ||
+        response.headers.get("x-request-id") ||
+        response.headers.get("x-correlation-id") ||
+        undefined;
+      lightningAddressLogger.error("Breez registration failed", {
+        status: response.status,
+        responseBodyLength: errorText?.length || 0,
+        requestId,
+      });
       throw new Error(`Breez registration failed: ${response.status}`);
     }
 

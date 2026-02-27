@@ -14,6 +14,10 @@ class SecureSessionManager {
       document.addEventListener("visibilitychange", () => {
         if (document.hidden) {
           // Start aggressive timeout when tab hidden
+          if (this.visibilityTimeout) {
+            clearTimeout(this.visibilityTimeout);
+            this.visibilityTimeout = null;
+          }
           this.visibilityTimeout = window.setTimeout(
             () => this.clearAll(),
             5 * 60 * 1000,

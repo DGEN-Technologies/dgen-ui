@@ -38,11 +38,13 @@ export class TabSyncService {
     }
   }
 
-  private safeSetItem(key: string, value: string): void {
+  private safeSetItem(key: string, value: string): boolean {
     try {
       localStorage.setItem(key, value);
+      return true;
     } catch (err) {
       console.warn("[TabSync] localStorage unavailable:", err);
+      return false;
     }
   }
 
@@ -191,9 +193,15 @@ export class TabSyncService {
       }
 
       // Acquire lock
-      this.safeSetItem(this.LOCK_KEY, now.toString());
-      this.safeSetItem(this.LOCK_HOLDER_KEY, this.tabId);
-      this.safeSetItem(this.HEARTBEAT_KEY, now.toString());
+      const lockOk = this.safeSetItem(this.LOCK_KEY, now.toString());
+      const holderOk = this.safeSetItem(this.LOCK_HOLDER_KEY, this.tabId);
+      const heartbeatOk = this.safeSetItem(this.HEARTBEAT_KEY, now.toString());
+      if (!lockOk || !holderOk || !heartbeatOk) {
+        console.warn("[TabSync] Failed to persist lock state");
+        this.clearStaleLock();
+        this.hasWalletLock = false;
+        return false;
+      }
       this.hasWalletLock = true;
       this.lastHeartbeat = now;
 
@@ -303,9 +311,15 @@ export class TabSyncService {
 
     // Acquire lock without retries (we just cleared it)
     const now = Date.now();
-    this.safeSetItem(this.LOCK_KEY, now.toString());
-    this.safeSetItem(this.LOCK_HOLDER_KEY, this.tabId);
-    this.safeSetItem(this.HEARTBEAT_KEY, now.toString());
+    const lockOk = this.safeSetItem(this.LOCK_KEY, now.toString());
+    const holderOk = this.safeSetItem(this.LOCK_HOLDER_KEY, this.tabId);
+    const heartbeatOk = this.safeSetItem(this.HEARTBEAT_KEY, now.toString());
+    if (!lockOk || !holderOk || !heartbeatOk) {
+      console.warn("[TabSync] Failed to persist lock state");
+      this.clearStaleLock();
+      this.hasWalletLock = false;
+      return false;
+    }
     this.hasWalletLock = true;
     this.lastHeartbeat = now;
 
@@ -417,8 +431,20 @@ export class TabSyncService {
     this.heartbeatInterval = window.setInterval(() => {
       if (this.hasWalletLock) {
         const now = Date.now();
-        this.safeSetItem(this.HEARTBEAT_KEY, now.toString());
-        this.safeSetItem(this.LOCK_KEY, now.toString());
+        const heartbeatOk = this.safeSetItem(
+          this.HEARTBEAT_KEY,
+          now.toString(),
+        );
+        const lockOk = this.safeSetItem(this.LOCK_KEY, now.toString());
+        if (!heartbeatOk || !lockOk) {
+          console.warn("[TabSync] Failed to refresh lock heartbeat");
+          this.hasWalletLock = false;
+          if (this.heartbeatInterval) {
+            clearInterval(this.heartbeatInterval);
+            this.heartbeatInterval = null;
+          }
+          return;
+        }
         this.lastHeartbeat = now;
       }
     }, this.HEARTBEAT_INTERVAL);

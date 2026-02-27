@@ -170,6 +170,12 @@
     pendingSubmit = false;
   };
 
+  const handleTermsKeydown = (e) => {
+    if (e.key === "Escape") {
+      closeTermsModal();
+    }
+  };
+
   const acceptTerms = async () => {
     termsAccepted = true;
     showTerms = false;
@@ -183,6 +189,18 @@
 
   $effect(() => {
     if (need2fa && form.token === token) token = "";
+  });
+
+  $effect(() => {
+    if (!browser) return;
+    if (!showTerms) return;
+    const onKeydown = (e) => {
+      if (e.key === "Escape") {
+        closeTermsModal();
+      }
+    };
+    window.addEventListener("keydown", onKeydown);
+    return () => window.removeEventListener("keydown", onKeydown);
   });
 
   $effect(() => {
@@ -450,10 +468,14 @@
       onclick={(e) => e.stopPropagation()}
       role="dialog"
       aria-modal="true"
+      aria-labelledby="terms-title"
     >
       <div class="flex items-start justify-between gap-4">
         <div>
-          <h2 class="text-2xl md:text-3xl font-bold text-white">
+          <h2
+            id="terms-title"
+            class="text-2xl md:text-3xl font-bold text-white"
+          >
             Terms & Conditions
           </h2>
           <p class="text-white/60 text-xs md:text-sm mt-1">

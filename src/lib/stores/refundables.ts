@@ -34,17 +34,17 @@ const refresh = async (options: { rescan?: boolean } = {}): Promise<void> => {
     if (options.rescan) {
       try {
         await rescanOnchainSwaps();
+        autoRescanAttempted = true;
       } catch (error) {
         console.warn("[RefundablesStore] Rescan failed:", error);
       }
-      autoRescanAttempted = true;
     }
 
     let refundables = await listRefundables();
     if (refundables.length === 0 && !autoRescanAttempted) {
-      autoRescanAttempted = true;
       try {
         await rescanOnchainSwaps();
+        autoRescanAttempted = true;
       } catch (error) {
         console.warn("[RefundablesStore] Auto rescan failed:", error);
       }

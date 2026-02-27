@@ -954,8 +954,7 @@
             >
             <iconify-icon icon="ph:caret-down-bold" width="16"></iconify-icon>
           </button>
-          <span
-            class="text-sm md:text-sm font-semibold text-center w-full block"
+          <span class="text-sm font-semibold text-center w-full block"
             >(Options other than Lightning Invoice)</span
           >
         </div>

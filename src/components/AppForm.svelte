@@ -34,16 +34,16 @@
       if (!value) return;
       const trimmed = String(value).trim();
       if (!trimmed) return;
-      try {
-        const parsed = new URL(trimmed);
-        origins.add(parsed.origin);
-        return;
-      } catch {}
-      for (const candidate of [`https://${trimmed}`, `http://${trimmed}`]) {
+      if (trimmed.includes("://")) {
         try {
-          origins.add(new URL(candidate).origin);
+          const parsed = new URL(trimmed);
+          origins.add(parsed.origin);
         } catch {}
+        return;
       }
+      try {
+        origins.add(new URL(`https://${trimmed}`).origin);
+      } catch {}
     };
     addOrigin(publicEnv.PUBLIC_DGEN_URL);
     addOrigin(publicEnv.PUBLIC_DOMAIN);
