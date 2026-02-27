@@ -45,13 +45,18 @@ const persistLocal = (key, defaultValue: any = undefined) => {
 };
 
 const persistLocalValue = (key, defaultValue: any = undefined) => {
-  const s = writable(
-    browser &&
-      localStorage.getItem(key) !== null &&
-      localStorage.getItem(key) !== "undefined"
-      ? JSON.parse(localStorage.getItem(key) || "")
-      : defaultValue,
-  );
+  let initialValue = defaultValue;
+  if (browser) {
+    const stored = localStorage.getItem(key);
+    if (stored !== null && stored !== "undefined") {
+      try {
+        initialValue = JSON.parse(stored);
+      } catch {
+        initialValue = defaultValue;
+      }
+    }
+  }
+  const s = writable(initialValue);
 
   s.subscribe((v) => {
     try {

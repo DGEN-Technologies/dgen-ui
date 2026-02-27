@@ -62,7 +62,7 @@ const config = {
       directives: {
         "default-src": ["self"],
         "script-src": ["self", "wasm-unsafe-eval"], // wasm-unsafe-eval required for Breez SDK WebAssembly
-        "style-src": styleSrc, // Google Fonts; inline styles only in development
+        "style-src": styleSrc, // Google Fonts; inline styles are allowed at runtime for Svelte style injection
         "img-src": imgSrc,
         "font-src": ["self", "data:", "https://fonts.gstatic.com"],
         "connect-src": connectSrc,

@@ -941,7 +941,7 @@
 
       <!-- More deposit options button (when collapsed state not yet activated) -->
       {#if !showMoreOptions && !showLightningAddress}
-        <div class="flex justify-center mt-4">
+        <div class="flex flex-col items-center justify-center mt-4 gap-1">
           <button
             class="text-base text-white/60 hover:text-white transition-all duration-300 flex items-center gap-2 hover:gap-3"
             onclick={() => {
@@ -954,10 +954,11 @@
             >
             <iconify-icon icon="ph:caret-down-bold" width="16"></iconify-icon>
           </button>
+          <span
+            class="text-sm md:text-sm font-semibold text-center w-full block"
+            >(Options other than Lightning Invoice)</span
+          >
         </div>
-        <span class="text-sm md:text-2sm font-semibold"
-          >(Options other than Lightning Invoice)</span
-        >
       {/if}
 
       <!-- Payment Method Selection (Lightning Address, Bitcoin, Liquid) - EXPANDED view -->

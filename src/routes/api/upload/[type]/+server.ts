@@ -1,4 +1,4 @@
-import { error } from "@sveltejs/kit";
+import { error, isHttpError } from "@sveltejs/kit";
 import { env } from "$env/dynamic/public";
 
 // Proxy uploads to backend to avoid CORS issues in production
@@ -53,6 +53,9 @@ export async function POST({ params, request, cookies }) {
     });
   } catch (err: any) {
     console.error("[Upload Proxy] Request failed:", err);
+    if (isHttpError(err)) {
+      throw err;
+    }
     throw error(500, "Upload failed");
   }
 }

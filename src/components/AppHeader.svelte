@@ -75,6 +75,15 @@
 
   const handleHomeClick = (event, href) => {
     if (!browser) return;
+    if (
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return;
+    }
     event.preventDefault();
     window.location.assign(href);
   };
@@ -106,22 +115,19 @@
         {#each links as { href, icon, flip, label, reload }}
           <a
             {href}
+            class="btn-menu {opacity(href)} flex-col gap-1"
+            aria-label={label}
             data-sveltekit-preload-data="off"
             onclick={reload
               ? (event) => handleHomeClick(event, href)
               : undefined}
           >
-            <button
-              class="btn-menu {opacity(href)} flex-col gap-1"
-              aria-label={label}
+            <iconify-icon noobserver {icon} width={w > 640 ? 32 : 24} {flip}
+            ></iconify-icon>
+            <span
+              class="hidden md:block text-xs font-semibold whitespace-nowrap"
+              >{label}</span
             >
-              <iconify-icon noobserver {icon} width={w > 640 ? 32 : 24} {flip}
-              ></iconify-icon>
-              <span
-                class="hidden md:block text-xs font-semibold whitespace-nowrap"
-                >{label}</span
-              >
-            </button>
           </a>
         {/each}
         <Menu {opacity} {user} t={$t} {w} />

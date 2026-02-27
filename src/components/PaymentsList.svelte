@@ -332,7 +332,7 @@
     const text = String(value);
     const isNumeric = typeof value === "number";
     const hardened =
-      !isNumeric && /^[\s]*[=+\-@]/.test(text) ? `'${text}` : text;
+      !isNumeric && /^[\s]*[=+\-@|!]/.test(text) ? `'${text}` : text;
     return hardened.replace(/"/g, '""');
   };
 
@@ -906,7 +906,7 @@
               </p>
               <button
                 class="btn btn-primary btn-sm mt-4"
-                onclick={() => window.location.reload()}
+                onclick={() => transactionStore.loadTransactions(true)}
               >
                 Reload
               </button>

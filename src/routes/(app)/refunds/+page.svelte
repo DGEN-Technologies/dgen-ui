@@ -37,6 +37,8 @@
     </div>
     <button
       class="btn btn-primary btn-sm w-full sm:w-auto"
+      disabled={$refundablesStore.loading}
+      aria-busy={$refundablesStore.loading}
       onclick={() => refresh({ rescan: true })}
     >
       Rescan

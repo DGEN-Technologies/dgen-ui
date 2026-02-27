@@ -8,6 +8,7 @@
   import { tick } from "svelte";
   import { fly } from "svelte/transition";
   import { enhance } from "$app/forms";
+  import { TERMS_VERSION } from "$lib/termsVersion";
 
   import Pin from "$comp/Pin.svelte";
   import Spinner from "$comp/Spinner.svelte";
@@ -292,6 +293,12 @@
     />
     <input type="hidden" name="token" value={token} />
     <input type="hidden" name="confirm" bind:value={confirmPassword} />
+    <input
+      type="hidden"
+      name="termsAccepted"
+      value={termsAccepted ? "true" : ""}
+    />
+    <input type="hidden" name="termsVersion" value={TERMS_VERSION} />
 
     <div class="relative group">
       <div

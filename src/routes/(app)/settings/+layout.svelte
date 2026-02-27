@@ -72,7 +72,7 @@
   };
 
   onMount(() => {
-    const removeBeforeNavigate = beforeNavigate(() => {
+    beforeNavigate(() => {
       clearPasswordState();
     });
     const handleVisibility = () => {
@@ -80,7 +80,6 @@
     };
     document.addEventListener("visibilitychange", handleVisibility);
     return () => {
-      removeBeforeNavigate();
       document.removeEventListener("visibilitychange", handleVisibility);
     };
   });

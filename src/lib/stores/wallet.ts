@@ -480,6 +480,17 @@ const startEventListening = async (): Promise<void> => {
   if (eventListenerActive) return;
 
   try {
+    const refreshRefundables = async () => {
+      try {
+        const { refundablesStore } = await import("$lib/stores/refundables");
+        refundablesStore.refresh();
+      } catch (error) {
+        console.error(
+          "[WalletStore] Failed to import refundables store:",
+          error,
+        );
+      }
+    };
     // addEventListener expects just the callback function, not a string first
     const listenerId = await walletService.addEventListener(
       (event: SdkEvent) => {
@@ -643,16 +654,7 @@ const startEventListening = async (): Promise<void> => {
                 );
                 walletStore.refresh();
                 transactions.refresh();
-                import("$lib/stores/refundables")
-                  .then(({ refundablesStore }) => {
-                    refundablesStore.refresh();
-                  })
-                  .catch((error) => {
-                    console.error(
-                      "[WalletStore] Failed to import refundables store:",
-                      error,
-                    );
-                  });
+                refreshRefundables();
                 break;
 
               // Refund Events
@@ -660,32 +662,14 @@ const startEventListening = async (): Promise<void> => {
                 console.log("[WalletStore] Payment refund pending");
                 walletStore.refresh();
                 transactions.refresh();
-                import("$lib/stores/refundables")
-                  .then(({ refundablesStore }) => {
-                    refundablesStore.refresh();
-                  })
-                  .catch((error) => {
-                    console.error(
-                      "[WalletStore] Failed to import refundables store:",
-                      error,
-                    );
-                  });
+                refreshRefundables();
                 break;
 
               case "paymentRefunded":
                 console.log("[WalletStore] Payment refunded");
                 walletStore.refresh();
                 transactions.refresh();
-                import("$lib/stores/refundables")
-                  .then(({ refundablesStore }) => {
-                    refundablesStore.refresh();
-                  })
-                  .catch((error) => {
-                    console.error(
-                      "[WalletStore] Failed to import refundables store:",
-                      error,
-                    );
-                  });
+                refreshRefundables();
                 break;
 
               // Sync Events
@@ -696,16 +680,7 @@ const startEventListening = async (): Promise<void> => {
                 }));
                 walletStore.refresh();
                 transactions.refresh();
-                import("$lib/stores/refundables")
-                  .then(({ refundablesStore }) => {
-                    refundablesStore.refresh();
-                  })
-                  .catch((error) => {
-                    console.error(
-                      "[WalletStore] Failed to import refundables store:",
-                      error,
-                    );
-                  });
+                refreshRefundables();
                 break;
 
               default:
