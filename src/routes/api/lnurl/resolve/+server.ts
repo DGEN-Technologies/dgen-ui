@@ -1,4 +1,5 @@
 import { error, json } from "@sveltejs/kit";
+import { isAllowedLnurlHost } from "$lib/lnurlSecurity";
 
 const ADDRESS_RE = /^([a-z0-9._-]+)@([a-z0-9.-]+)$/i;
 
@@ -14,9 +15,20 @@ export const GET = async ({ url, fetch }) => {
     throw error(400, "Invalid lightning address domain");
   }
 
-  const lnurlpUrl = `https://${domain}/.well-known/lnurlp/${encodeURIComponent(
-    name.toLowerCase(),
-  )}`;
+  let lnurlpUrl: URL;
+  try {
+    lnurlpUrl = new URL(
+      `https://${domain}/.well-known/lnurlp/${encodeURIComponent(
+        name.toLowerCase(),
+      )}`,
+    );
+  } catch {
+    throw error(400, "Invalid lightning address domain");
+  }
+
+  if (!(await isAllowedLnurlHost(lnurlpUrl, fetch))) {
+    throw error(400, "Invalid lightning address domain");
+  }
 
   let response: Response;
   try {
@@ -50,15 +62,35 @@ export const GET = async ({ url, fetch }) => {
     throw error(400, "Lightning address callback missing");
   }
 
+  const minSendable = Number(body.minSendable);
+  const maxSendable = Number(body.maxSendable);
+  const commentAllowedRaw = Number(body.commentAllowed ?? 0);
+
+  const isValidNonNegativeInt = (value: number) =>
+    Number.isFinite(value) && Number.isInteger(value) && value >= 0;
+
+  if (
+    !isValidNonNegativeInt(minSendable) ||
+    !isValidNonNegativeInt(maxSendable)
+  ) {
+    throw error(400, "Invalid lightning address limits");
+  }
+  if (minSendable > maxSendable) {
+    throw error(400, "Invalid lightning address limits");
+  }
+  const commentAllowed = isValidNonNegativeInt(commentAllowedRaw)
+    ? Math.min(commentAllowedRaw, 500)
+    : 0;
+
   const proxyUrl = new URL("/api/lnurl/callback", url.origin);
   proxyUrl.searchParams.set("url", callbackUrl);
 
   return json({
     callback: proxyUrl.toString(),
-    minSendable: Number(body.minSendable),
-    maxSendable: Number(body.maxSendable),
+    minSendable,
+    maxSendable,
     metadataStr: body.metadata ?? body.metadataStr ?? "",
-    commentAllowed: Number(body.commentAllowed ?? 0),
+    commentAllowed,
     domain,
     allowsNostr: Boolean(body.allowsNostr),
     nostrPubkey: body.nostrPubkey ?? undefined,

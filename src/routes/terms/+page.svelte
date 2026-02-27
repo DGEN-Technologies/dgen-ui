@@ -4,7 +4,11 @@
 
   const rawReturnTarget = $derived($page.url.searchParams.get("return") || "/");
   const returnTarget = $derived(
-    rawReturnTarget && rawReturnTarget.startsWith("/") ? rawReturnTarget : "/",
+    rawReturnTarget &&
+      rawReturnTarget.startsWith("/") &&
+      !rawReturnTarget.startsWith("//")
+      ? rawReturnTarget
+      : "/",
   );
   const backLabel = $derived(
     returnTarget.startsWith("/settings") ? "Back to Settings" : "Back to Home",

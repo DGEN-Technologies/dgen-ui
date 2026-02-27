@@ -318,7 +318,7 @@ const connectSdk = async (mnemonic: string, retryCount = 0): Promise<void> => {
     if (retryCount > 0) {
       // Add exponential backoff delay to help avoid blockstream.info rate limits (429 errors)
       // This is especially important when multiple apps are running or on retries
-      const delayMs = 5000 * Math.pow(2, retryCount); // 5s, 10s, 20s
+      const delayMs = 5000 * Math.pow(2, retryCount - 1); // 5s, 10s, 20s
       sdkLogger.info(
         `Connecting to SDK (attempt ${retryCount + 1}/${maxRetries + 1}) with ${delayMs}ms delay...`,
       );
@@ -1228,6 +1228,10 @@ export const registerLightningAddress = async (
           candidate = `${username}${suffix}`;
           tries += 1;
         } while (attemptedUsernames.has(candidate) && tries < 5);
+        if (attemptedUsernames.has(candidate)) {
+          const fallbackSuffix = `${attempt}-${Date.now() % 10000}`;
+          candidate = `${username}${fallbackSuffix}`;
+        }
         currentUsername = candidate;
       }
 

@@ -24,16 +24,36 @@
 
   onMount(() => {
     if (browser) {
-      const userSet = localStorage.getItem("proModeUserSet") === "true";
-      if (!userSet) {
+      let storageReadOk = false;
+      let userSetRaw: string | null = null;
+      try {
+        userSetRaw = localStorage.getItem("proModeUserSet");
+        storageReadOk = true;
+      } catch (err) {
+        console.warn("[Landing] localStorage unavailable:", err);
+      }
+      if (storageReadOk && userSetRaw !== "true") {
         proMode.set(true);
       }
-      const ua = navigator.userAgent || "";
-      const platform = navigator.userAgentData?.platform || "";
-      const prefersReduced = window.matchMedia?.(
-        "(prefers-reduced-motion: reduce)",
-      )?.matches;
-      reduceFx = Boolean(prefersReduced);
+
+      let ua = "";
+      let platform = "";
+      try {
+        ua = navigator.userAgent || "";
+        platform = navigator.userAgentData?.platform || "";
+      } catch (err) {
+        console.warn("[Landing] navigator metadata unavailable:", err);
+      }
+
+      let prefersReduced = false;
+      try {
+        prefersReduced =
+          window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ===
+          true;
+      } catch (err) {
+        console.warn("[Landing] matchMedia unavailable:", err);
+      }
+      reduceFx = prefersReduced;
     }
 
     // Bind section elements after components are mounted

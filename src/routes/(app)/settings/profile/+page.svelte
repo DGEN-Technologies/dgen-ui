@@ -26,8 +26,12 @@
   const markProModeUserSet = (event) => {
     if (!browser) return;
     const next = event?.currentTarget?.checked;
-    localStorage.setItem("proModeUserSet", "true");
-    sessionStorage.setItem("proModeOverride", next ? "on" : "off");
+    try {
+      localStorage?.setItem("proModeUserSet", "true");
+      sessionStorage?.setItem("proModeOverride", next ? "on" : "off");
+    } catch (err) {
+      console.debug("[Profile] Storage unavailable:", err);
+    }
   };
 
   let copy = async (text) => {

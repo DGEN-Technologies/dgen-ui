@@ -19,9 +19,9 @@ const initialState: RefundablesState = {
 };
 
 const { subscribe, set } = writable<RefundablesState>(initialState);
-let autoRescanAttempted = false;
 
 const refresh = async (options: { rescan?: boolean } = {}): Promise<void> => {
+  let autoRescanAttempted = false;
   set({ ...initialState, loading: true });
 
   try {

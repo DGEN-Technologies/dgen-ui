@@ -86,12 +86,10 @@
               ? new URL(document.referrer).origin
               : null;
           } catch {}
-          const originCandidates = [referrerOrigin, ...allowedOrigins].filter(
-            Boolean,
-          );
-          const targetOrigin = originCandidates.find((origin) =>
-            allowedOrigins.includes(origin),
-          );
+          const targetOrigin =
+            referrerOrigin && allowedOrigins.includes(referrerOrigin)
+              ? referrerOrigin
+              : null;
           if (!targetOrigin) {
             console.warn(
               "[AppForm] Opener origin not allowlisted; skipping postMessage",
