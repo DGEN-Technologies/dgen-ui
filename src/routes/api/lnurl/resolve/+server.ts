@@ -1,29 +1,106 @@
 import { error, json } from "@sveltejs/kit";
+import { bech32 } from "bech32";
 import { isAllowedLnurlHost } from "$lib/server/lnurlSecurity";
 
 const ADDRESS_RE = /^([a-z0-9._-]+)@([a-z0-9.-]+)$/i;
+const COINOS_HOST = "coinos.io";
 
 export const GET = async ({ url, fetch }) => {
-  const address = url.searchParams.get("address")?.trim() || "";
-  const match = ADDRESS_RE.exec(address);
-  if (!match) {
-    throw error(400, "Invalid lightning address");
-  }
-
-  const [, name, domain] = match;
-  if (!domain || domain.includes("..")) {
-    throw error(400, "Invalid lightning address domain");
+  let address = url.searchParams.get("address")?.trim() || "";
+  const lowerAddress = address.toLowerCase();
+  if (lowerAddress.startsWith("lightning:")) {
+    address = address.slice("lightning:".length).trim();
   }
 
   let lnurlpUrl: URL;
-  try {
-    lnurlpUrl = new URL(
-      `https://${domain}/.well-known/lnurlp/${encodeURIComponent(
-        name.toLowerCase(),
-      )}`,
-    );
-  } catch {
-    throw error(400, "Invalid lightning address domain");
+  let domain = "";
+  let lnAddress: string | undefined;
+  let urlInput: URL | null = null;
+
+  if (address.toLowerCase().startsWith("lnurl")) {
+    let lnurlText = address.toLowerCase();
+    if (
+      lnurlText.startsWith("lnurlp://") ||
+      lnurlText.startsWith("lnurlw://") ||
+      lnurlText.startsWith("lnurlc://")
+    ) {
+      lnurlText = `https://${lnurlText.slice("lnurl".length + 3)}`;
+    } else if (lnurlText.startsWith("lnurl1")) {
+      try {
+        const decoded = bech32.decode(lnurlText, 20000);
+        if (decoded.prefix !== "lnurl") {
+          throw error(400, "Invalid LNURL");
+        }
+        const bytes = bech32.fromWords(decoded.words);
+        lnurlText = Buffer.from(bytes).toString();
+      } catch {
+        throw error(400, "Invalid LNURL");
+      }
+    }
+
+    try {
+      lnurlpUrl = new URL(lnurlText);
+      domain = lnurlpUrl.hostname;
+    } catch {
+      throw error(400, "Invalid LNURL");
+    }
+  } else {
+    const match = ADDRESS_RE.exec(address);
+    if (match) {
+      const [, name, addrDomain] = match;
+      if (!addrDomain || addrDomain.includes("..")) {
+        throw error(400, "Invalid lightning address domain");
+      }
+
+      domain = addrDomain;
+      lnAddress = address;
+      try {
+        lnurlpUrl = new URL(
+          `https://${addrDomain}/.well-known/lnurlp/${encodeURIComponent(
+            name.toLowerCase(),
+          )}`,
+        );
+      } catch {
+        throw error(400, "Invalid lightning address domain");
+      }
+    } else {
+      let candidate = address;
+      if (
+        !candidate.startsWith("http://") &&
+        !candidate.startsWith("https://")
+      ) {
+        if (candidate.includes("/")) {
+          candidate = `https://${candidate}`;
+        }
+      }
+      try {
+        urlInput = new URL(candidate);
+      } catch {
+        throw error(400, "Invalid lightning address");
+      }
+
+      domain = urlInput.hostname;
+      const path = urlInput.pathname || "/";
+      if (
+        path.startsWith("/.well-known/lnurlp/") ||
+        path.startsWith("/lnurlp/") ||
+        path.startsWith("/p/")
+      ) {
+        lnurlpUrl = urlInput;
+      } else {
+        const segments = path.split("/").filter(Boolean);
+        if (segments.length === 1) {
+          const name = segments[0];
+          const isCoinos = domain.toLowerCase().endsWith(COINOS_HOST);
+          const resolvedPath = isCoinos
+            ? `/p/${encodeURIComponent(name)}`
+            : `/.well-known/lnurlp/${encodeURIComponent(name.toLowerCase())}`;
+          lnurlpUrl = new URL(`https://${domain}${resolvedPath}`);
+        } else {
+          throw error(400, "Invalid lightning address");
+        }
+      }
+    }
   }
 
   if (!(await isAllowedLnurlHost(lnurlpUrl, fetch))) {
@@ -94,6 +171,6 @@ export const GET = async ({ url, fetch }) => {
     domain,
     allowsNostr: Boolean(body.allowsNostr),
     nostrPubkey: body.nostrPubkey ?? undefined,
-    lnAddress: address,
+    lnAddress,
   });
 };

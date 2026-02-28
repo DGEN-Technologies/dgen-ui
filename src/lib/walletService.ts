@@ -548,14 +548,33 @@ export const parseInput = async (
   input: string,
 ): Promise<breezSdk.InputType> => {
   if (!sdk) throw new Error("SDK not initialized");
-  const trimmed = input?.trim() ?? "";
+  let trimmed = input?.trim() ?? "";
+  const lowerRaw = trimmed.toLowerCase();
+  if (lowerRaw.startsWith("lightning:")) {
+    trimmed = trimmed.slice("lightning:".length).trim();
+  }
+  const lower = trimmed.toLowerCase();
+
+  // Short-circuit Lightning Address resolution via backend proxy to avoid CSP issues
+  if (trimmed && trimmed.includes("@") && !lower.startsWith("lnurl")) {
+    const data = await resolveLightningAddress(trimmed);
+    return { type: "lnUrlPay", data };
+  }
+  if (trimmed && lower.startsWith("lnurl")) {
+    const data = await resolveLightningAddress(trimmed);
+    return { type: "lnUrlPay", data };
+  }
+  if (trimmed && trimmed.includes("/") && !trimmed.includes("@")) {
+    const data = await resolveLightningAddress(trimmed);
+    return { type: "lnUrlPay", data };
+  }
+
   try {
     return await sdk.parse(trimmed);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : String(error || "");
-    const lower = trimmed.toLowerCase();
-    if (trimmed && trimmed.includes("@") && !lower.startsWith("lightning:")) {
+    if (trimmed && trimmed.includes("@")) {
       try {
         return await sdk.parse(`lightning:${trimmed}`);
       } catch (retryError) {
