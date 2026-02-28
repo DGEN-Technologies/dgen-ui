@@ -131,16 +131,9 @@ const resolveSystemIpAddresses = async (
   hostname: string,
 ): Promise<string[]> => {
   try {
-    const { execSync } = await import("node:child_process");
-    const output = execSync(`getent ahosts ${hostname}`, {
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
-    });
-    const addresses = output
-      .split("\n")
-      .map((line) => line.trim().split(/\s+/)[0])
-      .filter((addr) => addr && isIpLiteral(addr));
-    return Array.from(new Set(addresses));
+    const dns = await import("node:dns");
+    const records = await dns.promises.lookup(hostname, { all: true });
+    return records.map((record) => record.address).filter(isIpLiteral);
   } catch (error) {
     console.warn("[LNURL] System DNS lookup failed:", error);
     return [];
