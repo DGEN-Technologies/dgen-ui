@@ -65,10 +65,7 @@ export const GET = async ({ url, fetch }) => {
       }
     } else {
       let candidate = address;
-      if (
-        !candidate.startsWith("http://") &&
-        !candidate.startsWith("https://")
-      ) {
+      if (!candidate.startsWith("http://") && !candidate.startsWith("https://")) {
         if (candidate.includes("/")) {
           candidate = `https://${candidate}`;
         }

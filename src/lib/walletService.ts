@@ -556,7 +556,11 @@ export const parseInput = async (
   const lower = trimmed.toLowerCase();
 
   // Short-circuit Lightning Address resolution via backend proxy to avoid CSP issues
-  if (trimmed && trimmed.includes("@") && !lower.startsWith("lnurl")) {
+  if (
+    trimmed &&
+    trimmed.includes("@") &&
+    !lower.startsWith("lnurl")
+  ) {
     const data = await resolveLightningAddress(trimmed);
     return { type: "lnUrlPay", data };
   }
