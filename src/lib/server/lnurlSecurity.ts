@@ -131,7 +131,7 @@ const resolveSystemIpAddresses = async (
   hostname: string,
 ): Promise<string[]> => {
   try {
-    const dns = await import("node:dns");
+    const dns = await import(/* @vite-ignore */ "node:dns");
     const records = await dns.promises.lookup(hostname, { all: true });
     return records.map((record) => record.address).filter(isIpLiteral);
   } catch (error) {
@@ -149,15 +149,12 @@ const resolvesToPrivateIp = async (
       resolveIpAddresses(hostname, fetchFn),
       resolveSystemIpAddresses(hostname),
     ]);
-    if (systemAddresses.length === 0) return true;
-    if (systemAddresses.some((address) => isPrivateIp(address))) return true;
 
-    if (dohAddresses.length > 0) {
-      const dohSet = new Set(dohAddresses);
-      if (systemAddresses.some((address) => !dohSet.has(address))) {
-        return true;
-      }
-    }
+    const candidates =
+      systemAddresses.length > 0 ? systemAddresses : dohAddresses;
+
+    if (candidates.length === 0) return true;
+    if (candidates.some((address) => isPrivateIp(address))) return true;
 
     return false;
   } catch {
