@@ -58,7 +58,24 @@ export const actions = {
     ) {
       // Liquid: Bech32 (lq1, ex1, ert1) or Base58 confidential (V, CT, 2)
       paymentType = "liquid";
-    } else if (lower.includes("@") && !lower.includes(" ")) {
+    } else if (
+      lower.startsWith("lnurl") ||
+      lower.startsWith("lnurlp://") ||
+      lower.startsWith("lnurlw://") ||
+      lower.startsWith("lnurlc://") ||
+      lower.includes("@")
+    ) {
+      paymentType = "lnurl";
+    } else if (
+      (lower.startsWith("http://") || lower.startsWith("https://")) &&
+      !lower.includes(" ")
+    ) {
+      paymentType = "lnurl";
+    } else if (
+      lower.includes("/") &&
+      lower.includes(".") &&
+      !lower.includes(" ")
+    ) {
       paymentType = "lnurl";
     }
 
