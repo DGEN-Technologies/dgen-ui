@@ -564,7 +564,14 @@ export const parseInput = async (
     const data = await resolveLightningAddress(trimmed);
     return { type: "lnUrlPay", data };
   }
-  if (trimmed && trimmed.includes("/") && !trimmed.includes("@")) {
+  if (
+    trimmed &&
+    !trimmed.includes("@") &&
+    (lower.startsWith("http://") ||
+      lower.startsWith("https://") ||
+      lower.startsWith("lnurl")) &&
+    trimmed.includes("/")
+  ) {
     const data = await resolveLightningAddress(trimmed);
     return { type: "lnUrlPay", data };
   }

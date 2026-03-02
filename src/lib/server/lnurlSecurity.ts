@@ -150,8 +150,9 @@ const resolvesToPrivateIp = async (
       resolveSystemIpAddresses(hostname),
     ]);
 
-    const candidates =
-      systemAddresses.length > 0 ? systemAddresses : dohAddresses;
+    const candidates = Array.from(
+      new Set([...systemAddresses, ...dohAddresses]),
+    );
 
     if (candidates.length === 0) return true;
     if (candidates.some((address) => isPrivateIp(address))) return true;
