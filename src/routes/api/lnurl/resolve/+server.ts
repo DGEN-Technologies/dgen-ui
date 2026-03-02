@@ -91,7 +91,10 @@ export const GET = async ({ url, fetch }) => {
         const segments = path.split("/").filter(Boolean);
         if (segments.length === 1) {
           const name = segments[0];
-          const isCoinos = domain.toLowerCase().endsWith(COINOS_HOST);
+          const loweredDomain = domain.toLowerCase();
+          const isCoinos =
+            loweredDomain === COINOS_HOST ||
+            loweredDomain.endsWith(`.${COINOS_HOST}`);
           const resolvedPath = isCoinos
             ? `/p/${encodeURIComponent(name)}`
             : `/.well-known/lnurlp/${encodeURIComponent(name.toLowerCase())}`;
