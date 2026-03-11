@@ -26,7 +26,7 @@ function ensureDomPurifyHooks() {
 }
 
 marked.setOptions({
-  breaks: false,
+  breaks: true, // render single \n as <br>
   gfm: true, // GitHub-style markdown
 });
 
