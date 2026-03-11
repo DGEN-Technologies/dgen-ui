@@ -505,6 +505,7 @@
       </div>
       <div>
         <button
+          type="button"
           onclick={toggleOpen}
           class="close-button"
           aria-label="Close chat"

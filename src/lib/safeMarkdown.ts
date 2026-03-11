@@ -52,7 +52,7 @@ export async function renderSafeMarkdown(markdown: string): Promise<string> {
       "pre",
     ],
     ALLOWED_ATTR: ["href", "target", "rel"],
-    ALLOWED_URI_REGEXP: /^https?:\/\//i,
+    ALLOWED_URI_REGEXP: /^https:\/\//i,
   });
 
   return cleanHtml;
