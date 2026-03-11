@@ -58,11 +58,11 @@
   let disclaimerWindowRef = $state<HTMLDivElement>();
   let disclaimerCloseRef = $state<HTMLButtonElement>();
   let abortController: AbortController | null = null;
+  let mounted = false;
 
   // Helpers for storage keys
   const buildKey = (suffix: string, userId?: string) =>
     `dgen_${suffix}_${userId ?? "anon"}`;
-  const messagesKeyFor = (userId?: string) => buildKey("messages", userId);
   const userKeyFor = (userId?: string) => buildKey("user", userId);
   const tokenKeyFor = (userId?: string) => buildKey("token", userId);
 
@@ -259,8 +259,11 @@
       } catch (firstErr) {
         // On timeout, 5xx, or network error, retry once (cold-start recovery).
         // TypeError covers connection refused / network failure during cold start.
+        // Browsers may throw the abort reason directly (modern) or as a
+        // DOMException with name "AbortError" (older). Handle both.
         const isTimeout =
-          firstErr instanceof Error && firstErr.name === "AbortError";
+          firstErr instanceof Error &&
+          (firstErr.name === "AbortError" || firstErr.message === "TIMEOUT");
         const is5xx =
           firstErr instanceof Error && firstErr.message.startsWith("HTTP_5");
         const isNetworkError = firstErr instanceof TypeError;
@@ -271,6 +274,7 @@
           throw firstErr;
         }
       }
+      if (!mounted) return;
       appendMessage(assistantMessage);
     } catch (err) {
       if (err instanceof Error && err.message === "UNMOUNT") {
@@ -279,7 +283,10 @@
 
       let message =
         "Something unexpected went wrong. Please try asking your question again.";
-      if (err instanceof Error && err.name === "AbortError") {
+      if (
+        err instanceof Error &&
+        (err.name === "AbortError" || err.message === "TIMEOUT")
+      ) {
         message =
           "The request is taking longer than usual. Please try again later.";
       } else if (err instanceof Error && err.message === "INVALID_JSON") {
@@ -375,34 +382,35 @@
       sessionToken = storedToken;
     }
 
-    const mKey = messagesKeyFor(sessionUserId);
-    storage.removeItem(mKey);
-
     const intro =
       "Hello! I'm DGEN AI Assistant, your guide to this DGEN app. How can I help you today?";
 
-    (async () => {
-      messages = [
-        {
-          id: "assistant-intro",
-          role: "assistant",
-          content: intro,
-          createdAt: Date.now(),
-          html: await renderSafeMarkdown(intro).catch((err) => {
-            // Fail closed: drop HTML if markdown render or sanitize fails
-            console.warn("renderSafeMarkdown failed", err);
-            return undefined;
-          }),
-        },
-      ];
-    })();
+    // Set intro synchronously so the message appears immediately (no empty-state flash),
+    // then patch in the rendered HTML once markdown resolves.
+    const introMessage: ChatMessage = {
+      id: "assistant-intro",
+      role: "assistant",
+      content: intro,
+      createdAt: Date.now(),
+    };
+    messages = [introMessage];
+    renderSafeMarkdown(intro)
+      .then((html) => {
+        messages = [{ ...introMessage, html }];
+      })
+      .catch((err) => {
+        // Fail closed: leave html undefined so plain text renders instead
+        console.warn("renderSafeMarkdown failed", err);
+      });
 
+    mounted = true;
     isReady = true;
     const promptTimer = window.setTimeout(() => {
       showPrompt = false;
     }, 3000);
     window.addEventListener("keydown", handleGlobalKeydown);
     return () => {
+      mounted = false;
       window.removeEventListener("keydown", handleGlobalKeydown);
 
       // Abort any in-flight requests on unmount
