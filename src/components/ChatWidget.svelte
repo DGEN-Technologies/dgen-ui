@@ -30,11 +30,11 @@
   // Config
   const MAX_MESSAGE_LENGTH = 1000;
   const SEND_COOLDOWN_MS = 300;
-  const REQUEST_TIMEOUT_MS = 15000;
-  const COLD_START_TIMEOUT_MS = 45000; // extended timeout for cold-start retry
+  const REQUEST_TIMEOUT_MS = 60000;
+  const REASSURE_DELAY_MS = 30000; // switch label after 30s to reassure the user
   const MAX_MESSAGES_STORED = 200;
   const LABEL_THINKING = "Thinking…";
-  const LABEL_RETRYING = "Still loading, please wait…";
+  const LABEL_REASSURE = "Still thinking, please wait…";
   let lastSendTime = 0;
 
   // State
@@ -252,28 +252,12 @@
     });
     input = "";
 
+    const reassureTimer = window.setTimeout(() => {
+      sendingLabel = LABEL_REASSURE;
+    }, REASSURE_DELAY_MS);
+
     try {
-      let assistantMessage: ChatMessage;
-      try {
-        assistantMessage = await doFetch(text, REQUEST_TIMEOUT_MS);
-      } catch (firstErr) {
-        // On timeout, 5xx, or network error, retry once (cold-start recovery).
-        // TypeError covers connection refused / network failure during cold start.
-        // Browsers may throw the abort reason directly (modern) or as a
-        // DOMException with name "AbortError" (older). Handle both.
-        const isTimeout =
-          firstErr instanceof Error &&
-          (firstErr.name === "AbortError" || firstErr.message === "TIMEOUT");
-        const is5xx =
-          firstErr instanceof Error && firstErr.message.startsWith("HTTP_5");
-        const isNetworkError = firstErr instanceof TypeError;
-        if (isTimeout || is5xx || isNetworkError) {
-          sendingLabel = LABEL_RETRYING;
-          assistantMessage = await doFetch(text, COLD_START_TIMEOUT_MS);
-        } else {
-          throw firstErr;
-        }
-      }
+      const assistantMessage = await doFetch(text, REQUEST_TIMEOUT_MS);
       if (!mounted) return;
       appendMessage(assistantMessage);
     } catch (err) {
@@ -316,6 +300,7 @@
         createdAt: Date.now(),
       });
     } finally {
+      window.clearTimeout(reassureTimer);
       isSending = false;
       sendingLabel = LABEL_THINKING;
     }
