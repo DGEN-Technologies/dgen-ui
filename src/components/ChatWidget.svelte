@@ -30,8 +30,11 @@
   // Config
   const MAX_MESSAGE_LENGTH = 1000;
   const SEND_COOLDOWN_MS = 300;
-  const REQUEST_TIMEOUT_MS = 15000;
+  const REQUEST_TIMEOUT_MS = 60000;
+  const REASSURE_DELAY_MS = 30000; // switch label after 30s to reassure the user
   const MAX_MESSAGES_STORED = 200;
+  const LABEL_THINKING = "Thinking…";
+  const LABEL_REASSURE = "Still thinking, please wait…";
   let lastSendTime = 0;
 
   // State
@@ -46,18 +49,20 @@
   let showPrompt = $state(true);
   let showDisclaimer = $state(false);
   let disclaimerAgreed = $state(false);
+  let isApiBaseValid = $state(true);
+  let sendingLabel = $state(LABEL_THINKING);
 
-  // Refs
-  let bottomRef: HTMLDivElement;
-  let textareaRef: HTMLTextAreaElement;
-  let disclaimerWindowRef: HTMLDivElement;
-  let disclaimerCloseRef: HTMLButtonElement;
+  // Ref
+  let bottomRef = $state<HTMLDivElement>();
+  let textareaRef = $state<HTMLTextAreaElement>();
+  let disclaimerWindowRef = $state<HTMLDivElement>();
+  let disclaimerCloseRef = $state<HTMLButtonElement>();
   let abortController: AbortController | null = null;
+  let mounted = false;
 
   // Helpers for storage keys
   const buildKey = (suffix: string, userId?: string) =>
     `dgen_${suffix}_${userId ?? "anon"}`;
-  const messagesKeyFor = (userId?: string) => buildKey("messages", userId);
   const userKeyFor = (userId?: string) => buildKey("user", userId);
   const tokenKeyFor = (userId?: string) => buildKey("token", userId);
 
@@ -123,6 +128,91 @@
     }
   }
 
+  // Perform a single POST attempt with a given timeout. Throws on any error.
+  // Throws Error("UNMOUNT") when the widget is torn down mid-request.
+  async function doFetch(
+    text: string,
+    timeoutMs: number,
+  ): Promise<ChatMessage> {
+    abortController = new AbortController();
+    const timeoutId = window.setTimeout(() => {
+      abortController?.abort(new Error("TIMEOUT"));
+    }, timeoutMs);
+
+    try {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (sessionToken) {
+        headers["X-Session-Token"] = sessionToken;
+      }
+
+      const res = await fetch(apiBase, {
+        method: "POST",
+        headers,
+        signal: abortController.signal,
+        body: JSON.stringify({ message: text }),
+      });
+
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          sessionToken = "";
+          sessionUserId = undefined;
+          throw new Error("AUTH_EXPIRED");
+        }
+        throw new Error(`HTTP_${res.status}`);
+      }
+
+      let data: ChatResponse;
+      try {
+        data = (await res.json()) as ChatResponse;
+      } catch {
+        throw new Error("INVALID_JSON");
+      }
+
+      if (data.user_id) {
+        sessionUserId = data.user_id;
+        window.sessionStorage.setItem(userKeyFor(sessionUserId), sessionUserId);
+      }
+      if (data.session_token) {
+        sessionToken = data.session_token;
+        window.sessionStorage.setItem(
+          tokenKeyFor(sessionUserId),
+          data.session_token,
+        );
+      }
+
+      const answer: string =
+        data.answer ??
+        "I did not receive a response. Please try again in a moment.";
+
+      return {
+        id: `assistant-${Date.now()}`,
+        role: "assistant",
+        content: answer,
+        createdAt: Date.now(),
+        html: await renderSafeMarkdown(answer).catch((err) => {
+          // Fail closed: drop HTML if markdown render or sanitize fails
+          console.warn("renderSafeMarkdown failed", err);
+          return undefined;
+        }),
+      };
+    } catch (err) {
+      // Re-raise unmount aborts as a named error so sendMessage can silently exit.
+      // Must be checked here while abortController is still set (before finally clears it).
+      if (err instanceof Error && err.name === "AbortError") {
+        const reason = abortController?.signal?.reason;
+        if (reason instanceof Error && reason.message === "UNMOUNT") {
+          throw new Error("UNMOUNT");
+        }
+      }
+      throw err;
+    } finally {
+      abortController = null;
+      window.clearTimeout(timeoutId);
+    }
+  }
+
   async function sendMessage() {
     if (!isReady) return;
     if (!disclaimerAgreed) {
@@ -145,129 +235,56 @@
       return;
     }
 
-    // Require https (allow localhost for dev)
-    try {
-      const target = new URL(apiBase);
-      if (target.protocol !== "https:" && target.hostname !== "localhost") {
-        throw new Error("INSECURE_PROTOCOL");
-      }
-    } catch {
+    if (!isApiBaseValid) {
       error = "Chat is not configured correctly. Please try again later.";
       return;
     }
 
     error = null;
     isSending = true;
+    sendingLabel = LABEL_THINKING;
 
-    const userMessage: ChatMessage = {
+    appendMessage({
       id: `user-${Date.now()}`,
       role: "user",
       content: text,
       createdAt: Date.now(),
-    };
-
-    appendMessage(userMessage);
+    });
     input = "";
-    abortController = new AbortController();
-    const timeoutId = window.setTimeout(() => {
-      abortController?.abort(new Error("TIMEOUT"));
-    }, REQUEST_TIMEOUT_MS);
+
+    const reassureTimer = window.setTimeout(() => {
+      sendingLabel = LABEL_REASSURE;
+    }, REASSURE_DELAY_MS);
 
     try {
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (sessionToken) {
-        headers["X-Session-Token"] = sessionToken;
-      }
-
-      const res = await fetch(`${apiBase}`, {
-        method: "POST",
-        headers,
-        signal: abortController.signal,
-        body: JSON.stringify({
-          message: text,
-        }),
-      });
-
-      if (!res.ok) {
-        if (res.status === 401 || res.status === 403) {
-          sessionToken = "";
-          sessionUserId = undefined;
-          throw new Error("AUTH_EXPIRED");
-        }
-        throw new Error(`HTTP_${res.status}`);
-      }
-
-      let data: ChatResponse;
-      try {
-        data = (await res.json()) as ChatResponse;
-      } catch (parseErr) {
-        throw new Error("INVALID_JSON");
-      }
-
-      if (data.user_id) {
-        sessionUserId = data.user_id;
-        if (typeof window !== "undefined") {
-          window.sessionStorage.setItem(
-            userKeyFor(sessionUserId),
-            sessionUserId,
-          );
-        }
-      }
-      if (data.session_token) {
-        sessionToken = data.session_token;
-        if (typeof window !== "undefined") {
-          const tokenKey = tokenKeyFor(sessionUserId);
-          window.sessionStorage.setItem(tokenKey, data.session_token);
-        }
-      }
-
-      const answer: string =
-        data.answer ??
-        "I did not receive a response. Please try again in a moment.";
-
-      const assistantMessage: ChatMessage = {
-        id: `assistant-${Date.now()}`,
-        role: "assistant",
-        content: answer,
-        createdAt: Date.now(),
-        html: await renderSafeMarkdown(answer).catch((err) => {
-          // Fail closed: drop HTML if markdown render or sanitize fails
-          console.warn("renderSafeMarkdown failed", err);
-          return undefined;
-        }),
-      };
+      const assistantMessage = await doFetch(text, REQUEST_TIMEOUT_MS);
+      if (!mounted) return;
       appendMessage(assistantMessage);
     } catch (err) {
-      if (err instanceof Error && err.name === "AbortError") {
-        const reason = abortController?.signal?.reason;
-        if (reason instanceof Error && reason.message === "UNMOUNT") {
-          return; // Silent cleanup on unmount
-        }
+      if (err instanceof Error && err.message === "UNMOUNT") {
+        return; // Silent cleanup on unmount
       }
 
       let message =
         "Something unexpected went wrong. Please try asking your question again.";
-      if (err instanceof Error && err.name === "AbortError") {
+      if (
+        err instanceof Error &&
+        (err.name === "AbortError" || err.message === "TIMEOUT")
+      ) {
         message =
-          "The request took too long and timed out. Please try again later.";
+          "The request is taking longer than usual. Please try again later.";
       } else if (err instanceof Error && err.message === "INVALID_JSON") {
         message =
           "Unexpected response from the server. Please try again later.";
-      } else if (err instanceof Error && err.message === "INSECURE_PROTOCOL") {
-        message = "Secure connection required. Please use HTTPS to continue.";
       } else if (err instanceof Error && err.message === "AUTH_EXPIRED") {
-        if (typeof window !== "undefined") {
-          const storage = window.sessionStorage;
-          storage.removeItem(userKeyFor(sessionUserId));
-          storage.removeItem(tokenKeyFor(sessionUserId));
-        }
+        window.sessionStorage.removeItem(userKeyFor(sessionUserId));
+        window.sessionStorage.removeItem(tokenKeyFor(sessionUserId));
         sessionToken = "";
         sessionUserId = undefined;
         message = "Session expired. Please send your message again.";
       } else if (err instanceof TypeError) {
-        message = "Network error - please check your connection and try again.";
+        message =
+          "Unable to reach the server. Please check your connection and try again.";
       } else if (err instanceof Error && err.message.startsWith("HTTP_5")) {
         message =
           "Our server had a problem processing your request. Please try again in a moment.";
@@ -276,18 +293,16 @@
           "There was a problem with this request. Please double-check and try again.";
       }
 
-      // Always add a fallback assistant message when an error occurs
-      const fallbackMessage: ChatMessage = {
+      appendMessage({
         id: `assistant-error-${Date.now()}`,
         role: "assistant",
         content: message,
         createdAt: Date.now(),
-      };
-      appendMessage(fallbackMessage);
+      });
     } finally {
+      window.clearTimeout(reassureTimer);
       isSending = false;
-      abortController = null;
-      window.clearTimeout(timeoutId);
+      sendingLabel = LABEL_THINKING;
     }
   }
 
@@ -315,7 +330,24 @@
 
   // Lifecycle - Initialize session and messages
   onMount(() => {
-    if (typeof window === "undefined") return;
+    // Validate apiBase once on mount
+    try {
+      const target = new URL(apiBase);
+      if (target.protocol !== "https:" && target.hostname !== "localhost") {
+        isApiBaseValid = false;
+      }
+    } catch {
+      isApiBaseValid = false;
+    }
+
+    // Warm-up ping: fire a GET to wake the Cloud Run instance while the user
+    // reads the disclaimer and types their first message. Errors are ignored.
+    if (isApiBaseValid) {
+      fetch(apiBase, {
+        method: "GET",
+        signal: AbortSignal.timeout(10000),
+      }).catch(() => {});
+    }
 
     const storage = window.sessionStorage;
 
@@ -335,34 +367,37 @@
       sessionToken = storedToken;
     }
 
-    const mKey = messagesKeyFor(sessionUserId);
-    storage.removeItem(mKey);
-
     const intro =
       "Hello! I'm DGEN AI Assistant, your guide to this DGEN app. How can I help you today?";
 
-    (async () => {
-      messages = [
-        {
-          id: "assistant-intro",
-          role: "assistant",
-          content: intro,
-          createdAt: Date.now(),
-          html: await renderSafeMarkdown(intro).catch((err) => {
-            // Fail closed: drop HTML if markdown render or sanitize fails
-            console.warn("renderSafeMarkdown failed", err);
-            return undefined;
-          }),
-        },
-      ];
-    })();
+    // Set intro synchronously so the message appears immediately (no empty-state flash),
+    // then patch in the rendered HTML once markdown resolves.
+    const introMessage: ChatMessage = {
+      id: "assistant-intro",
+      role: "assistant",
+      content: intro,
+      createdAt: Date.now(),
+    };
+    messages = [introMessage];
+    renderSafeMarkdown(intro)
+      .then((html) => {
+        messages = messages.map((m) =>
+          m.id === introMessage.id ? { ...m, html } : m,
+        );
+      })
+      .catch((err) => {
+        // Fail closed: leave html undefined so plain text renders instead
+        console.warn("renderSafeMarkdown failed", err);
+      });
 
+    mounted = true;
     isReady = true;
     const promptTimer = window.setTimeout(() => {
       showPrompt = false;
     }, 3000);
     window.addEventListener("keydown", handleGlobalKeydown);
     return () => {
+      mounted = false;
       window.removeEventListener("keydown", handleGlobalKeydown);
 
       // Abort any in-flight requests on unmount
@@ -375,7 +410,7 @@
 
   // Auto-scroll to bottom
   $effect(() => {
-    if (messages.length > 0 || isOpen) {
+    if (isOpen && messages.length > 0) {
       bottomRef?.scrollIntoView({ behavior: "smooth" });
     }
   });
@@ -446,18 +481,18 @@
     class="widget-container"
     id="dgen-chat-widget"
     role="dialog"
+    aria-modal="true"
     aria-label="DGEN support chat"
   >
     <!-- Header -->
     <div class="header">
       <div class="header-text">
-        <div style="font-weight: 600;">DGEN Chatbot</div>
+        <div class="chatbot-title">DGEN Chatbot</div>
         <button
           type="button"
           class="disclaimer-link"
           onclick={() => {
             showDisclaimer = true;
-            disclaimerAgreed = false;
           }}
         >
           Disclaimer: Read First Before Using This DGEN Chatbot
@@ -465,6 +500,7 @@
       </div>
       <div>
         <button
+          type="button"
           onclick={toggleOpen}
           class="close-button"
           aria-label="Close chat"
@@ -484,12 +520,7 @@
       {/if}
 
       {#each messages as m (m.id)}
-        <div
-          class="message-row"
-          style="justify-content: {m.role === 'user'
-            ? 'flex-end'
-            : 'flex-start'};"
-        >
+        <div class="message-row" class:user={m.role === "user"}>
           <div class="bubble {m.role}">
             {#if m.role === "assistant" && m.html}
               {@html m.html}
@@ -501,9 +532,9 @@
       {/each}
 
       {#if isSending}
-        <div class="message-row" style="justify-content: flex-start;">
+        <div class="message-row">
           <div class="bubble assistant">
-            <span style="opacity: 0.7;">Thinking…</span>
+            <span class="sending-label">{sendingLabel}</span>
           </div>
         </div>
       {/if}
@@ -532,12 +563,6 @@
         onclick={sendMessage}
         disabled={!isReady || isSending || !input.trim() || !disclaimerAgreed}
         class="send-button"
-        style="opacity: {!isReady ||
-        isSending ||
-        !input.trim() ||
-        !disclaimerAgreed
-          ? 0.5
-          : 1};"
       >
         ➤
       </button>
@@ -553,6 +578,7 @@
     tabindex="-1"
     onkeydown={trapDisclaimerFocus}
   >
+    <!-- tabindex="-1" allows programmatic focus without adding the element to the tab order -->
     <div
       class="disclaimer-window"
       bind:this={disclaimerWindowRef}
@@ -772,11 +798,23 @@
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 14px;
+  }
+
+  .chatbot-title {
+    font-weight: 600;
   }
 
   .message-row {
     display: flex;
+  }
+
+  .message-row.user {
+    justify-content: flex-end;
+  }
+
+  .sending-label {
+    opacity: 0.7;
   }
 
   .bubble {
@@ -786,12 +824,12 @@
     line-height: 1.4;
     max-width: 80%;
     word-break: break-word;
-    white-space: pre-wrap;
   }
 
   .bubble.user {
     background: var(--widget-bg-user);
     color: var(--widget-text-color);
+    white-space: pre-wrap;
   }
 
   .bubble.assistant {
@@ -801,9 +839,13 @@
 
   .empty-state {
     font-size: 14px;
-    opacity: 0.8;
     text-align: center;
     margin-top: 24px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition:
+      opacity 0.4s ease,
+      transform 0.4s ease;
   }
 
   .error {
@@ -850,6 +892,7 @@
 
   .send-button:disabled {
     cursor: not-allowed;
+    opacity: 0.5;
   }
 
   @media (max-width: 600px) {
@@ -866,14 +909,6 @@
       bottom: 16px;
       right: 16px;
     }
-  }
-
-  .empty-state {
-    opacity: 0;
-    transform: translateY(10px);
-    transition:
-      opacity 0.4s ease,
-      transform 0.4s ease;
   }
 
   .empty-state.ready {
@@ -932,14 +967,6 @@
     margin: 0;
     font-size: clamp(22px, 3vw, 28px);
     color: #e5e7eb;
-  }
-
-  .disclaimer-close {
-    border: none;
-    background: transparent;
-    color: #d1d5db;
-    font-size: 18px;
-    cursor: pointer;
   }
 
   .disclaimer-body {

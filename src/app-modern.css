@@ -1038,3 +1038,24 @@ main.pro-mode .landing-page-content * {
     opacity: 0.6;
   }
 }
+
+/* Chatbot bubble: restore paragraph/list formatting that Tailwind Preflight resets.
+   Uses the "lobotomized owl" (> * + *) to handle all adjacent block combinations:
+   p→p, p→ul, ul→p, ul→ul, etc. */
+.bubble.assistant > * + * {
+  margin-top: 0.75em;
+}
+
+.bubble.assistant ul {
+  list-style: disc;
+  padding-left: 1.25em;
+}
+
+.bubble.assistant ol {
+  list-style: decimal;
+  padding-left: 1.25em;
+}
+
+.bubble.assistant li + li {
+  margin-top: 0.2em;
+}

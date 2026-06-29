@@ -26,7 +26,7 @@ function ensureDomPurifyHooks() {
 }
 
 marked.setOptions({
-  breaks: false,
+  breaks: true, // render single \n as <br>
   gfm: true, // GitHub-style markdown
 });
 
@@ -52,7 +52,7 @@ export async function renderSafeMarkdown(markdown: string): Promise<string> {
       "pre",
     ],
     ALLOWED_ATTR: ["href", "target", "rel"],
-    ALLOWED_URI_REGEXP: /^https?:\/\//i,
+    ALLOWED_URI_REGEXP: /^https:\/\//i,
   });
 
   return cleanHtml;
