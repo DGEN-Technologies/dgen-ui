@@ -381,7 +381,9 @@
     messages = [introMessage];
     renderSafeMarkdown(intro)
       .then((html) => {
-        messages = [{ ...introMessage, html }];
+        messages = messages.map((m) =>
+          m.id === introMessage.id ? { ...m, html } : m
+        );
       })
       .catch((err) => {
         // Fail closed: leave html undefined so plain text renders instead
