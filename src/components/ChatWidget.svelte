@@ -382,7 +382,7 @@
     renderSafeMarkdown(intro)
       .then((html) => {
         messages = messages.map((m) =>
-          m.id === introMessage.id ? { ...m, html } : m
+          m.id === introMessage.id ? { ...m, html } : m,
         );
       })
       .catch((err) => {
