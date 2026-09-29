@@ -1,14 +1,7 @@
 <script>
   import { onDestroy, onMount } from "svelte";
-  import {
-    parseInput,
-    prepareSendPayment,
-    sendPayment,
-    prepareLnurlPay,
-    lnurlPay,
-    fetchLightningLimits,
-    isConnected,
-  } from "$lib/walletService";
+  import { parseInput, isConnected } from "$lib/walletService";
+  import { prepareSend, sendPayment } from "$lib/rails";
   import { fail, loc, sats } from "$lib/utils";
   import { goto } from "$app/navigation";
   import Spinner from "./Spinner.svelte";
@@ -31,10 +24,32 @@
   let isLightningAddress = $state(false);
   let isAmountlessInvoice = $state(false);
   let amountSat = $state(1000); // Default amount for Lightning addresses
+
+  // The amount that `preparedPayment` was actually quoted for. The Numpad
+  // stays editable after Prepare, so without this a user could prepare 1,000
+  // sats, change the field to 5,000, and send — the screen showing 5,000
+  // while the SDK executes the 1,000-sat quote it still holds. Sending a
+  // different amount than the one on screen is the worst thing a wallet can
+  // do, so the prepared quote is discarded the moment the amount moves.
+  let preparedForAmountSat = $state(null);
+  let preparedIsStale = $derived(
+    preparedForAmountSat !== null &&
+      Math.trunc(amountSat) !== preparedForAmountSat,
+  );
+
+  $effect(() => {
+    if (preparedIsStale) {
+      preparedPayment = null;
+      preparedForAmountSat = null;
+    }
+  });
   let comment = $state("");
-  let limits = $state(null);
-  let minSendable = $state(0);
-  let maxSendable = $state(0);
+  // Spark reports fees and constraints at prepare time, so these are only
+  // populated when the destination itself carries a sendable range (LNURL);
+  // otherwise they stay wide open and the actual bounds are enforced by
+  // prepareSend/sendPayment.
+  let minSendable = $state(1);
+  let maxSendable = $state(Infinity);
   let gateWaiting = $derived($sendGateStore.status === "waiting");
   let lnUrlData = $derived(
     parsed?.type === "lnUrlPay" ? parsed.data : parsed?.lnUrlPay?.data,
@@ -87,8 +102,8 @@
       preparedPayment = null;
       isLightningAddress = false;
       isAmountlessInvoice = false;
-      minSendable = 0;
-      maxSendable = 0;
+      minSendable = 1;
+      maxSendable = Infinity;
 
       devLog("[SendLightning] Attempting to parse payment input");
 
@@ -109,61 +124,32 @@
 
         if (!parsed.invoice.amountMsat) {
           isAmountlessInvoice = true;
-
-          const limitsResponse = await fetchLightningLimits();
-          limits = limitsResponse;
-          const networkMinSat = Number(limitsResponse.send.minSat);
-          const networkMaxSat = Number(limitsResponse.send.maxSat);
-
-          minSendable = networkMinSat;
-          maxSendable = networkMaxSat;
-          amountSat = Math.max(1000, networkMinSat);
+          amountSat = 1000;
 
           devLog(
-            "[SendLightning] Amountless invoice detected, amount range:",
-            minSendable,
-            "-",
-            maxSendable,
+            "[SendLightning] Amountless invoice detected, awaiting amount",
           );
           loading = false;
           return;
         }
 
-        const prepareRequest = {
-          destination: parsed.invoice.bolt11,
-          amount: {
-            type: "bitcoin",
-            receiverAmountSat: Math.floor(parsed.invoice.amountMsat / 1000),
-          },
-        };
-
-        preparedPayment = await prepareSendPayment(prepareRequest);
+        preparedPayment = await prepareSend(
+          parsed.invoice.bolt11,
+          Math.floor(parsed.invoice.amountMsat / 1000),
+        );
       } else if (parsed?.type === "lnUrlPay" || parsed?.lnUrlPay) {
         // Handle Lightning Address / LNURL-Pay
         isLightningAddress = true;
         isAmountlessInvoice = false;
 
-        // Fetch network limits
-        const limitsResponse = await fetchLightningLimits();
-        limits = limitsResponse;
-
         // Get the data object - could be at parsed.data or parsed.lnUrlPay.data
         const lnUrlData = parsed.data || parsed.lnUrlPay?.data;
 
-        // Calculate sendable range (msat to sat)
-        const lnurlMinSat = Math.floor(lnUrlData.minSendable / 1000);
-        const lnurlMaxSat = Math.floor(lnUrlData.maxSendable / 1000);
-        const networkMinSat = Number(limitsResponse.send.minSat);
-        const networkMaxSat = Number(limitsResponse.send.maxSat);
-
-        minSendable = Math.min(
-          Math.max(networkMinSat, lnurlMinSat),
-          networkMaxSat,
-        );
-        maxSendable = Math.max(
-          networkMinSat,
-          Math.min(networkMaxSat, lnurlMaxSat),
-        );
+        // Sendable range comes from the LNURL data itself; Spark enforces
+        // its own network limits at prepare time rather than a standing
+        // limits call.
+        minSendable = Math.floor(lnUrlData.minSendable / 1000);
+        maxSendable = Math.floor(lnUrlData.maxSendable / 1000);
 
         // Set default amount to minimum
         amountSat = minSendable;
@@ -175,29 +161,13 @@
           maxSendable,
         );
       } else if (parsed?.type === "bolt12Offer" || parsed?.offer) {
-        // Handle BOLT12 Offer (Lightning addresses registered with Breez return this)
-        isLightningAddress = true;
-        isAmountlessInvoice = false;
-
-        // Fetch network limits
-        const limitsResponse = await fetchLightningLimits();
-        limits = limitsResponse;
-
-        const networkMinSat = Number(limitsResponse.send.minSat);
-        const networkMaxSat = Number(limitsResponse.send.maxSat);
-
-        minSendable = networkMinSat;
-        maxSendable = networkMaxSat;
-
-        // Set default amount to a reasonable value
-        amountSat = Math.max(1000, networkMinSat);
-
-        devLog(
-          "[SendLightning] BOLT12 offer detected, amount range:",
-          minSendable,
-          "-",
-          maxSendable,
-        );
+        // Spark parses a BOLT12 offer but cannot pay one: SendPaymentMethod
+        // has no BOLT12 variant, so prepareSendPayment rejects it. Say so
+        // here rather than letting the user pick an amount, press Send, and
+        // meet a raw SDK error at the last step.
+        error =
+          "BOLT12 offers aren't supported yet. Ask the recipient for a Lightning invoice or their Lightning address instead.";
+        devLog("[SendLightning] BOLT12 offer rejected — unsupported by Spark");
       } else {
         error = `Unsupported payment type: ${parsed?.type || "unknown"}`;
       }
@@ -232,7 +202,6 @@
     if (
       !parsed?.lnUrlPay &&
       parsed?.type !== "lnUrlPay" &&
-      !parsed?.offer &&
       !isAmountlessInvoice
     )
       return;
@@ -253,40 +222,19 @@
         if (!lnUrlData) {
           throw new Error("Missing LNURL pay data");
         }
-        // Prepare LNURL payment
-        const prepareRequest = {
-          data: lnUrlData,
-          amount: {
-            type: "bitcoin",
-            receiverAmountSat: safeAmountSat,
-          },
-          comment: comment || undefined,
-          validateSuccessActionUrl: true,
-        };
-
-        preparedPayment = await prepareLnurlPay(prepareRequest);
+        // Prepare LNURL payment. Spark's prepareSendPayment accepts a
+        // Lightning address or LNURL directly as `{ type: "input" }`, so
+        // the original `payreq` string is passed straight through.
+        preparedPayment = await prepareSend(payreq, safeAmountSat);
+        preparedForAmountSat = safeAmountSat;
         devLog("[SendLightning] LNURL payment prepared");
       } else if (isAmountlessInvoice && parsed?.invoice) {
-        preparedPayment = await prepareSendPayment({
-          destination: parsed.invoice.bolt11,
-          amount: {
-            type: "bitcoin",
-            receiverAmountSat: safeAmountSat,
-          },
-        });
+        preparedPayment = await prepareSend(
+          parsed.invoice.bolt11,
+          safeAmountSat,
+        );
+        preparedForAmountSat = safeAmountSat;
         devLog("[SendLightning] Amountless invoice prepared");
-      } else if (parsed.type === "bolt12Offer" || parsed.offer) {
-        // Prepare BOLT12 payment
-        const prepareRequest = {
-          destination: parsed.offer.offer,
-          amount: {
-            type: "bitcoin",
-            receiverAmountSat: safeAmountSat,
-          },
-        };
-
-        preparedPayment = await prepareSendPayment(prepareRequest);
-        devLog("[SendLightning] BOLT12 payment prepared");
       }
     } catch (e) {
       console.error("Failed to prepare payment:", e);
@@ -342,31 +290,23 @@
 
       if (parsed?.type === "lnUrlPay" || parsed?.lnUrlPay) {
         // Execute LNURL payment
-        const lnurlPayRequest = {
-          prepareResponse: preparedPayment,
-        };
-        result = await lnurlPay(lnurlPayRequest);
+        result = await sendPayment(preparedPayment);
         devLog("[SendLightning] LNURL payment sent");
 
         // Navigate to success page
-        if (result?.payment?.txId) {
-          await goto(`/payment/${result.payment.txId}`);
+        if (result?.id) {
+          await goto(`/payment/${result.id}`);
         } else {
           await goto("/payments");
         }
       } else {
-        // Execute regular Lightning payment or BOLT12 payment
-        const sendRequest = {
-          prepareResponse: preparedPayment,
-        };
-        result = await sendPayment(sendRequest);
+        // Execute regular Lightning payment
+        result = await sendPayment(preparedPayment);
         devLog("[SendLightning] Lightning payment sent");
 
-        // Navigate to success page using txId or paymentHash
-        const paymentId =
-          result.payment.txId || result.payment.details?.paymentHash;
-        if (paymentId) {
-          await goto(`/payment/${paymentId}`);
+        // Navigate to success page
+        if (result?.id) {
+          await goto(`/payment/${result.id}`);
         } else {
           await goto("/payments");
         }
@@ -480,11 +420,11 @@
               </div>
             {/if}
 
-            {#if preparedPayment?.feesSat !== undefined}
+            {#if preparedPayment?.feeSat !== undefined}
               <div class="pt-2 border-t border-white/10">
                 <p class="text-sm text-white/60 mb-1">Network Fee</p>
                 <p class="font-mono">
-                  ⚡ {formatSats(Number(preparedPayment.feesSat))} sats
+                  ⚡ {formatSats(Number(preparedPayment.feeSat))} sats
                 </p>
               </div>
             {/if}
@@ -532,11 +472,11 @@
               </div>
             {/if}
 
-            {#if preparedPayment?.feesSat}
+            {#if preparedPayment?.feeSat}
               <div>
                 <p class="text-sm text-white/60 mb-1">Network Fee</p>
                 <p class="font-mono">
-                  ⚡ {formatSats(preparedPayment.feesSat)} sats
+                  ⚡ {formatSats(preparedPayment.feeSat)} sats
                 </p>
               </div>
             {/if}

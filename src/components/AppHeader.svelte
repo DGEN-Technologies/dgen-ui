@@ -103,7 +103,7 @@
 
 {#if !$loading}
   <header
-    class="glass backdrop-blur-xl h-[175px] w-full relative mb-16 !z-30 border-b dark:border-white/10 border-gray-300/50 {bg
+    class="glass backdrop-blur-xl h-[175px] w-full relative mb-16 lg:mb-8 !z-30 border-b dark:border-white/10 border-gray-300/50 {bg
       ? 'dark:bg-black/40 bg-white/40'
       : ''}"
     style:background-image={bg}
@@ -166,8 +166,23 @@
       </a>
     </div>
     {#if subject}
+      <!--
+        The avatar straddles the header's bottom edge, so its overhang is
+        space the page below cannot use. That makes the two values here a
+        PAIR, and they must be changed together:
+
+            header mb-*  >  avatar -bottom-*
+
+        Break that and the avatar lands on top of whatever follows. It did:
+        mb-16 was reduced to mb-6 at lg while the overhang stayed at 64px,
+        and the profile username — which is left-aligned, directly beneath
+        the avatar, not centred — was overlapped.
+
+        mobile : mb-16 (64) vs -bottom-64  -> straddles half out, unchanged
+        lg+    : mb-8  (32) vs -bottom-4   -> 16px clear, content sits higher
+      -->
       <div
-        class="absolute md:w-[64px] md:mx-auto lg:left-[154px] xl:left-[194px] left-[calc(50vw-64px)] -bottom-[64px] z-30"
+        class="absolute md:w-[64px] md:mx-auto lg:left-[154px] xl:left-[194px] left-[calc(50vw-64px)] -bottom-[64px] lg:-bottom-4 z-30"
       >
         <Avatar user={subject} size={avatarSize} />
       </div>

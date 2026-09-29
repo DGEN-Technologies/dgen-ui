@@ -1,5 +1,15 @@
-import adapter from "@sveltejs/adapter-netlify";
+import netlifyAdapter from "@sveltejs/adapter-netlify";
+import vercelAdapter from "@sveltejs/adapter-vercel";
 import { vitePreprocess } from "@sveltejs/vite-plugin-svelte";
+
+// Vercel sets VERCEL=1 on every build. Picking the adapter from it means the
+// same commit deploys to both hosts with no branch-local edit to remember —
+// swapping the import by hand is how a demo deploy ends up committed and
+// breaking the Netlify production build.
+const adapter = () =>
+  process.env.VERCEL
+    ? vercelAdapter({ runtime: "nodejs22.x" })
+    : netlifyAdapter();
 
 const isProd = process.env.NODE_ENV === "production";
 const styleSrc = ["self", "https://fonts.googleapis.com", "unsafe-inline"];
@@ -17,6 +27,13 @@ if (!process.env.PUBLIC_WIDGET_API_BASE) {
   );
 }
 
+// The Lightning-address domain the Spark SDK registers on and then fetches
+// LNURL metadata from. It MUST match src/lib/rails/spark.ts's LNURL_DOMAIN,
+// including its default — the SDK's own mainnet default is breez.tips, and
+// leaving that host out of connect-src blocked the metadata fetch outright,
+// which surfaced as a wasm abort inside the SDK rather than a clean error.
+const lnurlDomain = process.env.VITE_LNURL_DOMAIN || "breez.tips";
+
 const connectSrc = [
   "self",
   "https://*.railway.app",
@@ -29,7 +46,21 @@ const connectSrc = [
   "https://*.breez.technology",
   "https://*.breez.technology:*",
   "wss://*.breez.technology",
+  // breez.fun is the pre-migration domain; addresses registered there still
+  // resolve, so it stays alongside the current one.
   "https://breez.fun",
+  `https://${lnurlDomain}`,
+  // Spark rail operators. Spark signs across a threshold set of three
+  // independent hosts, only one of which is a Breez domain covered by the
+  // wildcard above. With the other two blocked, Lightning and on-chain BTC
+  // fail outright — this is not optional connectivity.
+  "https://*.spark.lightspark.com",
+  "https://api.lightspark.com",
+  "https://*.flashnet.xyz",
+  // Spark network status, read by SparkStatusBanner. The apex redirects to
+  // www, and a CSP wildcard never matches the apex, so both are listed.
+  "https://spark.money",
+  "https://www.spark.money",
   "https://api.sideswap.io", // PayJoin API for Breez SDK
   "wss://api.sideswap.io", // SideSwap WebSocket for swap coordination
   "wss://api-testnet.sideswap.io", // SideSwap testnet WebSocket

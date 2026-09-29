@@ -26,7 +26,13 @@ export function trackOutgoingTx(
   pending = { txid, network, since: Date.now() };
 }
 
-export async function waitForOutgoingSlot(): Promise<void> {
+export async function waitForOutgoingSlot(
+  chain: "liquid" | "spark" = "liquid",
+): Promise<void> {
+  // The gate exists to avoid Liquid UTXO conflicts. Spark is not UTXO-based,
+  // so gating it would slow Lightning for no benefit.
+  if (chain === "spark") return;
+
   if (!pending) return;
   if (waitPromise) return waitPromise;
 

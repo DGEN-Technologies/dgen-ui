@@ -13,3 +13,20 @@ db
 test-results/
 playwright-report/
 test-*.js
+
+# SDD scratch workspace (subagent-driven-development)
+.superpowers/
+
+# Spark smoke-test wallet storage (throwaway seeds)
+.spark-smoke-data/
+spark_data/
+
+# Vercel build output
+.vercel
+.env*
+
+# Local env dumps (vercel env pull). Never commit — these hold live keys.
+.venv-check
+.v2
+.env.local
+.env*.local

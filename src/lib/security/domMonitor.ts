@@ -73,17 +73,23 @@ class DOMSecurityMonitor {
    */
   private checkMutations(mutations: MutationRecord[]): void {
     for (const mutation of mutations) {
-      // Check for injection of suspicious scripts or iframes
-      if (mutation.type === "childList") {
-        mutation.addedNodes.forEach((node) => {
-          if (node.nodeName === "SCRIPT" || node.nodeName === "IFRAME") {
-            this.recordEvent(
-              "suspicious_injection",
-              `${node.nodeName} element added to DOM`,
-            );
-          }
-        });
-      }
+      // DISABLED — script/iframe injection detection. TO BE REPLACED, NOT
+      // FORGOTTEN: see the note on `suspiciousTypes` below for what a correct
+      // version has to do.
+      //
+      // It counted every <script> or <iframe> added to the DOM as an attack.
+      // This app is a code-splitting SvelteKit SPA: each route navigation and
+      // each lazy import() injects a <script>, as do the chat widget, the
+      // SwapSpace iframe, and any browser extension the user has installed.
+      // Ten within five seconds is ordinary hydration, and ten was the
+      // threshold — so it fired `lockWallet()` and a blocking alert() during
+      // normal use. Confirmed firing on the public landing page, where no
+      // wallet exists at all.
+      //
+      // The defence it was reaching for is already in place and is the one
+      // that actually works: CSP `script-src 'self' wasm-unsafe-eval` refuses
+      // injected third-party scripts outright. Node type cannot distinguish
+      // an app chunk from an attack.
 
       // Check for style changes that might be used to hide malicious activity
       if (
@@ -183,12 +189,17 @@ class DOMSecurityMonitor {
       (e) => now - e.timestamp < this.TIME_WINDOW,
     );
 
-    // Count suspicious event types
-    const suspiciousTypes = [
-      "suspicious_injection",
-      "seed_hiding",
-      "rapid_clipboard_access",
-    ];
+    // Count suspicious event types.
+    //
+    // "suspicious_injection" is deliberately absent — nothing records it any
+    // more (see checkMutations). When injection detection is reinstated it
+    // needs three things this version lacked: a signal that separates the
+    // app's own chunks from injected ones (same-origin src, or a nonce match
+    // against the CSP nonce) rather than node type; a threshold measured
+    // against real hydration traffic rather than a guessed 10-in-5s; and a
+    // response short of a blocking alert(), which freezes the page on a
+    // false positive and is itself the worst part of the old behaviour.
+    const suspiciousTypes = ["seed_hiding", "rapid_clipboard_access"];
 
     const suspiciousCount = recentEvents.filter((e) =>
       suspiciousTypes.includes(e.type),

@@ -113,37 +113,3 @@ export async function prepareSendUSDT(params: {
     fromAsset: params.fromAsset,
   });
 }
-
-// Exchange assets (self-payment)
-export async function exchangeAssets(params: {
-  fromAsset: string;
-  toAsset: string;
-  toAmount: number;
-}): Promise<breezSdk.SendPaymentResponse> {
-  // First, create a receive address for the target asset
-  const receiveAmount: breezSdk.ReceiveAmount = {
-    type: "asset",
-    assetId: params.toAsset,
-  };
-
-  const prepareReceiveRes = await walletService.prepareReceivePayment({
-    paymentMethod: "liquidAddress",
-    amount: receiveAmount,
-  });
-
-  const receiveRes = await walletService.receivePayment({
-    prepareResponse: prepareReceiveRes,
-  });
-
-  // Now send to that address with asset swap
-  const prepareSendRes = await prepareSendAsset({
-    destination: receiveRes.destination,
-    toAsset: params.toAsset,
-    receiverAmount: params.toAmount,
-    fromAsset: params.fromAsset,
-  });
-
-  return await sendAsset({
-    prepareResponse: prepareSendRes,
-  });
-}

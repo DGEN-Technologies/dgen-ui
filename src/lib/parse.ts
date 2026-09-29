@@ -4,6 +4,8 @@ import { decode } from "$lib/bip21";
 import { get, post } from "$lib/utils";
 import { redirect } from "@sveltejs/kit";
 import * as walletService from "$lib/walletService";
+import { adapters } from "$lib/rails";
+import { getSparkSdk } from "$lib/rails/spark";
 
 export default async (s, host) => {
   if (!s) return;
@@ -30,10 +32,16 @@ export default async (s, host) => {
   if (["note", "nevent"].some((p) => t.startsWith(p))) redirect(307, `/e/${t}`);
   if (["nprofile", "npub"].some((p) => t.startsWith(p))) redirect(307, `/${t}`);
 
-  // Try to parse with Breez SDK if connected (client-side only)
-  if (browser && walletService.isConnected()) {
+  // Try to parse with a connected SDK if available (client-side only)
+  if (
+    browser &&
+    (adapters.spark.isConnected() || adapters.liquid.isConnected())
+  ) {
     try {
-      const parsed = await walletService.parseInput(t);
+      const sdk = getSparkSdk();
+      const parsed = sdk
+        ? await sdk.parse(t)
+        : await walletService.parseInput(t);
 
       switch (parsed.type) {
         case "bitcoinAddress": {
@@ -51,14 +59,24 @@ export default async (s, host) => {
             }
           }
 
-          const address = parsed.address.address;
+          // Spark's InputType flattens BitcoinAddressDetails onto the union
+          // member, so `parsed.address` is already the address string.
+          // Liquid's InputType nests it: `parsed.address` is an object whose
+          // own `.address` is the string. Handle both shapes.
+          const address =
+            typeof parsed.address === "string"
+              ? parsed.address
+              : parsed.address.address;
           let route = `/send/bitcoin/${address}`;
           if (amount) route += `/${Math.round(amount * 100000000)}`;
           redirect(307, route);
           break;
         }
 
-        case "bolt11": {
+        // "bolt11" is Liquid's discriminant, "bolt11Invoice" is Spark's —
+        // both SDKs can be the active parser here, so both are handled.
+        case "bolt11":
+        case "bolt11Invoice": {
           // Check if this is an invoice in our database first
           let foundInvoice = null;
           try {
@@ -78,24 +96,71 @@ export default async (s, host) => {
         }
 
         case "bolt12Offer": {
-          // BOLT12 offers - redirect to send page
+          // Spark cannot pay a BOLT12 offer. Still route to the send screen
+          // rather than failing here, so the explanation reaches the user in
+          // the one place that already renders payment errors.
           redirect(307, `/send/lightning/${t}`);
           break;
         }
 
-        case "lnUrlPay": {
+        // "lnUrlPay" is Liquid's discriminant, "lnurlPay" is Spark's.
+        case "lnUrlPay":
+        case "lnurlPay": {
           // LNURL-Pay and Lightning addresses - redirect to LNURL handler
           redirect(307, `/ln/${t}`);
           break;
         }
 
-        case "lnUrlWithdraw": {
+        // Spark reports a Lightning address as its own type; Liquid folded it
+        // into lnUrlPay. Without this case, scanning a friend's
+        // alice@getalby.com QR fell through to the default branch and the
+        // user landed on a blank send page with no explanation.
+        case "lightningAddress": {
+          redirect(307, `/ln/${t}`);
+          break;
+        }
+
+        // Likewise bip21: Liquid parsed a "bitcoin:..." URI straight to
+        // bitcoinAddress, Spark wraps it. The payload carries the concrete
+        // instruments in paymentMethods, so recurse into the first one we
+        // already know how to route.
+        case "bip21": {
+          const details = parsed as unknown as {
+            amountSat?: number;
+            paymentMethods?: Array<Record<string, any>>;
+          };
+          const method = (details.paymentMethods ?? []).find((m) =>
+            ["bitcoinAddress", "bolt11Invoice", "bolt11", "lnurlPay"].includes(
+              m?.type,
+            ),
+          );
+          const addr =
+            typeof method?.address === "string"
+              ? method.address
+              : method?.address?.address;
+          if (addr) {
+            const amt = details.amountSat;
+            redirect(
+              307,
+              amt ? `/send/bitcoin/${addr}/${amt}` : `/send/bitcoin/${addr}`,
+            );
+          }
+          // No routable instrument inside; fall through to legacy handling
+          // rather than redirecting somewhere with undefined in the URL.
+          break;
+        }
+
+        // "lnUrlWithdraw" is Liquid's discriminant, "lnurlWithdraw" is Spark's.
+        case "lnUrlWithdraw":
+        case "lnurlWithdraw": {
           // LNURL-Withdraw - redirect to LNURL handler
           redirect(307, `/ln/${t}`);
           break;
         }
 
-        case "lnUrlAuth": {
+        // "lnUrlAuth" is Liquid's discriminant, "lnurlAuth" is Spark's.
+        case "lnUrlAuth":
+        case "lnurlAuth": {
           // LNURL-Auth - redirect to LNURL handler
           redirect(307, `/ln/${t}`);
           break;

@@ -261,13 +261,15 @@
             </div>
           {:else}
             <div class="text-xl font-bold mt-1">{s(displayAmount())} sats</div>
-            <div class="text-sm text-white/40">
-              {f(
-                (displayAmount() / sats) * (payment.rate || 50000),
-                payment.currency || "USD",
-                locale,
-              )}
-            </div>
+            {#if payment.rate > 0}
+              <div class="text-sm text-white/40">
+                {f(
+                  (displayAmount() / sats) * payment.rate,
+                  payment.currency || "USD",
+                  locale,
+                )}
+              </div>
+            {/if}
           {/if}
         </div>
 
