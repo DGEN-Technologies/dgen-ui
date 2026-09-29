@@ -57,7 +57,8 @@ const cfg = pkg.defaultConfig("mainnet");
 cfg.apiKey = apiKey;
 // Mirrors src/lib/rails/spark.ts so this exercises the app's real config.
 cfg.maxDepositClaimFee = { type: "networkRecommended", leewaySatPerVbyte: 2 };
-const domain = process.env.VITE_LNURL_DOMAIN || envFromDotenv("VITE_LNURL_DOMAIN");
+const domain =
+  process.env.VITE_LNURL_DOMAIN || envFromDotenv("VITE_LNURL_DOMAIN");
 if (domain) cfg.lnurlDomain = domain;
 
 console.log(`\nSpark smoke test — lnurlDomain: ${cfg.lnurlDomain}\n`);
@@ -108,7 +109,9 @@ try {
   const looksReal = /^lnbc/i.test(inv);
   if (!looksReal) throw new Error(`not a mainnet bolt11: ${inv.slice(0, 24)}`);
   pass("mint bolt11 invoice", `${inv.slice(0, 34)}…  (fee ${r.fee ?? 0})`);
-  console.log(`\n        paste this into any wallet to verify it decodes:\n        ${inv}\n`);
+  console.log(
+    `\n        paste this into any wallet to verify it decodes:\n        ${inv}\n`,
+  );
 } catch (e) {
   fail("mint bolt11 invoice", e);
 }
@@ -137,8 +140,13 @@ try {
 
 const probeName = registerName ?? `smoke${Date.now().toString().slice(-8)}`;
 try {
-  const free = await sdk.checkLightningAddressAvailable({ username: probeName });
-  pass("check address availability", `${probeName} -> ${free ? "free" : "taken"}`);
+  const free = await sdk.checkLightningAddressAvailable({
+    username: probeName,
+  });
+  pass(
+    "check address availability",
+    `${probeName} -> ${free ? "free" : "taken"}`,
+  );
 } catch (e) {
   fail("check address availability", e);
 }
@@ -150,7 +158,9 @@ if (registerName) {
       description: "spark smoke test",
     });
     pass("register lightning address", info.lightningAddress);
-    console.log(`\n        pay it from another wallet to test receive:\n        ${info.lightningAddress}\n`);
+    console.log(
+      `\n        pay it from another wallet to test receive:\n        ${info.lightningAddress}\n`,
+    );
   } catch (e) {
     fail("register lightning address", e);
   }
