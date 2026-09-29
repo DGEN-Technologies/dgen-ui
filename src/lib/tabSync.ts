@@ -21,8 +21,25 @@ export class TabSyncService {
   private lockCheckInterval: number | null = null;
   private heartbeatInterval: number | null = null;
   private lastHeartbeat = 0;
-  private readonly HEARTBEAT_INTERVAL = 5000; // 5 seconds
-  private readonly LOCK_TIMEOUT = 10000; // 10 seconds
+  private visibilityHandlerInstalled = false;
+  private readonly HEARTBEAT_INTERVAL = 5000; // 5 seconds, foreground cadence
+  /**
+   * How long a lock may go unrefreshed before another tab may take it.
+   *
+   * This must clear the browser's background-timer throttle by a wide margin.
+   * Chrome slows setInterval in a hidden tab to at most once a minute, so the
+   * previous test — lock younger than LOCK_TIMEOUT (10s) AND heartbeat younger
+   * than HEARTBEAT_INTERVAL * 2 (10s) — declared a perfectly alive backgrounded
+   * tab dead within ten seconds. A second tab then "recovered" the stale lock,
+   * believed it legitimately owned it (so the tab-lock banner never appeared),
+   * and tried to open the SDK while the first tab still held the storage. The
+   * balance sat on "Loading" forever with nothing on screen explaining why.
+   *
+   * 90s leaves room for a throttled 60s heartbeat plus scheduling slack. A tab
+   * frozen for longer than this does lose its lock, which is correct — and the
+   * visibilitychange handler below is how it finds out on the way back.
+   */
+  private readonly LOCK_STALE_AFTER = 90000; // 90 seconds
   private readonly LOCK_KEY = "breez_wallet_lock";
   private readonly LOCK_HOLDER_KEY = "breez_wallet_lock_holder";
   private readonly HEARTBEAT_KEY = "breez_wallet_heartbeat";
@@ -166,11 +183,11 @@ export class TabSyncService {
       if (existingLock && lockHolder && lockHolder !== this.tabId) {
         const lockTime = parseInt(existingLock);
 
-        // If lock is recent and has recent heartbeat, another tab has it
-        if (
-          now - lockTime < this.LOCK_TIMEOUT &&
-          now - lastHeartbeat < this.HEARTBEAT_INTERVAL * 2
-        ) {
+        // Another tab holds it if EITHER marker was refreshed recently. Take
+        // the freshest of the two: a throttled background tab may update them
+        // a beat apart, and requiring both to be fresh is what made a live tab
+        // look dead.
+        if (now - Math.max(lockTime, lastHeartbeat) < this.LOCK_STALE_AFTER) {
           if (attempt < maxRetries - 1) {
             console.log(
               `[TabSync] Lock held by ${lockHolder}, retrying in ${retryDelayMs}ms (attempt ${attempt + 1}/${maxRetries})...`,
@@ -278,11 +295,9 @@ export class TabSyncService {
 
     const lockTime = parseInt(existingLock);
 
-    // Check if lock is recent and has recent heartbeat
-    return (
-      now - lockTime < this.LOCK_TIMEOUT &&
-      now - lastHeartbeat < this.HEARTBEAT_INTERVAL * 2
-    );
+    // Same staleness rule as tryAcquireWalletLock, or the two disagree about
+    // who holds the lock.
+    return now - Math.max(lockTime, lastHeartbeat) < this.LOCK_STALE_AFTER;
   }
 
   /**
@@ -342,8 +357,9 @@ export class TabSyncService {
     const lastHeartbeat = parseInt(this.safeGetItem(this.HEARTBEAT_KEY) || "0");
     const now = Date.now();
 
-    // Consider tab alive if heartbeat is within the last 2 intervals
-    return now - lastHeartbeat < this.HEARTBEAT_INTERVAL * 2;
+    // Same window as the lock staleness rule. Two intervals (10s) reported a
+    // backgrounded tab as dead, because the browser throttles its heartbeat.
+    return now - lastHeartbeat < this.LOCK_STALE_AFTER;
   }
 
   /**
@@ -423,10 +439,52 @@ export class TabSyncService {
   /**
    * Start heartbeat to maintain lock
    */
+  /**
+   * Re-assert or relinquish the lock the moment this tab becomes visible.
+   *
+   * The interval alone is not enough: while hidden it is throttled, and a tab
+   * frozen outright stops ticking. Refreshing on the way back to the
+   * foreground closes the window in which another tab could still read this
+   * one as dead. Checking the holder key is how a tab that genuinely DID lose
+   * the lock while frozen finds out — without it, two tabs both believe they
+   * own the wallet and the second one's SDK never opens.
+   */
+  private installVisibilityHandler(): void {
+    if (typeof document === "undefined" || this.visibilityHandlerInstalled) {
+      return;
+    }
+    this.visibilityHandlerInstalled = true;
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden || !this.hasWalletLock) return;
+
+      const holder = this.safeGetItem(this.LOCK_HOLDER_KEY);
+      if (holder && holder !== this.tabId) {
+        console.warn(
+          `[TabSync] Lock was taken by ${holder} while this tab was hidden`,
+        );
+        this.hasWalletLock = false;
+        if (this.heartbeatInterval) {
+          clearInterval(this.heartbeatInterval);
+          this.heartbeatInterval = null;
+        }
+        this.broadcast({ type: "LOCK_ACQUIRED", tabId: holder });
+        return;
+      }
+
+      const now = Date.now();
+      this.safeSetItem(this.HEARTBEAT_KEY, now.toString());
+      this.safeSetItem(this.LOCK_KEY, now.toString());
+      this.lastHeartbeat = now;
+    });
+  }
+
   private startHeartbeat(): void {
     if (this.heartbeatInterval) {
       clearInterval(this.heartbeatInterval);
     }
+
+    this.installVisibilityHandler();
 
     this.heartbeatInterval = window.setInterval(() => {
       if (this.hasWalletLock) {

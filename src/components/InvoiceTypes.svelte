@@ -159,45 +159,6 @@
       <div class="text-lg font-semibold text-white">Lightning Invoice</div>
     </button>
 
-    <button
-      class="glass px-6 py-4 rounded-xl border-2 transition-all duration-300 hover:scale-105 flex items-center gap-3 grow"
-      class:border-purple-400={type === types.bolt12}
-      class:bg-purple-500={type === types.bolt12}
-      class:bg-opacity-20={type === types.bolt12}
-      class:shadow-lg={type === types.bolt12}
-      class:shadow-purple-500={type === types.bolt12}
-      class:border-white={type !== types.bolt12}
-      class:border-opacity-20={type !== types.bolt12}
-      class:hover:border-purple-400={type !== types.bolt12}
-      class:hover:border-opacity-60={type !== types.bolt12}
-      class:hover:shadow-purple-400={type !== types.bolt12}
-      class:hidden={activeOnly && type !== types.bolt12}
-      onclick={() => {
-        if (activeOnly) {
-          toggleType();
-        } else {
-          // BOLT12 doesn't require amount upfront for receiving
-          setType(types.bolt12);
-        }
-      }}
-    >
-      <div
-        class="bg-gradient-to-br from-purple-400 to-pink-500 rounded-full w-10 h-10 items-center justify-center flex shadow-lg shadow-purple-500 shadow-opacity-30"
-      >
-        <div class="m-auto">
-          <iconify-icon
-            noobserver
-            icon="ph:lightning-fill"
-            class="text-white text-2xl"
-          ></iconify-icon>
-        </div>
-      </div>
-      <div class="text-lg font-semibold text-white">
-        <span>BOLT12 Offer</span>
-        <span class="text-xs block text-purple-300">Reusable</span>
-      </div>
-    </button>
-
     <!-- Lightning Address / LNURL - Coming Soon -->
     <!-- <button
       class="glass px-6 py-4 rounded-xl border-2 transition-all duration-300 hover:scale-105 flex items-center gap-3 grow"

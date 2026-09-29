@@ -5,11 +5,12 @@
   import { goto } from "$app/navigation";
   import {
     prepareSendPayment,
-    sendPayment,
+    sendPayment as walletSendPayment,
     parseInput,
   } from "$lib/walletService";
+  import { prepareSend, sendPayment } from "$lib/rails";
   import { sendGateStore } from "$lib/sendGate";
-  import { ASSET_IDS } from "$lib/assets";
+  import { ASSET_IDS, toAssetUnits } from "$lib/assets";
   import { onMount } from "svelte";
 
   let { data } = $props();
@@ -59,34 +60,6 @@
       // Determine payment type based on parsed input
       if (parsedDestination.type === "liquidAddress") {
         // Liquid address send - check asset type
-        let prepareRequest;
-
-        if (asset === "usdt") {
-          // Sending USDT
-          const usdtAssetId =
-            "ce091c998b83c78bb71a632313ba3760f1763d9cfcffae02258ffa9865a37bd2";
-          prepareRequest = {
-            destination: address,
-            amount: {
-              type: "asset",
-              toAsset: usdtAssetId,
-              receiverAmount: amountSat / 100000000, // Convert from smallest unit to USDT amount
-              estimateAssetFees: true, // Estimate fees in USDT
-            },
-          };
-        } else {
-          // Sending LBTC (default)
-          prepareRequest = {
-            destination: address,
-            amount: {
-              type: "bitcoin", // For LBTC
-              receiverAmountSat: amountSat,
-            },
-          };
-        }
-
-        console.log("Preparing Liquid send:", prepareRequest);
-
         const prepareTimeoutPromise = new Promise((_, reject) =>
           setTimeout(
             () =>
@@ -99,14 +72,51 @@
           ),
         );
 
-        prepareResponse = await Promise.race([
-          prepareSendPayment(prepareRequest),
-          prepareTimeoutPromise,
-        ]);
-        console.log("Prepare response:", prepareResponse);
+        if (asset === "usdt") {
+          // Sending USDT. $lib/rails' prepareSend only supports the native
+          // asset (LBTC) amount shape, not an arbitrary token amount, so
+          // USDT keeps calling the Liquid SDK directly here.
+          const prepareRequest = {
+            destination: address,
+            amount: {
+              type: "asset",
+              toAsset: ASSET_IDS.USDT,
+              // receiverAmount is in the asset's own units, not its smallest
+              // unit. Divided through the asset's recorded precision rather
+              // than a literal 1e8, so an asset with different precision
+              // cannot silently send the wrong amount.
+              receiverAmount: toAssetUnits(amountSat, ASSET_IDS.USDT),
+              estimateAssetFees: true, // Estimate fees in USDT
+            },
+          };
 
-        if (prepareResponse.feesSat) {
-          console.log("Estimated fees:", prepareResponse.feesSat, "sats");
+          console.log("Preparing Liquid USDT send:", prepareRequest);
+
+          prepareResponse = await Promise.race([
+            prepareSendPayment(prepareRequest),
+            prepareTimeoutPromise,
+          ]);
+          console.log("Prepare response:", prepareResponse);
+
+          if (prepareResponse.feesSat) {
+            console.log("Estimated fees:", prepareResponse.feesSat, "sats");
+          }
+        } else {
+          // Sending LBTC (default) - routed through the rail router.
+          console.log("Preparing Liquid LBTC send via rails:", {
+            destination: address,
+            amountSat,
+          });
+
+          prepareResponse = await Promise.race([
+            prepareSend(address, amountSat),
+            prepareTimeoutPromise,
+          ]);
+          console.log("Prepare response:", prepareResponse);
+
+          if (prepareResponse.feeSat) {
+            console.log("Estimated fees:", prepareResponse.feeSat, "sats");
+          }
         }
       } else {
         error = `Invalid destination type: ${parsedDestination.type}. Expected liquidAddress.`;
@@ -131,29 +141,37 @@
 
     try {
       // Step 3: Execute the send payment
-      // For USDT, use asset fees if available
-      const useAssetFees =
-        asset === "usdt" && prepareResponse.estimatedAssetFees ? true : false;
+      if (asset === "usdt") {
+        // For USDT, use asset fees if available
+        const useAssetFees = prepareResponse.estimatedAssetFees ? true : false;
+        const sendRequest = { prepareResponse, useAssetFees };
 
-      const sendRequest = {
-        prepareResponse,
-        useAssetFees,
-      };
+        console.log("Sending USDT payment...", { useAssetFees });
+        const sendResponse = await walletSendPayment(sendRequest);
+        console.log("Payment sent:", sendResponse);
 
-      console.log("Sending payment...", { useAssetFees });
-      const sendResponse = await sendPayment(sendRequest);
-      console.log("Payment sent:", sendResponse);
+        if (sendResponse.payment) {
+          // Success - redirect to payment details or home
+          const paymentId =
+            sendResponse.payment.id || sendResponse.payment.txId;
+          if (paymentId) {
+            goto(`/payment/${paymentId}`);
+          } else {
+            goto(`/`); // Navigate to home on success
+          }
+        } else {
+          error = "Failed to send payment";
+        }
+      } else {
+        console.log("Sending LBTC payment via rails...");
+        const payment = await sendPayment(prepareResponse);
+        console.log("Payment sent:", payment);
 
-      if (sendResponse.payment) {
-        // Success - redirect to payment details or home
-        const paymentId = sendResponse.payment.id || sendResponse.payment.txId;
-        if (paymentId) {
-          goto(`/payment/${paymentId}`);
+        if (payment?.id) {
+          goto(`/payment/${payment.id}`);
         } else {
           goto(`/`); // Navigate to home on success
         }
-      } else {
-        error = "Failed to send payment";
       }
     } catch (e) {
       console.error("Send payment error:", e);
@@ -207,7 +225,7 @@
         </div>
       </div>
 
-      {#if prepareResponse?.feesSat || prepareResponse?.estimatedAssetFees}
+      {#if (asset === "usdt" ? prepareResponse?.feesSat : prepareResponse?.feeSat) || prepareResponse?.estimatedAssetFees}
         <div class="divider my-2"></div>
         <div class="space-y-2">
           <p class="text-sm text-white/60">Network Fee</p>
@@ -217,7 +235,11 @@
             </div>
           {:else}
             <div class="text-xl font-semibold text-orange-400">
-              {sat(prepareResponse.feesSat)}
+              {sat(
+                asset === "usdt"
+                  ? prepareResponse.feesSat
+                  : prepareResponse.feeSat,
+              )}
             </div>
           {/if}
         </div>
@@ -242,10 +264,10 @@
             </p>
           {:else}
             <div class="text-2xl font-bold text-primary">
-              {sat(parseInt(amount) + prepareResponse.feesSat)}
+              {sat(parseInt(amount) + prepareResponse.feeSat)}
             </div>
             <p class="text-xs text-white/40">
-              {sat(amount)} + {sat(prepareResponse.feesSat)} fee
+              {sat(amount)} + {sat(prepareResponse.feeSat)} fee
             </p>
           {/if}
         </div>

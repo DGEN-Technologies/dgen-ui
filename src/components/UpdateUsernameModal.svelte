@@ -1,19 +1,25 @@
 <script lang="ts">
   import { browser } from "$app/environment";
   import { lnAddressStore, isUpdating } from "$lib/stores/lightningAddress";
+  import { formatUsername } from "$lib/walletService";
+  // Registration goes through $lib/rails (Spark, DGEN domain). The
+  // walletService version registers against the shared breez.fun domain and
+  // auto-suffixes a taken name, so this dialog would show one domain and
+  // register on another.
   import {
-    updateLightningAddress,
-    formatUsername,
-    type LnAddressRegistrationResult,
-  } from "$lib/walletService";
+    registerLightningAddress,
+    checkLightningAddressAvailable,
+    LNURL_DOMAIN,
+    type SparkLightningAddress,
+  } from "$lib/rails";
   import { success, fail } from "$lib/utils";
-  import { PUBLIC_DGEN_URL, PUBLIC_DOMAIN } from "$env/static/public";
+  import { PUBLIC_DGEN_URL } from "$env/static/public";
 
   interface Props {
     currentUsername: string;
     userId: string;
     onClose: () => void;
-    onSuccess?: (result: LnAddressRegistrationResult) => void;
+    onSuccess?: (result: SparkLightningAddress) => void;
   }
 
   let { currentUsername, userId, onClose, onSuccess }: Props = $props();
@@ -22,7 +28,11 @@
   let validationError = $state<string | null>(null);
   let showConfirmation = $state(false);
 
-  const domain = PUBLIC_DOMAIN || "breez.fun";
+  // PUBLIC_DOMAIN is the site's own hostname, not the LNURL domain, so it was
+  // never a valid fallback here — on any deployment where the two differ it
+  // offered the user an address nobody could pay. LNURL_DOMAIN is the value
+  // the SDK actually registers on.
+  const domain = LNURL_DOMAIN;
 
   // Validation
   const validateUsername = (value: string): string | null => {
@@ -79,12 +89,15 @@
       // Format username before update
       const formattedUsername = formatUsername(newUsername);
 
-      // Use update function which generates new BOLT12 offer and has retry logic
-      // This will automatically try with discriminators if username is taken
-      const result = await updateLightningAddress(
-        formattedUsername,
-        webhookUrl.toString(),
-      );
+      // The namespace is exclusive on a DGEN-owned domain, so check first and
+      // tell the user rather than silently handing them a suffixed name.
+      const available = await checkLightningAddressAvailable(formattedUsername);
+      if (!available) {
+        throw new Error(
+          `The name "${formattedUsername}" is already taken. Please choose another.`,
+        );
+      }
+      const result = await registerLightningAddress(formattedUsername);
 
       // Update store
       lnAddressStore.setUpdateSuccess(

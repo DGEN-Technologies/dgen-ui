@@ -12,6 +12,23 @@ let token;
 
 export const auth = () => token && send("login", token);
 
+/**
+ * Pull fresh balances from both rails after a server-announced payment.
+ *
+ * Imported lazily because `$lib/stores/rails` reaches the SDKs, and this
+ * module is loaded on paths that must not drag the wallet in. A failure here
+ * must never break the notification or navigation that follows it, so it
+ * logs and returns rather than rejecting.
+ */
+async function refreshRailBalances(): Promise<void> {
+  try {
+    const { refreshBalances } = await import("$lib/stores/rails");
+    await refreshBalances();
+  } catch (e) {
+    console.warn("[Socket] Balance refresh after payment failed:", e);
+  }
+}
+
 export const send = async (type, data) => {
   if (!socket || socket.readyState !== 1) {
     try {
@@ -88,6 +105,13 @@ export const messages = (data) => ({
     invalidate("app:invoice");
     invalidate("app:payments");
 
+    // invalidate() only re-runs SvelteKit load functions; the balance on
+    // screen comes from the SDKs, not from server data. Without this the
+    // server can announce "payment received" while the displayed balance
+    // stays exactly as it was — the toast and the number disagreeing is the
+    // single most alarming thing a wallet can show.
+    void refreshRailBalances();
+
     // Update the invoice store if we're on the relevant invoice page
     const currentInvoice = get(invoice);
     if (currentInvoice && invoiceData && currentInvoice.id === invoiceData.id) {
@@ -102,9 +126,12 @@ export const messages = (data) => ({
       );
       notifyPaymentReceived(
         {
+          // Spread FIRST. The other way round, a payment carrying its own
+          // `amountSat` key — even an undefined one — overwrites the figure
+          // computed above, and the receipt screen renders 0.
+          ...payment,
           amountSat: amount,
           paymentType: "receive",
-          ...payment,
         },
         "confirmed",
       );
@@ -134,6 +161,9 @@ export const messages = (data) => ({
     invalidate("app:user");
     invalidate("app:invoice");
     invalidate("app:payments");
+
+    // See paymentReceived: load invalidation does not touch SDK balances.
+    void refreshRailBalances();
 
     // Update the invoice store if viewing this invoice
     const currentInvoice = get(invoice);
@@ -222,13 +252,15 @@ export const messages = (data) => ({
         // LNURL-Pay info request - return min/max amounts
         logWebhook("Handling lnurlpay_info request");
 
-        const { fetchLightningLimits } = await import("$lib/walletService");
-        const limits = await fetchLightningLimits();
-
+        // LNURL-Pay requires numeric bounds in the response, but there is
+        // no standing limits call to source them from any more — Spark
+        // reports real fees and constraints when the payment is prepared,
+        // not ahead of time. These are generous static placeholders, not a
+        // business limit.
         const response = {
           callback: webhookData.callback_url,
-          maxSendable: limits.receive.maxSat * 1000, // Convert to msat
-          minSendable: limits.receive.minSat * 1000,
+          maxSendable: 100_000_000_000, // 100,000,000 sats, in msat
+          minSendable: 1_000, // 1 sat, in msat
           metadata: JSON.stringify([["text/plain", "Pay to DGEN user"]]),
           tag: "payRequest",
         };

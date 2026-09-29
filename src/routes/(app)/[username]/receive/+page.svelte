@@ -1,19 +1,6 @@
 <script>
   import { run } from "svelte/legacy";
-  import {
-    btc,
-    loc,
-    post,
-    copy,
-    fail,
-    f,
-    get,
-    types,
-    sat,
-    s,
-    sats,
-  } from "$lib/utils";
-  import { getEffectiveOnchainReceiveMinSat } from "$lib/bitcoinLimits";
+  import { btc, loc, post, copy, fail, f, get, types, s } from "$lib/utils";
   import { tick, onMount, onDestroy } from "svelte";
   import { browser } from "$app/environment";
   import { last, showQr, amountPrompt } from "$lib/store";
@@ -29,14 +16,8 @@
   import { t } from "$lib/translations";
   import { goto, invalidate } from "$app/navigation";
   import { page } from "$app/stores";
-  import {
-    getWalletInfo,
-    prepareReceivePayment,
-    receivePayment,
-    fetchOnchainLimits,
-    fetchLightningLimits,
-    setupLightningAddress,
-  } from "$lib/walletService";
+  import { getWalletInfo, setupLightningAddress } from "$lib/walletService";
+  import { createReceiveRequest, LNURL_DOMAIN } from "$lib/rails";
   import {
     lnAddressStore,
     hasValidAddress,
@@ -89,9 +70,6 @@
   let lastError = $state(null);
   let walletInitialized = $state(true); // Assume initialized by default
   let walletSkipped = $state(false);
-  let onchainLimits = $state(null);
-  let lightningLimits = $state(null);
-  let fetchingLimits = $state(false);
   let showMoreOptions = $state(false); // Controls "More deposit options" panel
   let showMoreOptionsExpanded = $state(false); // Controls expanded vs collapsed state
   let showLightningAddress = $state(false); // Controls Lightning Address special view
@@ -101,7 +79,6 @@
   // Payment received animation state
   let showingSuccess = $state(false);
   let receivedPayment = $state(null);
-  let onchainMinSat = $derived(getEffectiveOnchainReceiveMinSat(onchainLimits));
 
   // Derived state for Lightning Address
   let lightningAddress = $derived($lnAddressStore.lnAddress);
@@ -114,12 +91,16 @@
     lnAddressStore.setLoading();
 
     try {
-      const {
-        isConnected,
-        formatUsername,
-        registerLightningAddress,
-        recoverLightningAddress,
-      } = await import("$lib/walletService");
+      // Must use $lib/rails, not walletService. The walletService versions
+      // register against the shared breez.fun domain and auto-suffix a taken
+      // name; running them here silently overwrote whatever the settings
+      // page had registered on the DGEN domain.
+      const { isConnected, formatUsername } = await import(
+        "$lib/walletService"
+      );
+      const { registerLightningAddress, getLightningAddress } = await import(
+        "$lib/rails"
+      );
 
       // Wait for SDK to be ready
       let attempts = 0;
@@ -149,7 +130,9 @@
 
       // Try recovery first - this checks if current seed already has a registered address
       console.log("[Lightning Address] Attempting recovery first...");
-      const recovered = await recoverLightningAddress(webhookUrl.toString());
+      // Spark resolves ownership from the wallet's identity key — a plain
+      // read, no signing and no webhook argument.
+      const recovered = await getLightningAddress();
 
       if (recovered && recovered.lightningAddress) {
         console.log(
@@ -209,11 +192,10 @@
         baseUsername,
       );
 
-      // registerLightningAddress now includes automatic retry with discriminators
-      const result = await registerLightningAddress(
-        baseUsername,
-        webhookUrl.toString(),
-      );
+      // No silent discriminator suffix: on a DGEN-owned domain the namespace
+      // is exclusive, so a taken name is surfaced rather than quietly turning
+      // alice into alice473.
+      const result = await registerLightningAddress(baseUsername);
 
       console.log(
         "[Lightning Address] Auto-registration successful:",
@@ -307,20 +289,7 @@
         const { isConnected } = await import("$lib/walletService");
         walletInitialized = isConnected();
 
-        // Fetch payment limits if wallet initialized
-        if (walletInitialized) {
-          fetchingLimits = true;
-          try {
-            [onchainLimits, lightningLimits] = await Promise.all([
-              fetchOnchainLimits(),
-              fetchLightningLimits(),
-            ]);
-          } catch (e) {
-            console.error("Failed to fetch payment limits:", e);
-          } finally {
-            fetchingLimits = false;
-          }
-        } else {
+        if (!walletInitialized) {
           console.log(
             "SDK not connected yet, will become available when ready",
           );
@@ -338,17 +307,6 @@
         if (isConnected()) {
           walletInitialized = true;
           console.log("SDK connected - wallet ready for use");
-
-          // Fetch limits now that SDK is ready
-          try {
-            [onchainLimits, lightningLimits] = await Promise.all([
-              fetchOnchainLimits(),
-              fetchLightningLimits(),
-            ]);
-          } catch (e) {
-            console.error("Failed to fetch payment limits:", e);
-          }
-
           clearInterval(checkInterval);
         }
       } else {
@@ -374,8 +332,12 @@
     hash = "";
     id = "";
 
-    // For Liquid/Bitcoin/Lightning, wait for SDK to be ready
-    if ([types.liquid, types.bitcoin, types.lightning].includes(invoiceType)) {
+    // For Liquid/Bitcoin/Lightning/USDT, wait for SDK to be ready
+    if (
+      [types.liquid, types.bitcoin, types.lightning, types.usdt].includes(
+        invoiceType,
+      )
+    ) {
       if (!walletInitialized) {
         // Wait for SDK to initialize (max 10 seconds)
         const { isConnected } = await import("$lib/walletService");
@@ -398,146 +360,50 @@
     hash = "";
 
     try {
-      // Use browser SDK for all payment types
-      if (invoiceType === types.lightning) {
-        if (!amount || amount <= 0) {
+      // Lightning, Bitcoin, Liquid and USDT all route through the rail
+      // router, which picks Spark or Liquid based on the method. The
+      // invoiceType values already match the router's expected keys
+      // (lightning, bitcoin, liquid, usdt).
+      if (
+        [types.lightning, types.bitcoin, types.liquid, types.usdt].includes(
+          invoiceType,
+        )
+      ) {
+        if (invoiceType === types.lightning && (!amount || amount <= 0)) {
           fail("Lightning invoices require an amount");
           return;
         }
 
-        const prepareRequest = {
-          paymentMethod: "lightning", // Use 'lightning' like wasm-example-app
-          amount: {
-            type: "bitcoin",
-            payerAmountSat: amount,
-          },
-        };
+        // USDT is reachable either as its own invoiceType (from the
+        // Payment Options modal) or as types.liquid with selectedAsset
+        // set to "usdt" (from the compact "More options" asset picker).
+        const isUsdt =
+          invoiceType === types.usdt ||
+          (invoiceType === types.liquid && selectedAsset === "usdt");
 
-        const prepareResponse = await prepareReceivePayment(prepareRequest);
-
-        const receiveRequest = {
-          prepareResponse,
+        const request = await createReceiveRequest(invoiceType, {
+          amountSat: amount,
           description: invoiceMemo || "",
-        };
+          assetId: isUsdt ? ASSET_IDS.USDT : undefined,
+        });
 
-        // Add timeout to prevent infinite hanging
-        const receivePromise = receivePayment(receiveRequest);
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(
-            () =>
-              reject(
-                new Error("Invoice generation timed out after 30 seconds"),
-              ),
-            30000,
-          ),
-        );
+        invoiceText = request.destination;
 
-        const receiveResponse = await Promise.race([
-          receivePromise,
-          timeoutPromise,
-        ]);
-
-        invoiceText = receiveResponse.destination;
-        id = receiveResponse.destination; // Use destination as ID
-        hash = "";
-      }
-      // Bitcoin on-chain address generation
-      else if (invoiceType === types.bitcoin) {
-        const prepareRequest = {
-          paymentMethod: "bitcoinAddress",
-          amount:
-            amount > 0
-              ? {
-                  type: "bitcoin",
-                  payerAmountSat: amount,
-                }
-              : undefined,
-        };
-
-        const prepareResponse = await prepareReceivePayment(prepareRequest);
-
-        const receiveRequest = {
-          prepareResponse,
-          description: invoiceMemo || "",
-        };
-
-        const receiveResponse = await receivePayment(receiveRequest);
-        invoiceText = receiveResponse.destination; // BIP21 URI
-
-        // Extract just the address from BIP21 URI for display
-        const addressMatch = invoiceText.match(/^bitcoin:([^?]+)/);
-        hash = addressMatch ? addressMatch[1] : invoiceText;
-        id = hash; // Use address as ID
-      }
-      // Liquid address generation (LBTC or USDT)
-      else if (invoiceType === types.liquid) {
-        // For Liquid, there are no hard limits, but amount should be greater than broadcast fees
-        // The SDK docs state: "There are no limits, but the payer amount should be greater than broadcast fees when specified"
-        // Amount is OPTIONAL - if not specified, creates address that can receive any amount
-
-        // Step 1: Prepare receive payment (calculate fees, validate)
-        let prepareRequest;
-
-        if (selectedAsset === "usdt") {
-          // Receiving USDT
-          // For Liquid assets, payerAmount is OPTIONAL
-          // If not specified, it creates an amountless BIP21 URI
-          const usdtAssetId = ASSET_IDS.USDT;
-
-          prepareRequest = {
-            paymentMethod: "liquidAddress",
-            amount: {
-              type: "asset",
-              assetId: usdtAssetId,
-              ...(amount && amount > 0 && { payerAmount: amount }),
-            },
-          };
+        if (invoiceType === types.bitcoin) {
+          // Extract just the address in case the destination is a BIP21 URI
+          const addressMatch = invoiceText.match(/^bitcoin:([^?]+)/);
+          hash = addressMatch ? addressMatch[1] : invoiceText;
+          id = hash;
+        } else if (invoiceType === types.liquid || invoiceType === types.usdt) {
+          // Extract plain address from BIP21 URI for display
+          // Format: liquidnetwork:lq1...?amount=0.00010000&label=Description
+          const liquidMatch = invoiceText.match(/^liquidnetwork:([^?]+)/);
+          hash = liquidMatch ? liquidMatch[1] : invoiceText;
+          id = hash;
         } else {
-          // Receiving LBTC (default)
-          // For LBTC, payerAmount is OPTIONAL; use asset type to force Liquid address.
-          prepareRequest = {
-            paymentMethod: "liquidAddress",
-            amount: {
-              type: "asset",
-              assetId: ASSET_IDS.LBTC,
-              ...(amount && amount > 0 && { payerAmount: amount }),
-            },
-          };
+          hash = "";
+          id = invoiceText;
         }
-
-        const prepareResponse = await prepareReceivePayment(prepareRequest);
-
-        // Validate that amount is greater than broadcast fees (only if amount was specified)
-        if (amount && amount > 0 && prepareResponse.feesSat > 0) {
-          // For USDT, convert amount back to sats for comparison
-          const amountInSats =
-            selectedAsset === "usdt"
-              ? amount // amount is already in smallest unit (like sats)
-              : amount;
-
-          if (amountInSats <= prepareResponse.feesSat) {
-            fail(
-              `Amount must be greater than broadcast fees (${sat(prepareResponse.feesSat)})`,
-            );
-            return;
-          }
-        }
-
-        // Step 2: Generate the actual address/BIP21 URI
-        const receiveRequest = {
-          prepareResponse,
-          description: invoiceMemo || "",
-          useDescriptionHash: false,
-        };
-
-        const receiveResponse = await receivePayment(receiveRequest);
-        invoiceText = receiveResponse.destination; // BIP21 URI with amount
-
-        // Extract plain address from BIP21 URI for display
-        // Format: liquidnetwork:lq1...?amount=0.00010000&label=Description
-        const liquidMatch = invoiceText.match(/^liquidnetwork:([^?]+)/);
-        hash = liquidMatch ? liquidMatch[1] : invoiceText;
-        id = hash; // Use address as ID for tracking
       }
       // For other types that aren't supported yet
       else {
@@ -552,16 +418,8 @@
         }
 
         ({ id } = result);
-
-        if (invoiceType === types.bolt12) {
-          invoiceText = result.text || "";
-          hash = "";
-        } else if (
-          [types.bitcoin, types.liquid, types.usdt].includes(invoiceType)
-        ) {
-          hash = result.hash || "";
-          invoiceText = result.text || "";
-        }
+        hash = result.hash || "";
+        invoiceText = result.text || "";
       }
 
       // Reset updating flag BEFORE UI updates to prevent race conditions
@@ -646,17 +504,21 @@
     }
     // LNURL/Lightning Address is static - just show the address
     else if (type === "lnurl") {
-      // Get the domain from the URL config
-      const domain = window.location.hostname;
-      invoiceText = `${username}@${domain}`;
+      // Show the address that is actually registered. This used to compose
+      // `${username}@${window.location.hostname}`, which is the site's own
+      // host — on every deployment whose hostname is not the LNURL domain
+      // (any preview or demo URL, and production too) that produced an
+      // address nobody could pay. Fall back to the configured LNURL domain
+      // only when no registration has loaded yet.
+      invoiceText = lightningAddress || `${username}@${LNURL_DOMAIN}`;
       hash = "";
       $showQr = true;
       updating = false;
     }
-    // USDT and BOLT12 don't require an amount
+    // USDT doesn't require an amount
     else {
       if (typeof newAmount !== "undefined") amount = newAmount;
-      await update(); // Create new USDT address or BOLT12 offer
+      await update(); // Create new USDT address
     }
   };
 
@@ -670,18 +532,6 @@
     if (!newAmount || newAmount <= 0) {
       fail("Please enter an amount");
       // Don't close dialog - keep user on numberpad
-      return;
-    }
-
-    // Check minimum for Bitcoin on-chain (28k sats minimum)
-    if (
-      invoiceType === types.bitcoin &&
-      Number.isFinite(onchainMinSat) &&
-      newAmount < onchainMinSat
-    ) {
-      const minBtc = (onchainMinSat / sats).toFixed(8);
-      fail(`Minimum: ${minBtc} BTC (${sat(onchainMinSat)} sats)`);
-      // Don't close dialog - keep user on numberpad until valid amount
       return;
     }
 
@@ -1528,8 +1378,6 @@
           {updating}
           {lastError}
           {update}
-          {onchainLimits}
-          {lightningLimits}
         />
 
         <InvoiceActions
@@ -1567,8 +1415,6 @@
           {updating}
           {lastError}
           {update}
-          {onchainLimits}
-          {lightningLimits}
         />
 
         <InvoiceActions
@@ -1619,8 +1465,6 @@
   t={$t}
   {invoiceType}
   {selectedAsset}
-  {onchainLimits}
-  {lightningLimits}
 />
 
 <SetMemo bind:memo {settingMemo} {setMemo} {toggleMemo} t={$t} />

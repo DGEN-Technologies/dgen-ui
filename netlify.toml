@@ -24,10 +24,20 @@
     Strict-Transport-Security = "max-age=31536000; includeSubDomains"
     # Referrer policy
     Referrer-Policy = "no-referrer"
-    # Permissions policy - disable unnecessary browser features
-    Permissions-Policy = "geolocation=(), microphone=(), camera=()"
-    # Cross-Origin policies for additional isolation
-    Cross-Origin-Embedder-Policy = "require-corp"
+    # Permissions policy - disable unnecessary browser features.
+    # camera=(self), NOT camera=(). An empty allowlist disables the camera for
+    # every origin INCLUDING this one, so /scan's getUserMedia was refused
+    # before the browser ever prompted — the permission showed as "denied"
+    # while the browser setting still said "ask". (self) allows this origin
+    # and nobody else. geolocation and microphone stay closed; nothing uses
+    # them, and the QR scanner requests video only.
+    Permissions-Policy = "geolocation=(), microphone=(), camera=(self)"
+    # Cross-Origin policies for additional isolation.
+    # NOT Cross-Origin-Embedder-Policy: require-corp. It demands that every
+    # cross-origin resource opt in via CORP/COEP, and the SwapSpace widget
+    # sends neither, so the swap iframe was refused with "swapspace.co can not
+    # connect". Its only real benefit is cross-origin isolation for
+    # SharedArrayBuffer, and neither Breez SDK uses SAB.
     Cross-Origin-Opener-Policy = "same-origin"
     Cross-Origin-Resource-Policy = "same-origin"
 
