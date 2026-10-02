@@ -612,7 +612,17 @@ function createTransactionStore() {
 }
 
 // Helper functions
-function getPaymentId(payment: breezSdk.Payment): string {
+
+/**
+ * The id a payment is listed, cached and linked under.
+ *
+ * Exported because the payment detail route has to resolve the id in a link
+ * back to the same payment. It previously carried its own inline priority
+ * list, which omitted `details.paymentHash` and ordered `txId` first — a
+ * different answer from this one for the same payment, so a row that rendered
+ * fine in the list produced "Payment Not Found" when opened.
+ */
+export function getPaymentId(payment: breezSdk.Payment): string {
   return (
     payment.id ||
     (payment as any).txId ||
