@@ -418,7 +418,7 @@
     <input type="hidden" name="pin" value={$pin} />
     <input type="hidden" name="tab" value={tab} />
 
-    <div class="container mx-auto max-w-2xl px-4 py-2 sm:py-20">
+    <div class="container mx-auto max-w-2xl px-4 py-2 sm:py-6">
       <div class="header animate-fadeInUp">
         <!-- Title with epic glow effect -->
         <h1 class="text-center text-4xl md:text-5xl font-bold mb-2">

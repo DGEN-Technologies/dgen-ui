@@ -54,7 +54,7 @@ class TransactionCache {
     if (this.db) return;
 
     return new Promise((resolve, reject) => {
-      const request = indexedDB.open(this.dbName, 1);
+      const request = indexedDB.open(this.dbName, 2);
 
       request.onerror = () => reject(request.error);
       request.onsuccess = () => {
@@ -64,13 +64,17 @@ class TransactionCache {
 
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
-        if (!db.objectStoreNames.contains(this.storeName)) {
-          const store = db.createObjectStore(this.storeName, { keyPath: "id" });
-          store.createIndex("paymentTime", "paymentTime");
-          store.createIndex("paymentType", "paymentType");
-          store.createIndex("status", "status");
-          store.createIndex("amountSat", "amountSat");
+        // v2 stores RailPayment. The cache holds derived data only, so the
+        // upgrade drops and rebuilds rather than migrating field names.
+        if (db.objectStoreNames.contains(this.storeName)) {
+          db.deleteObjectStore(this.storeName);
         }
+        const store = db.createObjectStore(this.storeName, { keyPath: "id" });
+        store.createIndex("timestamp", "timestamp");
+        store.createIndex("direction", "direction");
+        store.createIndex("status", "status");
+        store.createIndex("amountSat", "amountSat");
+        store.createIndex("rail", "rail");
       };
     });
   }
@@ -83,15 +87,15 @@ class TransactionCache {
     const store = transaction.objectStore(this.storeName);
 
     for (const tx of transactions) {
-      // Ensure each transaction has an id field for IndexedDB
-      const txWithId = {
-        ...tx,
-        id:
-          tx.id ||
-          tx.paymentHash ||
-          tx.details?.paymentHash ||
-          `payment_${(tx as any).paymentTime ?? (tx as any).timestamp ?? 0}_${tx.amountSat}_${tx.paymentType}`,
-      };
+      // Ensure each transaction has an id field for IndexedDB.
+      //
+      // This MUST use the same function the display path uses. It previously
+      // had its own copy of the priority list that omitted txId, so a Liquid
+      // payment with a txId but no paymentHash was written under the
+      // synthesised `payment_<time>_<amount>_<type>` key and read back under
+      // its txId — the same payment stored and looked up under two different
+      // ids, so cache hits missed and duplicates accumulated.
+      const txWithId = { ...tx, id: getPaymentId(tx) };
       store.put(txWithId);
     }
 
@@ -122,7 +126,12 @@ class TransactionCache {
     await new Promise<void>((resolve, reject) => {
       const tx = this.db!.transaction([this.storeName], "readwrite");
       const store = tx.objectStore(this.storeName);
-      const index = store.index("paymentTime");
+      // Must match the v2 schema. Asking for the removed "paymentTime" index
+      // throws NotFoundError, which rejects through saveTransactions into
+      // loadTransactions' catch — leaving the payments list showing stale data
+      // with no error on screen. Only bites wallets past the 2000-row prune
+      // threshold, which is exactly the users with the most to lose.
+      const index = store.index("timestamp");
       let deleted = 0;
       const request = index.openCursor();
       tx.oncomplete = () => resolve();
@@ -280,8 +289,23 @@ function createTransactionStore() {
 
         // Fetch from SDK if cache is empty or forcing refresh
         if (transactions.length === 0 || forceRefresh) {
-          // Check if SDK is connected
-          if (walletService.isConnected()) {
+          // BOTH rails. This used to read walletService alone — the Liquid
+          // SDK — so every Lightning and on-chain Bitcoin payment was absent
+          // from history entirely. On a wallet whose funds live on Spark and
+          // whose Liquid side is empty, that is a completely blank list.
+          //
+          // Liquid keeps its own call rather than going through allPayments():
+          // it accepts the date filter server-side and returns the SDK's full
+          // status vocabulary (refunded, waitingFeeAcceptance), which the
+          // normalised RailPayment status collapses. Spark is appended and
+          // date-filtered here instead.
+          const { adapters } = await import("$lib/rails");
+          const { toLegacyPayment } = await import("$lib/rails/legacy");
+
+          const liquidConnected = walletService.isConnected();
+          const sparkConnected = adapters.spark.isConnected();
+
+          if (liquidConnected || sparkConnected) {
             // Get current filter state to pass timestamps to SDK
             const currentState = get({ subscribe });
             const filter = currentState.filter;
@@ -299,13 +323,66 @@ function createTransactionStore() {
               );
             }
 
-            transactions = await walletService.getTransactions(sdkFilter);
+            const [liquidResult, sparkResult] = await Promise.allSettled([
+              liquidConnected
+                ? walletService.getTransactions(sdkFilter)
+                : Promise.resolve([]),
+              sparkConnected
+                ? adapters.spark.listPayments(100)
+                : Promise.resolve([]),
+            ]);
+
+            if (liquidResult.status === "rejected") {
+              console.warn(
+                "[Transactions] Liquid history failed:",
+                liquidResult.reason,
+              );
+            }
+            if (sparkResult.status === "rejected") {
+              console.warn(
+                "[Transactions] Spark history failed:",
+                sparkResult.reason,
+              );
+            }
+
+            // A failing rail contributes nothing rather than emptying the
+            // whole list — the other rail's history is still worth showing.
+            const liquidTx =
+              liquidResult.status === "fulfilled" ? liquidResult.value : [];
+            const sparkTx = (
+              sparkResult.status === "fulfilled" ? sparkResult.value : []
+            )
+              .filter((p) => {
+                // The date filter went to the Liquid SDK as a request
+                // parameter; Spark's listPayments takes no such filter, so the
+                // same window is applied here or the two rails would disagree
+                // about which range the list is showing.
+                if (
+                  sdkFilter.fromTimestamp &&
+                  p.timestamp < sdkFilter.fromTimestamp
+                )
+                  return false;
+                if (
+                  sdkFilter.toTimestamp &&
+                  p.timestamp > sdkFilter.toTimestamp
+                )
+                  return false;
+                return true;
+              })
+              .map(toLegacyPayment);
+
+            transactions = [...liquidTx, ...(sparkTx as any[])].sort(
+              (a: any, b: any) =>
+                (b.paymentTime || b.timestamp || 0) -
+                (a.paymentTime || a.timestamp || 0),
+            ) as breezSdk.Payment[];
+
             // Only log on initial load or significant changes
             if (transactions.length === 0 || forceRefresh) {
               console.log(
                 "[Transactions] Loaded",
                 transactions.length,
-                "transactions",
+                `transactions (liquid ${liquidTx.length}, spark ${sparkTx.length})`,
               );
             }
 

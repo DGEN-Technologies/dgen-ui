@@ -11,6 +11,9 @@ import {
   clearTrackedTxs,
 } from "../esplora/PollManager";
 import { trackOutgoingTx } from "../sendGate";
+import { railState, refreshBalances } from "./rails";
+import { allPayments } from "../rails";
+import { toLegacyPayment } from "../rails/legacy";
 
 // Define interfaces locally to avoid import issues
 interface GetInfoResponse {
@@ -333,6 +336,13 @@ const createWalletState = (mnemonicStore?: any, passwordStore?: any) => {
 
     // Refresh wallet info (with deduplication)
     async refresh(): Promise<void> {
+      // walletBalance/assetBalances now derive from railState, not from
+      // `info`. Around ten call sites — including the 60s missed-event poll
+      // and every "pull to refresh" screen — call this expecting the
+      // displayed balance to update, so it has to drive railState too.
+      // Without this they spin and then show whatever was already there.
+      void refreshBalances();
+
       try {
         const newInfo = await walletService.getWalletInfo();
 
@@ -417,15 +427,25 @@ export const isWalletUnlocked = derived(
 
 export const walletInfo = derived(walletStore, ($wallet) => $wallet.info);
 
-export const walletBalance = derived(
-  walletInfo,
-  ($info) => $info?.walletInfo?.balanceSat || 0,
-);
+// Spendable Bitcoin lives on the Spark rail. Liquid balances are separate
+// and surfaced through `assetBalances` (spec 5). These read from railState
+// rather than walletInfo so there is ONE source of balance truth; a second
+// derivation off `info` would drift from it.
+//
+// Note walletStore's own SDK listener is still live (startEventListening is
+// called from init() and unlock()), so `info` keeps updating — it just is
+// not what any balance display reads any more. refresh() below drives
+// railState as well, so the callers that expect it to update the visible
+// balance still work.
+//
+// The export names and the shape of each `assetBalances` entry
+// ({ assetId, balanceSat, name?, ticker? }) are load-bearing: five call
+// sites read them (AssetBalances.svelte, SendAsset.svelte,
+// PaymentsList.svelte, send/liquid/[address]). Every one has a `|| 0`
+// fallback, so a shape change shows as zeroed balances with no error.
+export const walletBalance = derived(railState, ($r) => $r.spark.balanceSat);
 
-export const assetBalances = derived(
-  walletInfo,
-  ($info) => $info?.walletInfo?.assetBalances || [],
-);
+export const assetBalances = derived(railState, ($r) => $r.liquid.assets);
 
 export const isWalletConnecting = derived(
   walletStore,
@@ -454,8 +474,13 @@ const createTransactionsStore = () => {
 
     async refresh(): Promise<void> {
       try {
-        const transactions = await walletService.getTransactions();
-        set(transactions);
+        // Both rails, newest first. Widened through toLegacyPayment so the
+        // existing consumers (PaymentsList, transactionService filters) keep
+        // reading paymentType/paymentTime/feesSat while new code can read the
+        // normalized names. See src/lib/rails/legacy.ts for why this is a
+        // boundary mapping rather than a rename.
+        const payments = await allPayments();
+        set(payments.map(toLegacyPayment) as unknown as Payment[]);
       } catch (error) {
         console.error("Failed to refresh transactions:", error);
         throw error;
@@ -480,17 +505,6 @@ const startEventListening = async (): Promise<void> => {
   if (eventListenerActive) return;
 
   try {
-    const refreshRefundables = async () => {
-      try {
-        const { refundablesStore } = await import("$lib/stores/refundables");
-        refundablesStore.refresh();
-      } catch (error) {
-        console.error(
-          "[WalletStore] Failed to import refundables store:",
-          error,
-        );
-      }
-    };
     // addEventListener expects just the callback function, not a string first
     const listenerId = await walletService.addEventListener(
       (event: SdkEvent) => {
@@ -654,7 +668,6 @@ const startEventListening = async (): Promise<void> => {
                 );
                 walletStore.refresh();
                 transactions.refresh();
-                refreshRefundables();
                 break;
 
               // Refund Events
@@ -662,14 +675,12 @@ const startEventListening = async (): Promise<void> => {
                 console.log("[WalletStore] Payment refund pending");
                 walletStore.refresh();
                 transactions.refresh();
-                refreshRefundables();
                 break;
 
               case "paymentRefunded":
                 console.log("[WalletStore] Payment refunded");
                 walletStore.refresh();
                 transactions.refresh();
-                refreshRefundables();
                 break;
 
               // Sync Events
@@ -680,7 +691,6 @@ const startEventListening = async (): Promise<void> => {
                 }));
                 walletStore.refresh();
                 transactions.refresh();
-                refreshRefundables();
                 break;
 
               default:
@@ -775,10 +785,6 @@ export const walletOperations = {
     await walletStore.refresh();
     await transactions.refresh();
     return result;
-  },
-
-  async fetchLightningLimits() {
-    return await walletService.fetchLightningLimits();
   },
 
   async fetchFiatRates() {

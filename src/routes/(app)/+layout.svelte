@@ -1,6 +1,8 @@
 <script>
   import { SvelteToast } from "@zerodevx/svelte-toast";
+  import SparkStatusBanner from "$comp/SparkStatusBanner.svelte";
   import { onDestroy, onMount, untrack } from "svelte";
+  import { get } from "svelte/store";
   import { PUBLIC_DGEN_URL } from "$env/static/public";
   import { close, connect, send, socket } from "$lib/socket";
   import {
@@ -33,6 +35,21 @@
   import { lnAddressStore } from "$lib/stores/lightningAddress";
   import { walletStore, transactions } from "$lib/stores/wallet";
   import { tabSync } from "$lib/tabSync";
+  import {
+    connectRails,
+    subscribeRails,
+    adapters,
+    getLightningAddress,
+    registerLightningAddress,
+  } from "$lib/rails";
+  import {
+    setRailState,
+    refreshBalances,
+    setUnclaimedDeposits,
+    railState,
+  } from "$lib/stores/rails";
+  import { notifyPaymentReceived } from "$lib/stores/paymentEvents";
+  import { toLegacyPayment } from "$lib/rails/legacy";
 
   let { data, children } = $props();
 
@@ -42,8 +59,7 @@
   let browserCompatible = $state(false);
   let walletInitError = $state(null);
   let walletInitialized = $state(false); // Track if wallet has been initialized
-  let walletEventListenerId = null;
-  let lastSyncTime = 0;
+  let railsUnsubscribe = null;
   let syncDebounceTimer = null;
   let currentUserId = null; // Track current user to detect changes
   let isSecondaryTab = $state(false); // Track if this is a secondary tab (no SDK instance)
@@ -87,6 +103,20 @@
       initializeBrowserWallet();
     }
   });
+
+  // Refresh rail balances, then broadcast the new Spark balance to other
+  // tabs. Only the tab holding the wallet lock receives SDK events, so a
+  // secondary tab has no other way to learn a balance changed — see the
+  // WALLET_UPDATED handler in tabSync.onMessage above. A broadcast failure
+  // must never break payment handling, hence the isolated try/catch.
+  const refreshAndBroadcast = async () => {
+    await refreshBalances();
+    try {
+      tabSync.broadcastWalletUpdate(get(railState).spark.balanceSat);
+    } catch (e) {
+      console.warn("[Layout] Balance broadcast failed:", e);
+    }
+  };
 
   const checkBrowserCompatibility = () => {
     if (!browser) return false;
@@ -132,9 +162,13 @@
         // Listen for wallet updates from primary tab
         tabSync.onMessage(async (message) => {
           if (message.type === "WALLET_UPDATED") {
-            // Refresh wallet data from shared storage if needed
-            const { walletStore } = await import("$lib/stores/wallet");
-            await walletStore.refresh();
+            // Adopt the broadcast figure directly. A secondary tab holds no
+            // wallet lock, so it never connects a rail and cannot fetch a
+            // balance of its own — the primary tab's broadcast is the only
+            // source it has. Calling walletStore.refresh() here discarded it
+            // and left this tab showing 0 forever.
+            const { adoptBroadcastBalance } = await import("$lib/stores/rails");
+            adoptBroadcastBalance(message.balance);
           } else if (message.type === "LOCK_RELEASED") {
             // Try to become primary tab
             isSecondaryTab = false;
@@ -186,7 +220,16 @@
         mnemonic = walletService.generateMnemonic();
 
         // Initialize and save the new wallet
-        await walletService.initWallet(mnemonic, userId);
+        await connectRails(mnemonic, userId);
+        setRailState(
+          "spark",
+          adapters.spark.isConnected() ? "connected" : "unavailable",
+        );
+        setRailState(
+          "liquid",
+          adapters.liquid.isConnected() ? "connected" : "unavailable",
+        );
+        await refreshBalances();
         await walletService.saveMnemonic(mnemonic, userPassword, userId);
 
         // Notify server about new wallet
@@ -215,11 +258,27 @@
       }
 
       // Initialize wallet with mnemonic
-      await walletService.initWallet(mnemonic, userId);
+      await connectRails(mnemonic, userId);
+      setRailState(
+        "spark",
+        adapters.spark.isConnected() ? "connected" : "unavailable",
+      );
+      setRailState(
+        "liquid",
+        adapters.liquid.isConnected() ? "connected" : "unavailable",
+      );
+      await refreshBalances();
 
-      // Check if connected successfully
-      if (!walletService.isConnected()) {
-        throw new Error("Failed to connect to wallet SDK");
+      // connectRails degrades the rails independently and throws only when
+      // BOTH fail, so this must not abort on Liquid alone. It used to test
+      // walletService.isConnected(), which is Liquid: a Liquid outage threw
+      // past the rail event subscription below, leaving a perfectly healthy
+      // Spark wallet with no listener, no balance updates, no deposit claims
+      // and a wallet-wide error banner — while Lightning and on-chain Bitcoin,
+      // which live on Spark, were fine. The per-rail state set above is what
+      // the UI reads to explain a partial outage.
+      if (!adapters.spark.isConnected() && !adapters.liquid.isConnected()) {
+        throw new Error("Failed to connect to any payment rail");
       }
 
       // Initialize transaction event handling FIRST to catch dataSynced events
@@ -235,72 +294,72 @@
         );
       }
 
-      // Setup event listener for SDK events AFTER connection (only if not already registered)
+      // Subscribe to rail events (balances, payments, deposits needing claim)
+      // AFTER connection (only if not already registered)
       try {
-        if (!walletEventListenerId) {
-          walletEventListenerId = await walletService.addEventListener(
-            async (event) => {
-              // Handle synced events with debouncing
-              if (event.type === "synced") {
-                const now = Date.now();
-
-                // Prevent rapid successive syncs (within 10 seconds)
-                // BUT: Always allow the first sync (lastSyncTime === 0) to ensure
-                // transactions are loaded when wallet opens (e.g., after Bitcoin purchase)
-                if (lastSyncTime !== 0 && now - lastSyncTime < 10000) {
-                  return;
-                }
-
-                lastSyncTime = now;
-
-                // Clear any pending refresh
-                if (syncDebounceTimer) {
-                  clearTimeout(syncDebounceTimer);
-                }
-
-                // Debounce the refresh to avoid rapid successive calls
-                syncDebounceTimer = setTimeout(async () => {
-                  try {
-                    // Refresh wallet data only (deduplication prevents unnecessary updates)
-                    const { walletStore } = await import("$lib/stores/wallet");
-                    await walletStore.refresh();
-
-                    // Mark initial sync as complete
-                    walletStore.update((state) => ({
-                      ...state,
-                      didCompleteInitialSync: true,
-                    }));
-
-                    // Get updated balance and broadcast to other tabs (only if changed)
-                    const info = await walletService.getWalletInfo();
-                    const balance = info?.walletInfo?.balanceSat || 0;
-
-                    // Broadcast wallet update to other tabs
-                    tabSync.broadcastWalletUpdate(balance);
-
-                    // Refresh transactions through transactionService to respect filters
-                    const { transactionStore } = await import(
-                      "$lib/transactionService"
-                    );
-                    await transactionStore.loadTransactions(true);
-                  } catch (e) {
-                    console.error("[Layout] Error refreshing after sync:", e);
-                  }
-                }, 1000); // Wait 1 second before refreshing
+        if (!railsUnsubscribe) {
+          railsUnsubscribe = await subscribeRails((event) => {
+            if (event.type === "depositsNeedClaim") {
+              setUnclaimedDeposits(event.count);
+              return;
+            }
+            if (event.type === "balanceChanged" || event.type === "synced") {
+              void refreshAndBroadcast();
+              return;
+            }
+            if (
+              event.type === "paymentSucceeded" ||
+              event.type === "paymentPending" ||
+              event.type === "paymentFailed"
+            ) {
+              void refreshAndBroadcast();
+              // Balances are not the payments list. Without this the payment
+              // that just arrived does not appear in history until something
+              // else happens to refresh it.
+              void transactions.refresh();
+              // Hand over the NORMALISED payment, not `raw`.
+              //
+              // Every consumer of this event reads `amountSat` — the
+              // payment-received screen and the toast both do. A raw Spark
+              // payment has no such field; it carries `amount` as a bigint.
+              // So a Lightning receive rendered as "0.00000000 BTC" while a
+              // Liquid one looked fine, because raw Liquid payments DO have
+              // amountSat. toLegacyPayment keeps the legacy aliases and
+              // `raw` alongside the normalised names, so nothing downstream
+              // loses a field it was reading.
+              // Only INCOMING payments produce a "payment received" notice.
+              // Without this guard, paying an invoice announced "⚡ Payment
+              // Received" for the amount just spent, and on the receive screen
+              // it played the success animation for an outgoing send. The
+              // Liquid handler in stores/wallet.ts has always guarded on
+              // direction; this one did not.
+              //
+              // A failed payment also has to report "failed", not "pending":
+              // paymentEvents only auto-clears confirmed/complete, so a failed
+              // send previously sat on screen as "Payment Pending" forever.
+              if (event.payment.direction === "receive") {
+                notifyPaymentReceived(
+                  toLegacyPayment(event.payment),
+                  event.type === "paymentSucceeded"
+                    ? "confirmed"
+                    : event.type === "paymentFailed"
+                      ? "failed"
+                      : "pending",
+                );
               }
-
-              // Note: Payment events (paymentPending, paymentWaitingConfirmation, paymentSucceeded, etc.)
-              // are handled comprehensively in wallet.ts:371-500 with proper navigation and notifications.
-              // We don't handle them here to avoid duplicate processing.
-            },
-          );
+            }
+          });
         }
       } catch (e) {
-        console.error("[Layout] Failed to add event listener:", e);
+        console.error("[Layout] Failed to subscribe to rails:", e);
       }
 
-      // SDK is connected - initialize wallet store which will start event listening
-      const { walletStore, transactions } = await import("$lib/stores/wallet");
+      // walletStore and transactions are imported at module scope. Re-declaring
+      // them here with `const` shadowed those bindings for this entire block —
+      // including the rail-event callback above, which reads `transactions`.
+      // Any payment arriving before this line executed threw
+      // "Cannot access 'transactions' before initialization" inside the SDK's
+      // event dispatch, losing the payment from the list and the toast.
 
       // Initialize the wallet store, which will:
       // 1. Get wallet info
@@ -373,9 +432,9 @@
 
       // Try recovery first - this checks if current seed already has a registered address
       console.log("[Layout] Attempting recovery first...");
-      const recovered = await walletService.recoverLightningAddress(
-        webhookUrl.toString(),
-      );
+      // Spark resolves ownership from the wallet's identity key, so this is
+      // a plain read — no signing, no webhook argument.
+      const recovered = await getLightningAddress();
 
       if (recovered && recovered.lightningAddress) {
         console.log("[Layout] Recovered existing address");
@@ -427,18 +486,12 @@
       const baseUsername = walletService.formatUsername(user.username);
       console.log("[Layout] Auto-registering with formatted username");
 
-      // registerLightningAddress now includes automatic retry with discriminators
-      const result = await walletService.registerLightningAddress(
-        baseUsername,
-        webhookUrl.toString(),
-      );
+      // No silent discriminator suffix any more: on a DGEN-owned domain the
+      // namespace is exclusive, so a taken name is surfaced rather than
+      // quietly turning alice into alice473.
+      const result = await registerLightningAddress(baseUsername);
 
       console.log("[Layout] Auto-registration successful");
-
-      // Log if username was modified with discriminator
-      if (result.usernameModified) {
-        console.log("[Layout] Username was modified during registration");
-      }
 
       lnAddressStore.setSuccess(
         result.lnurl,
@@ -625,7 +678,14 @@
       if (!walletService.isConnected()) {
         sdkSuspended = true;
         walletInitialized = false;
-        walletEventListenerId = null;
+        if (railsUnsubscribe) {
+          try {
+            await railsUnsubscribe();
+          } catch (e) {
+            console.warn("[Layout] Failed to unsubscribe rails on hide:", e);
+          }
+          railsUnsubscribe = null;
+        }
         return;
       }
       if (sdkDisconnectTimer) return;
@@ -641,7 +701,14 @@
           console.warn("[Layout] Failed to disconnect SDK on hide:", error);
         }
 
-        walletEventListenerId = null;
+        if (railsUnsubscribe) {
+          try {
+            await railsUnsubscribe();
+          } catch (e) {
+            console.warn("[Layout] Failed to unsubscribe rails on hide:", e);
+          }
+          railsUnsubscribe = null;
+        }
         walletInitialized = false;
 
         try {
@@ -666,7 +733,21 @@
       sdkDisconnectTimer = null;
     }
 
-    if (!sdkSuspended || sdkResumeInFlight) return;
+    // Resume when the wallet is not up — not only when it was suspended.
+    //
+    // A tab that FIRST LOADED while hidden never initialised at all: both the
+    // $effect above and initializeBrowserWallet() bail on document.hidden, and
+    // document.hidden is not reactive, so nothing re-runs them when the tab is
+    // finally looked at. Such a tab has sdkSuspended === false, so gating on
+    // that alone left it on "Loading" forever until a manual reload — no
+    // balance, no rails, and no tab-lock banner either, because it never even
+    // reached the lock. Opening the app in a background tab is enough to hit
+    // this: a middle-click, "open in new tab", or a browser restoring a
+    // session on startup.
+    //
+    // A secondary tab has walletInitialized === true, so it still returns here
+    // and does not re-attempt a lock it legitimately lost.
+    if ((!sdkSuspended && walletInitialized) || sdkResumeInFlight) return;
     sdkResumeInFlight = true;
     let resumeSucceeded = false;
     try {
@@ -750,14 +831,13 @@
       // Clean up tab sync (releases lock and broadcasts to other tabs)
       tabSync.cleanup();
 
-      // Clean up wallet event listener
-      if (walletEventListenerId) {
+      // Clean up rail event subscriptions
+      if (railsUnsubscribe) {
         try {
-          const ws = await import("$lib/walletService");
-          await ws.removeEventListener(walletEventListenerId);
-          walletEventListenerId = null;
+          await railsUnsubscribe();
+          railsUnsubscribe = null;
         } catch (e) {
-          console.error("[Layout] Failed to remove event listener:", e);
+          console.error("[Layout] Failed to unsubscribe rails:", e);
         }
       }
 
@@ -898,6 +978,7 @@
   class:pro-mode={$proMode}
 >
   <AppHeader {user} {subject} />
+  <SparkStatusBanner />
   <main class="pb-4 pro-mode-inherit">
     {#if !$loading && !isSwitchingUsers}
       {@render children?.()}

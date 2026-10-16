@@ -1,12 +1,11 @@
 <script>
   import { onMount } from "svelte";
+
+  // One value drives both the SDK config and this display, so what is shown
+  // here is always the domain a registration actually lands on.
+  import { LNURL_DOMAIN as lnurlDomain } from "$lib/rails";
   import { page } from "$app/stores";
-  import {
-    setupLightningAddress,
-    unregisterLightningAddress,
-    getWalletInfo,
-    UsernameConflictError,
-  } from "$lib/walletService";
+  import { getWalletInfo, UsernameConflictError } from "$lib/walletService";
   import {
     lnAddressStore,
     hasValidAddress,
@@ -130,9 +129,7 @@
     lnAddressStore.setLoading();
 
     try {
-      const { isConnected, recoverLightningAddress } = await import(
-        "$lib/walletService"
-      );
+      const { isConnected } = await import("$lib/walletService");
       if (!isConnected()) {
         console.log(
           "[Lightning Address] SDK not connected yet, skipping recovery",
@@ -152,7 +149,10 @@
       );
 
       // Try recovery - only succeeds if THIS seed already has a registration
-      const recovered = await recoverLightningAddress(webhookUrl.toString());
+      // Spark resolves ownership from the wallet's identity key, so recovery
+      // is a plain read — no message signing, no webhook argument.
+      const { getLightningAddress } = await import("$lib/rails");
+      const recovered = await getLightningAddress();
 
       if (recovered && recovered.lightningAddress) {
         console.log(
@@ -214,8 +214,7 @@
       return;
     }
 
-    const { isConnected, registerLightningAddress, formatUsername } =
-      await import("$lib/walletService");
+    const { isConnected, formatUsername } = await import("$lib/walletService");
     if (!isConnected()) {
       error =
         "Wallet SDK is still initializing. Please wait a moment and try again.";
@@ -240,12 +239,17 @@
         formattedUsername,
       );
 
-      // Use direct registration with automatic retry
-      // This will automatically try with discriminators if username is taken
-      const result = await registerLightningAddress(
-        formattedUsername,
-        webhookUrl.toString(),
-      );
+      // On a DGEN-owned domain the namespace is exclusive, so a taken name
+      // is reported to the user rather than silently suffixed. Check first.
+      const { registerLightningAddress, checkLightningAddressAvailable } =
+        await import("$lib/rails");
+      const available = await checkLightningAddressAvailable(formattedUsername);
+      if (!available) {
+        throw new Error(
+          `The name "${formattedUsername}" is already taken. Please choose another.`,
+        );
+      }
+      const result = await registerLightningAddress(formattedUsername);
 
       console.log(
         "[Lightning Address] Registration successful:",
@@ -324,7 +328,8 @@
       const webhookUrl = new URL("/api/backend/api/v1/notify", currentOrigin);
       webhookUrl.searchParams.set("user", user.id);
 
-      await unregisterLightningAddress(webhookUrl.toString());
+      const { deleteLightningAddress } = await import("$lib/rails");
+      await deleteLightningAddress();
 
       // Clear from user profile
       await post("/user", {
@@ -846,7 +851,7 @@
             <div
               class="bg-black/30 border border-white/20 rounded-lg sm:rounded-l-none px-4 py-3 text-white/60 text-center sm:text-left text-sm sm:text-base"
             >
-              @breez.fun
+              @{lnurlDomain}
             </div>
           </div>
 
@@ -874,8 +879,8 @@
         >
           <div class="font-semibold mb-2">How it works:</div>
           <ul class="space-y-1 text-white/80">
-            <li>• Your browser generates a reusable BOLT12 offer</li>
-            <li>• Anyone can pay you via username@breez.fun</li>
+            <li>• Your address is registered against your wallet's own keys</li>
+            <li>• Anyone can pay you via username@{lnurlDomain}</li>
             <li>• Works with any Lightning wallet</li>
             <li>• Payments come directly to your DGEN wallet</li>
           </ul>
@@ -930,8 +935,7 @@
 
     <div class="mt-6 text-sm text-white/60">
       <p class="mb-2">
-        <strong>Note:</strong> Your Lightning address will be hosted on breez.fun
-        (Breez's free service).
+        <strong>Note:</strong> Your Lightning address is hosted on {lnurlDomain}.
       </p>
       <p>
         To receive payments, you need to be online or have been online within

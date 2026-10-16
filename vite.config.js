@@ -29,7 +29,9 @@ const config = {
     port: parseInt(process.env.PORT) || 5173,
     https: process.env.HTTPS === "true" ? true : false,
     headers: {
-      "Cross-Origin-Embedder-Policy": "require-corp",
+      // No Cross-Origin-Embedder-Policy here: require-corp blocks the
+      // SwapSpace iframe, and dev must match production or the breakage only
+      // shows up after a deploy.
       "Cross-Origin-Opener-Policy": "same-origin",
     },
     proxy: {
@@ -84,7 +86,7 @@ const config = {
     },
   },
   optimizeDeps: {
-    exclude: ["@breeztech/breez-sdk-liquid"],
+    exclude: ["@breeztech/breez-sdk-liquid", "@breeztech/breez-sdk-spark"],
   },
 };
 

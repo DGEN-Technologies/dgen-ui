@@ -17,10 +17,8 @@
   let usdAmount = 100; // Default $100 USD
   let btcPrice = null; // Will be fetched from SDK
 
-  // Limits and fees state
-  let currentLimits = null;
+  // Fees state
   let preparedFees = null;
-  let usdLimits = { min: 0, max: 0 };
 
   // Track if we've already fetched data for this session
   let hasFetchedData = false;
@@ -44,7 +42,7 @@
 
   // Fetch data when modal is shown AND SDK is initialized
   $: if (show && sdkInitialized && !hasFetchedData && !loadingPrice) {
-    fetchBtcPriceAndLimits();
+    fetchBtcPrice();
   }
 
   // Reset state when modal closes
@@ -56,8 +54,8 @@
     step = "input";
   }
 
-  // Fetch real-time BTC price from SDK and limits
-  async function fetchBtcPriceAndLimits() {
+  // Fetch real-time BTC price from SDK
+  async function fetchBtcPrice() {
     // Prevent duplicate fetches
     if (hasFetchedData || loadingPrice) return;
 
@@ -87,21 +85,12 @@
         throw new Error("Failed to fetch USD exchange rate");
       }
 
-      // Fetch onchain limits
-      console.log("[BuyBitcoin] Fetching onchain limits...");
-      currentLimits = await walletService.fetchOnchainLimits();
-      console.log("[BuyBitcoin] Limits:", currentLimits);
-
-      // Calculate USD limits
-      usdLimits.min = (currentLimits.receive.minSat / 100000000) * btcPrice;
-      usdLimits.max = (currentLimits.receive.maxSat / 100000000) * btcPrice;
-
       hasFetchedData = true;
     } catch (e) {
       console.error("[BuyBitcoin] Error fetching data:", e);
       const message =
         e instanceof Error ? e.message : typeof e === "string" ? e : "";
-      error = message || "Failed to load Bitcoin price and limits";
+      error = message || "Failed to load Bitcoin price";
       // Mark as fetched even on error to prevent infinite retry loop
       hasFetchedData = true;
     } finally {
@@ -119,19 +108,12 @@
     usdAmount = (amount / 100000000) * btcPrice;
   }
 
-  // Validate amount is within limits
-  $: amountValid =
-    currentLimits &&
-    amount >= currentLimits.receive.minSat &&
-    amount <= currentLimits.receive.maxSat;
-  $: amountError =
-    currentLimits && amount < currentLimits.receive.minSat
-      ? `Minimum: ${currentLimits.receive.minSat.toLocaleString()} sats ($${usdLimits.min.toFixed(2)})`
-      : currentLimits && amount > currentLimits.receive.maxSat
-        ? `Maximum: ${currentLimits.receive.maxSat.toLocaleString()} sats ($${usdLimits.max.toFixed(2)})`
-        : null;
+  // No standing limits call; Moonpay reports real constraints when the
+  // purchase is prepared (see handleBuy), so only a basic sanity check
+  // happens here.
+  $: amountValid = amount > 0;
 
-  $: continueDisabled = loading || !btcPrice || !amountValid || !currentLimits;
+  $: continueDisabled = loading || !btcPrice || !amountValid;
 
   // Track if we're processing to prevent double-calls
   let isProcessing = false;
@@ -152,23 +134,12 @@
         amount = Math.round(amount / 1000) * 1000;
       }
 
-      // Validate amount against limits
-      if (!currentLimits) {
-        throw new Error("Limits not loaded. Please refresh and try again.");
+      if (amount <= 0) {
+        throw new Error("Enter a valid amount.");
       }
 
-      if (amount < currentLimits.receive.minSat) {
-        throw new Error(
-          `Minimum amount is ${currentLimits.receive.minSat.toLocaleString()} sats ($${usdLimits.min.toFixed(2)} USD)`,
-        );
-      }
-      if (amount > currentLimits.receive.maxSat) {
-        throw new Error(
-          `Maximum amount is ${currentLimits.receive.maxSat.toLocaleString()} sats ($${usdLimits.max.toFixed(2)} USD)`,
-        );
-      }
-
-      // Prepare the buy Bitcoin request to get fees
+      // Prepare the buy Bitcoin request to get fees. Moonpay reports its
+      // own min/max constraints here rather than a standing limits call.
       const prepareRequest = {
         provider: "moonpay",
         amountSat: amount,
@@ -282,9 +253,7 @@
           <div
             class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500 mb-4"
           ></div>
-          <div class="text-gray-300 mb-4">
-            Loading Bitcoin price and limits...
-          </div>
+          <div class="text-gray-300 mb-4">Loading Bitcoin price...</div>
           <button
             type="button"
             class="px-6 py-3 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors"
@@ -329,7 +298,7 @@
                 hasFetchedData = false;
                 error = null;
                 loadingPrice = false;
-                fetchBtcPriceAndLimits();
+                fetchBtcPrice();
               }}
             >
               Retry
@@ -352,8 +321,7 @@
                 <input
                   type="number"
                   bind:value={usdAmount}
-                  min={usdLimits.min}
-                  max={usdLimits.max}
+                  min="0"
                   step="1"
                   class="w-full pl-8 pr-4 py-3 bg-black bg-opacity-30 border border-white border-opacity-20 rounded-lg text-white"
                   placeholder="100"
@@ -371,8 +339,7 @@
               <input
                 type="number"
                 bind:value={amount}
-                min={currentLimits?.receive.minSat || 10000}
-                max={currentLimits?.receive.maxSat}
+                min="10000"
                 step="1000"
                 class="w-full px-4 py-3 bg-black bg-opacity-30 border border-white border-opacity-20 rounded-lg text-white"
                 placeholder="100000"
@@ -387,21 +354,6 @@
               </div>
             {/if}
           </div>
-
-          <!-- Show limits info -->
-          {#if currentLimits && btcPrice}
-            <div class="text-xs text-gray-400 mt-2">
-              Limits: {currentLimits.receive.minSat.toLocaleString()} - {currentLimits.receive.maxSat.toLocaleString()}
-              sats (${usdLimits.min.toFixed(2)} - ${usdLimits.max.toFixed(2)} USD)
-            </div>
-          {/if}
-
-          <!-- Show amount validation error -->
-          {#if amountError}
-            <div class="text-xs text-red-400 mt-2">
-              {amountError}
-            </div>
-          {/if}
 
           <!-- Toggle between USD and sats -->
           <div class="flex items-center justify-center mt-3">

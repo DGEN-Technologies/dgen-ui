@@ -4,6 +4,8 @@
   import { goto } from "$app/navigation";
   import { onMount } from "svelte";
   import BalancePlaceholder from "./BalancePlaceholder.svelte";
+  import DepositClaims from "$comp/DepositClaims.svelte";
+  import { sparkAvailable } from "$lib/stores/rails";
   import {
     walletBalance,
     walletInfo,
@@ -22,11 +24,18 @@
     last = false,
     showBuyBitcoin = $bindable(false),
   } = $props();
-  // Following misty-breez pattern: balance comes from SDK, component handles loading state
-  let balance = $derived($walletBalance);
-  // Show placeholder until initial sync completes
-  // This prevents showing 0.0 balance before sync finishes
-  let isWalletLoading = $derived(!$walletStore?.didCompleteInitialSync);
+  // Show placeholder until we have something real to show.
+  //
+  // didCompleteInitialSync is set ONLY by the Liquid SDK (its synced event, or
+  // getWalletInfo returning a balance). The headline, though, is the SPARK
+  // balance. Gating on Liquid alone meant that during a Liquid outage — the
+  // case this whole migration exists to survive — a funded Spark wallet showed
+  // a loading placeholder forever, over a balance refreshBalances() had
+  // already fetched. Same Liquid-gates-Spark mistake fixed in the layout and
+  // PaymentsList; this was the third instance.
+  let isWalletLoading = $derived(
+    !$walletStore?.didCompleteInitialSync && !$sparkAvailable,
+  );
   let currency = $derived(user?.currency || "USD");
   let unit = $state(currency); // Default to fiat currency display
   let isHovered = $state(false);
@@ -41,18 +50,24 @@
   let lbtcBalance = $derived(getBalance(ASSET_IDS.LBTC));
   let usdtBalance = $derived(getBalance(ASSET_IDS.USDT));
 
-  // Calculate unified total in sats (sum all asset balances, converting USDT to sats equivalent)
-  let unifiedTotalSats = $derived(() => {
-    let total = 0;
-    // BTC (Liquid)
-    total += getBalance(ASSET_IDS.LBTC);
-    // USDT (Liquid) - convert to sats using rate
-    const usdt = getBalance(ASSET_IDS.USDT);
-    if (usdt > 0 && rate > 0) {
-      // USDT is in 8 decimals, so convert to USD, then to sats
-      const usdtInUSD = usdt / sats;
-      const usdtInSats = Math.floor((usdtInUSD / rate) * sats);
-      total += usdtInSats;
+  // The headline is the Spark balance alone (spec 5). Lightning and on-chain
+  // Bitcoin both spend from it, and that is the common path. A blended figure
+  // would show money that cannot be spent on the rail being used — a user
+  // reads the total, pays a Lightning invoice, and is refused for insufficient
+  // funds. Liquid is a labelled section beneath instead.
+  //
+  // This previously summed the Liquid assets and omitted Spark entirely, so
+  // every Lightning and on-chain receive left the headline unchanged.
+  let headlineSats = $derived($walletBalance);
+
+  // Liquid total, shown inside the Liquid section only — never blended into
+  // the headline. USDT is converted through the fiat rate; with no rate it is
+  // left out rather than counted as zero, which would quietly understate it.
+  let liquidTotalSats = $derived.by(() => {
+    let total = lbtcBalance;
+    if (usdtBalance > 0 && rate > 0) {
+      // USDT carries 8 decimals, so dividing by `sats` yields USD.
+      total += Math.floor((usdtBalance / sats / rate) * sats);
     }
     return total;
   });
@@ -68,13 +83,31 @@
     }
   });
 
-  let displayBalance = $derived(() => {
-    const total = unifiedTotalSats();
-    if (unit === "btc") return btc(total);
-    if (unit === "sats") return sat(total);
+  // A rail that failed to connect reports balanceSat 0, which is
+  // indistinguishable from genuinely having no money. Showing a dash instead
+  // of "0" is the difference between "we cannot reach the network" and "your
+  // funds are gone" — the second is what a user assumes when a wallet that
+  // held money shows zero.
+  // Keyed on Spark alone now that Spark is the headline: with Spark down and
+  // Liquid up we still cannot say what the headline figure is, and rendering
+  // "0" there would read as "your funds are gone". The Liquid section below
+  // stands on its own and is hidden when it has nothing to show.
+  let balanceUnavailable = $derived(
+    account?.browserManaged && !$sparkAvailable,
+  );
+
+  function formatSats(amount) {
+    if (unit === "btc") return btc(amount);
+    if (unit === "sats") return sat(amount);
     // Convert sats to BTC then multiply by rate for fiat
-    return f((total / sats) * rate, currency);
-  });
+    return f((amount / sats) * rate, currency);
+  }
+
+  let displayBalance = $derived.by(() =>
+    balanceUnavailable ? "—" : formatSats(headlineSats),
+  );
+
+  let liquidTotal = $derived.by(() => formatSats(liquidTotalSats));
 
   let assetIcon = $derived(() => {
     switch (account?.asset) {
@@ -161,14 +194,17 @@
             <BalancePlaceholder />
           {:else if isHovered}
             <span class="hover-balance-glow" in:fade={{ duration: 300 }}>
-              {displayBalance()}
+              {displayBalance}
             </span>
           {:else}
             <span class="gradient-text">
-              {displayBalance()}
+              {displayBalance}
             </span>
           {/if}
         </div>
+
+        <!-- Bitcoin deposits awaiting manual claim (fees above the auto ceiling) -->
+        <div class="mt-4 text-left"><DepositClaims /></div>
 
         <!-- Beautiful Toggle for Fiat/BTC/Sats (3 options) -->
         <div class="flex items-center justify-center mt-4">
@@ -366,7 +402,7 @@
 
       <!-- Asset Details - Flattened for better mobile -->
       <div class="mt-6 pt-6 border-t border-white/10">
-        <p class="text-xs opacity-60 mb-4 px-1">Assets</p>
+        <p class="text-xs opacity-60 mb-4 px-1">Liquid</p>
 
         {#if lbtcBalance > 0 || usdtBalance > 0}
           <div class="space-y-3">
@@ -449,15 +485,15 @@
             <!-- Total Line -->
             <div class="pt-3 mt-3 border-t border-white/10">
               <div class="flex items-center justify-between px-1">
-                <p class="text-sm font-semibold opacity-80">Total Balance</p>
+                <p class="text-sm font-semibold opacity-80">Liquid total</p>
                 <p class="font-bold text-base sm:text-lg gradient-text">
-                  {displayBalance()}
+                  {liquidTotal}
                 </p>
               </div>
             </div>
           </div>
         {:else}
-          <p class="text-sm opacity-60 px-1">No assets yet</p>
+          <p class="text-sm opacity-60 px-1">No Liquid assets yet</p>
         {/if}
 
         <!-- Pending Transactions -->

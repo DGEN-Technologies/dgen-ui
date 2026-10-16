@@ -50,13 +50,9 @@
   let revealPassword = $state(false);
   let confirmPassword = $state("");
   let revealConfirmPassword = $state(false);
-  let formElement = $state();
 
   let showTerms = $state(false);
   let termsAccepted = $state(false);
-  let termsScrollEl = $state();
-  let termsScrolledToEnd = $state(false);
-  let pendingSubmit = $state(false);
 
   // Simple avatar color system
   const avatarColors = [
@@ -143,48 +139,22 @@
   let need2fa = $derived(form?.message === "2fa");
   let uploadedSrc = $state(null);
 
-  const openTermsModal = async () => {
+  const openTermsModal = () => {
     showTerms = true;
-    pendingSubmit = true;
-    termsScrolledToEnd = false;
-    await tick();
-    if (termsScrollEl) {
-      termsScrollEl.scrollTop = 0;
-      const reached =
-        termsScrollEl.scrollTop + termsScrollEl.clientHeight >=
-        termsScrollEl.scrollHeight - 8;
-      if (reached) termsScrolledToEnd = true;
-    }
-  };
-
-  const handleTermsScroll = () => {
-    if (!termsScrollEl) return;
-    const reached =
-      termsScrollEl.scrollTop + termsScrollEl.clientHeight >=
-      termsScrollEl.scrollHeight - 8;
-    if (reached) termsScrolledToEnd = true;
   };
 
   const closeTermsModal = () => {
     showTerms = false;
-    pendingSubmit = false;
   };
 
-  const handleTermsKeydown = (e) => {
-    if (e.key === "Escape") {
-      closeTermsModal();
-    }
-  };
-
-  const acceptTerms = async () => {
+  /**
+   * "I agree" inside the modal is a shortcut for ticking the checkbox, not a
+   * submit. The modal can be opened at any point while the form is still
+   * half-filled, so submitting from here would fire an incomplete form.
+   */
+  const acceptTerms = () => {
     termsAccepted = true;
     showTerms = false;
-
-    if (pendingSubmit && formElement) {
-      pendingSubmit = false;
-      await tick();
-      formElement.requestSubmit();
-    }
   };
 
   $effect(() => {
@@ -282,7 +252,6 @@
   <form
     class="space-y-5"
     method="POST"
-    bind:this={formElement}
     use:enhance={({ cancel }) => {
       // Validate password confirmation
       if ($password !== confirmPassword) {
@@ -292,8 +261,8 @@
       }
 
       if (!termsAccepted) {
+        fail("Please accept the Terms & Conditions to continue.");
         cancel();
-        void openTermsModal();
         return;
       }
 
@@ -377,11 +346,32 @@
       </div>
     </div>
 
+    <div class="flex items-start gap-3">
+      <input
+        id="termsAcceptedCheckbox"
+        type="checkbox"
+        bind:checked={termsAccepted}
+        class="checkbox checkbox-sm shrink-0 mt-0.5 !w-5 !h-5 !min-h-0 !p-0 !rounded-md border-2 border-white/30 checked:!border-purple-500 checked:!bg-purple-500"
+      />
+      <span class="text-sm text-white/80 leading-relaxed">
+        <label for="termsAcceptedCheckbox" class="cursor-pointer select-none">
+          By checking this box, I'm confirming I have read and agreed to these
+        </label>
+        <button
+          type="button"
+          class="font-semibold text-purple-300 underline underline-offset-2 hover:text-purple-200 transition-colors"
+          onclick={openTermsModal}
+        >
+          terms &amp; conditions
+        </button>.
+      </span>
+    </div>
+
     <button
       type="submit"
       class="w-full px-6 py-4 rounded-2xl font-bold text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-2xl active:scale-95 relative overflow-hidden group inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed"
       style="background: linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%); color: white; box-shadow: 0 10px 30px rgba(167, 139, 250, 0.3);"
-      disabled={loading}
+      disabled={loading || !termsAccepted}
       bind:this={btn}
     >
       {#if loading}
@@ -479,7 +469,7 @@
             Terms & Conditions
           </h2>
           <p class="text-white/60 text-xs md:text-sm mt-1">
-            Please scroll to the bottom before accepting.
+            Please read these before creating an account.
           </p>
         </div>
         <button
@@ -494,8 +484,6 @@
 
       <div
         class="mt-4 max-h-[60vh] overflow-y-auto rounded-2xl border border-white/10 bg-black/40 p-4 md:p-6"
-        bind:this={termsScrollEl}
-        onscroll={handleTermsScroll}
       >
         <TermsContent />
       </div>
@@ -506,23 +494,16 @@
           class="w-full sm:w-auto px-4 py-2 rounded-xl border border-white/20 text-white/80 hover:text-white hover:border-white/50 transition-all"
           onclick={closeTermsModal}
         >
-          Cancel
+          Close
         </button>
         <button
           type="button"
-          class="w-full sm:w-auto px-5 py-2 rounded-xl font-semibold transition-all border border-green-400/60 text-green-200 hover:text-white hover:border-green-300 hover:bg-green-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={!termsScrolledToEnd}
+          class="w-full sm:w-auto px-5 py-2 rounded-xl font-semibold transition-all border border-green-400/60 text-green-200 hover:text-white hover:border-green-300 hover:bg-green-500/20"
           onclick={acceptTerms}
         >
           I agree
         </button>
       </div>
-
-      {#if !termsScrolledToEnd}
-        <p class="mt-2 text-xs text-white/50">
-          Scroll to the bottom to enable “I agree”.
-        </p>
-      {/if}
     </div>
   </div>
 {/if}

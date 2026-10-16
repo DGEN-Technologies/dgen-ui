@@ -1746,24 +1746,6 @@
           below-limit transaction with the same address, or had anyone send you
           funds to a stale address? Look for them here to try and recover.
         </p>
-
-        <a
-          href="/refunds"
-          class="w-full sm:w-auto px-3 lg:px-6 py-2 lg:py-3 rounded-2xl font-semibold text-xs sm:text-sm lg:text-base transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 relative overflow-hidden group inline-flex items-center justify-center gap-2"
-          style="background: linear-gradient(135deg, #3B82F6 0%, #06B6D4 100%); color: white;"
-        >
-          <div
-            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-            style="background: linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%);"
-          ></div>
-          <iconify-icon
-            noobserver
-            icon="ph:currency-btc-bold"
-            width="16"
-            class="relative z-10 group-hover:rotate-12 transition-transform duration-500 flex-shrink-0 lg:w-5"
-          ></iconify-icon>
-          <span class="relative z-10">Check Refundables</span>
-        </a>
       </div>
     </div>
   </div>

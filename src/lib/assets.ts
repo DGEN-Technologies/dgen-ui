@@ -54,6 +54,25 @@ export function parseAssetAmount(amount: number, assetId: string): number {
   return Math.floor(amount * Math.pow(10, metadata.precision));
 }
 
+/**
+ * The inverse of parseAssetAmount: smallest-unit integer -> asset units.
+ *
+ * The Liquid SDK splits this by variant, and the two look alike enough to
+ * confuse: ReceiveAmount's `bitcoin` variant takes `payerAmountSat` (an
+ * integer in sats) while its `asset` variant takes `payerAmount` in the
+ * asset's OWN units — 0.1 for a tenth of a USDT, not 10000000. Handing the
+ * smallest-unit integer to `payerAmount` asks for ten million USDT.
+ *
+ * Anything holding a smallest-unit figure — the Numpad produces them for
+ * every asset — has to come back through here before it reaches an asset
+ * amount field.
+ */
+export function toAssetUnits(smallestUnit: number, assetId: string): number {
+  const metadata = getAssetMetadata(assetId);
+  if (!metadata) return smallestUnit;
+  return smallestUnit / Math.pow(10, metadata.precision);
+}
+
 // Check if asset supports fee payment
 export function supportsAssetFees(assetId: string): boolean {
   const metadata = getAssetMetadata(assetId);
