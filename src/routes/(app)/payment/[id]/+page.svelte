@@ -93,34 +93,57 @@
     if (!p && browser) {
       isLoading = true;
       try {
-        // Wait for SDK to be ready
+        // Retry across BOTH rails, like the loader. This path previously
+        // waited on the Liquid SDK and then searched Liquid payments only, so
+        // when the loader missed, the fallback could not find a Lightning
+        // payment either — it just spent 15 seconds failing to.
         const walletService = await import("$lib/walletService");
+        const { adapters } = await import("$lib/rails");
+        const { toLegacyPayment } = await import("$lib/rails/legacy");
+        const { getPaymentId } = await import("$lib/transactionService");
+
+        const ready = () =>
+          walletService.isConnected() || adapters.spark.isConnected();
+
         let attempts = 0;
-        while (!walletService.isConnected() && attempts < 30) {
+        while (!ready() && attempts < 30) {
           await new Promise((resolve) => setTimeout(resolve, 500));
           attempts++;
         }
 
-        if (walletService.isConnected()) {
-          // Get all transactions
-          const transactions = await walletService.getTransactions();
+        if (ready()) {
+          const liquidConnected = walletService.isConnected();
+          const sparkConnected = adapters.spark.isConnected();
+
+          const [liquidResult, sparkResult] = await Promise.allSettled([
+            liquidConnected
+              ? walletService.getTransactions()
+              : Promise.resolve([]),
+            sparkConnected
+              ? adapters.spark.listPayments(100)
+              : Promise.resolve([]),
+          ]);
+
+          const transactions = [
+            ...(liquidResult.status === "fulfilled" ? liquidResult.value : []),
+            ...(sparkResult.status === "fulfilled"
+              ? sparkResult.value
+              : []
+            ).map(toLegacyPayment),
+          ];
 
           // Extract payment ID from URL
           const urlParts = window.location.pathname.split("/");
           const paymentId = urlParts[urlParts.length - 1];
 
-          // Find the payment - check all possible ID formats
-          const payment = transactions.find((tx) => {
-            const txTime = tx.paymentTime || tx.timestamp || 0;
-            return (
+          const payment = transactions.find(
+            (tx) =>
+              getPaymentId(tx) === paymentId ||
               tx.txId === paymentId ||
               tx.id === paymentId ||
               tx.paymentHash === paymentId ||
-              tx.details?.paymentHash === paymentId ||
-              `payment_${txTime}_${tx.amountSat}_${tx.paymentType}` ===
-                paymentId
-            );
-          });
+              tx.details?.paymentHash === paymentId,
+          );
 
           if (payment) {
             // Get rate
@@ -141,8 +164,7 @@
             const resolvedStatus = resolvePaymentStatus(payment);
             p = {
               ...payment,
-              id:
-                payment.txId || payment.id || payment.paymentHash || paymentId,
+              id: getPaymentId(payment),
               rate,
               currency: user?.currency || "USD",
               status: resolvedStatus ?? payment.status,
