@@ -469,3 +469,13 @@
 .dg-landing .dg-auth label.input {
   padding-left: 24px;
 }
+/* "Join DGEN": DGEN logo gradient (lavender to teal) with a soft glow */
+.dg-landing .dg-auth .dg-auth-brand {
+  background: linear-gradient(90deg, #9688dd, #74ebd5);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  filter: drop-shadow(0 0 14px rgba(116, 235, 213, 0.35))
+    drop-shadow(0 0 32px rgba(150, 136, 221, 0.28));
+}
