@@ -10,9 +10,13 @@
 
   let { howItWorks, roadmap, about, user } = $props();
 
-  // The restyled look applies on the home page only. Login, register, admin
+  // The restyled look applies on the home, register and sign-in pages. Admin
   // and other pages reuse this header and keep their original look.
+  // Nav links and the mobile menu still depend on the home page only.
   let isHome = $derived($page.url.pathname === "/");
+  let isRestyled = $derived(
+    ["/", "/register", "/login"].includes($page.url.pathname),
+  );
 
   let showMobileMenu = $state(false);
   let header = $state();
@@ -23,29 +27,31 @@
 </script>
 
 <header
-  class={isHome
+  class={isRestyled
     ? "dg-nav-shell w-full px-4 sm:px-6 pt-5 fixed z-50 top-0"
     : "w-full px-6 py-4 fixed z-50 top-0 lg:bg-base-100/80 lg:backdrop-blur-xl lg:border-b lg:border-white/10"}
   bind:this={header}
 >
   <nav
-    class={isHome
+    class={isRestyled
       ? "dg-nav flex justify-between items-center max-w-[1120px] mx-auto"
       : "flex justify-between items-center max-w-7xl mx-auto"}
   >
     <div class="flex justify-start items-center">
-      {#if isHome}
-        <img
-          src="/images/dgen-logo-white.svg"
-          alt="DGEN Technologies"
-          class="dg-nav-logo hidden lg:block"
-        />
+      {#if isRestyled}
+        <a href="/" aria-label="DGEN home" class="hidden lg:block">
+          <img
+            src="/images/dgen-logo-white.svg"
+            alt="DGEN Technologies"
+            class="dg-nav-logo"
+          />
+        </a>
       {/if}
     </div>
 
     <!-- desktop nav -->
     <div
-      class={isHome
+      class={isRestyled
         ? "dg-nav-links hidden lg:flex justify-center items-center font-medium"
         : "hidden space-x-6 lg:flex justify-center items-center font-semibold"}
     >
@@ -75,14 +81,14 @@
         </button>
       {:else}
         <button
-          class={isHome
+          class={isRestyled
             ? "btn dg-btn-primary !w-auto !rounded-full px-6 border-0"
             : "btn bg-gradient-primary text-white border-0 !w-auto !rounded-full px-6 hover:shadow-lg hover:scale-105 transition-all"}
           onclick={() => goto("/register")}
           >{$t("nav.register")}
         </button>
         <button
-          class={isHome
+          class={isRestyled
             ? "btn btn-ghost dg-btn-ghost !w-auto !rounded-full px-6"
             : "btn btn-ghost !w-auto !rounded-full px-6 border border-white/20 hover:bg-white/10 transition-all"}
           onclick={() => goto("/login")}

@@ -6,17 +6,25 @@
   import Footer from "$comp/Footer.svelte";
   import LandingHeader from "$comp/LandingHeader.svelte";
   import { theme as themeStore, proMode } from "$lib/store";
+  import { page } from "$app/stores";
+  import "../../landing-restyle.css";
 
   let { data, children } = $props();
   let { theme } = $state(data);
 
   let { user } = $derived(data);
+  // Register and sign-in pages use the same look as the home page.
+  let isAuth = $derived(["/register", "/login"].includes($page.url.pathname));
   run(() => {
     theme = $themeStore;
   });
 </script>
 
-<div class="min-h-screen bg-black text-white">
+<div
+  class={isAuth
+    ? "dg-landing min-h-screen text-white"
+    : "min-h-screen bg-black text-white"}
+>
   <SvelteToast options={{ reversed: true, intro: { y: 192 } }} />
   <LandingHeader {user} />
   <!-- <Nostr /> -->

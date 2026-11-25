@@ -356,3 +356,126 @@
 .dg-landing .particles {
   display: none !important;
 }
+
+/* ---------- Register and sign-in cards (.dg-auth) ---------- */
+.dg-landing .dg-auth {
+  padding: 40px 36px !important;
+  background: rgba(255, 255, 255, 0.035) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+/* Retire the floating colour orbs and focus glow blobs */
+.dg-landing .dg-auth > .absolute.blur-3xl,
+.dg-landing .dg-auth .group > .absolute.inset-0 {
+  display: none !important;
+}
+.dg-landing .dg-auth h1 {
+  font-family: Inter, "Helvetica Neue", Arial, sans-serif;
+  font-weight: 500;
+  font-size: 36px;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+}
+.dg-landing .dg-auth h1 .lightning {
+  animation: none !important;
+}
+.dg-landing .dg-auth h1 + p {
+  color: rgba(245, 247, 250, 0.6);
+  opacity: 1;
+  font-size: 15px;
+}
+/* Inputs: quiet glass fields with a teal focus ring */
+.dg-landing .dg-auth input.glass,
+.dg-landing .dg-auth label.input {
+  height: 54px;
+  min-height: 54px;
+  border-radius: 16px !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: var(--dg-ink);
+  font-size: 15px;
+  box-shadow: none !important;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+}
+.dg-landing .dg-auth input.glass:focus,
+.dg-landing .dg-auth label.input:focus-within {
+  outline: none;
+  border-color: rgba(125, 227, 207, 0.55) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+.dg-landing .dg-auth input::placeholder {
+  color: rgba(245, 247, 250, 0.42);
+}
+.dg-landing .dg-auth .text-purple-400 {
+  color: var(--dg-lav) !important;
+}
+/* Main button (Register / Sign In) */
+.dg-landing .dg-auth button[type="submit"] {
+  min-height: 56px;
+  border-radius: 999px !important;
+  font-family: "Plus Jakarta Sans", Inter, sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  color: #0d0f14 !important;
+  background: linear-gradient(90deg, #8fe6d3, #b3a9ea) !important;
+  box-shadow:
+    0 10px 40px rgba(125, 227, 207, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+  transform: none !important;
+}
+.dg-landing .dg-auth button[type="submit"]:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+.dg-landing .dg-auth button[type="submit"]:disabled {
+  opacity: 0.45;
+}
+/* Secondary link button (Sign In on register, Register on sign-in) */
+.dg-landing .dg-auth a > button {
+  min-height: 48px;
+  border-radius: 999px !important;
+  font-family: "Plus Jakarta Sans", Inter, sans-serif;
+  font-weight: 700;
+  color: var(--dg-ink) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+  transform: none !important;
+}
+.dg-landing .dg-auth a > button:hover {
+  background: rgba(255, 255, 255, 0.09) !important;
+}
+.dg-landing .dg-auth button > .absolute.inset-0 {
+  display: none !important;
+}
+.dg-landing .dg-auth .text-secondary {
+  color: rgba(245, 247, 250, 0.6) !important;
+}
+/* Terms checkbox and link */
+.dg-landing .dg-auth input[type="checkbox"]:checked {
+  border-color: var(--dg-teal) !important;
+  background-color: var(--dg-teal) !important;
+}
+.dg-landing .dg-auth .text-purple-300 {
+  color: #b3a9ea !important;
+}
+.dg-landing .dg-auth label.input input {
+  font-size: 15px;
+  font-family: Inter, "Helvetica Neue", Arial, sans-serif;
+}
+.dg-landing .dg-auth label.input {
+  padding-left: 24px;
+}
+/* "Join DGEN": DGEN logo gradient (lavender to teal) with a soft glow */
+.dg-landing .dg-auth .dg-auth-brand {
+  background: linear-gradient(90deg, #9688dd, #74ebd5);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  filter: drop-shadow(0 0 14px rgba(116, 235, 213, 0.35))
+    drop-shadow(0 0 32px rgba(150, 136, 221, 0.28));
+}

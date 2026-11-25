@@ -221,7 +221,7 @@
 {/if}
 
 <div
-  class="mx-auto premium-card max-w-xl w-full md:w-[480px] mb-20 mt-32 relative overflow-visible animate-fadeInUp"
+  class="dg-auth mx-auto premium-card max-w-xl w-full md:w-[480px] mb-20 mt-32 relative overflow-visible animate-fadeInUp"
 >
   <!-- Animated background orbs -->
   <div
@@ -232,8 +232,7 @@
     style="animation-delay: 2s;"
   ></div>
   <h1 class="text-4xl font-bold text-center mb-2">
-    <span class="holographic">Join DGEN</span>
-    <span class="text-yellow-400 lightning mx-2">⚡</span>
+    <span class="dg-auth-brand">Join DGEN</span>
   </h1>
   <p class="text-center opacity-60 mb-6">Create Your Lightning Wallet</p>
   <!-- Removed avatar selector for simplified registration -->
