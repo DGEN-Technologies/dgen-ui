@@ -221,7 +221,7 @@
 {/if}
 
 <div
-  class="mx-auto premium-card max-w-xl w-full md:w-[480px] mb-20 mt-32 relative overflow-visible animate-fadeInUp"
+  class="dg-auth mx-auto premium-card max-w-xl w-full md:w-[480px] mb-20 mt-32 relative overflow-visible animate-fadeInUp"
 >
   <!-- Animated background orbs -->
   <div
