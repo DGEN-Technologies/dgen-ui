@@ -13,7 +13,8 @@
       phase: "Phase 1",
       title: "Public Listing & Fiat POS System",
       icon: "ph:chart-line-up-bold",
-      color: "from-green-400 to-emerald-400",
+      color: "from-[#5FC48B] to-[#5FC48B]",
+      badge: "bg-[#5FC48B]/12 text-[#5FC48B] border border-[#5FC48B]/35",
       items: [
         "Stock exchange listing (subject to approvals)",
         "Enhanced visibility & liquidity",
@@ -26,7 +27,8 @@
       phase: "Phase 2",
       title: "Introduction of DGEN Visa & Mastercard",
       icon: "ph:credit-card-bold",
-      color: "from-cyan-400 to-blue-400",
+      color: "from-[#5BB8F0] to-[#5BB8F0]",
+      badge: "bg-[#5BB8F0]/12 text-[#5BB8F0] border border-[#5BB8F0]/35",
       items: [
         "Branded Visa or Mastercard for crypto spending",
         "Global merchant acceptance",
@@ -39,7 +41,8 @@
       phase: "Phase 3",
       title: "Mobile App and Rewards Program",
       icon: "ph:device-mobile-bold",
-      color: "from-purple-400 to-pink-400",
+      color: "from-[#C58BEA] to-[#C58BEA]",
+      badge: "bg-[#C58BEA]/12 text-[#C58BEA] border border-[#C58BEA]/35",
       items: [
         "Mobile app on major app stores",
         "Global accessibility",
@@ -52,7 +55,8 @@
       phase: "Phase 4",
       title: "Launch of DGEN Crypto Wallet",
       icon: "ph:wallet-bold",
-      color: "from-yellow-400 to-orange-400",
+      color: "from-[#E8B64A] to-[#E8B64A]",
+      badge: "bg-[#E8B64A]/12 text-[#E8B64A] border border-[#E8B64A]/35",
       items: [
         "Secure web-based cryptocurrency wallet",
         "Robust security infrastructure",
@@ -107,7 +111,7 @@
                   >
                     <!-- Phase badge -->
                     <div
-                      class={`inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r ${item.color} text-black font-bold mb-4`}
+                      class={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${item.badge} font-semibold mb-4`}
                     >
                       <iconify-icon
                         icon={item.icon}

@@ -159,7 +159,7 @@
 
       <!-- Resource Tabs -->
       <div
-        class="flex flex-col justify-center gap-3 mb-12 px-4"
+        class="flex flex-col sm:flex-row sm:flex-wrap justify-center gap-3 mb-12 px-4"
         in:fly={{ y: 20, duration: 600, delay: 200 }}
       >
         {#each Object.entries(resources) as [key, section]}
@@ -196,12 +196,12 @@
                 >
                   <div class="flex items-start gap-4 h-full">
                     <div
-                      class="w-12 h-12 rounded-xl bg-gradient-to-br from-dgen-aqua to-dgen-cyan flex items-center justify-center flex-shrink-0"
+                      class="w-12 h-12 rounded-xl bg-dgen-aqua/10 border border-dgen-aqua/30 flex items-center justify-center flex-shrink-0"
                     >
                       <iconify-icon
                         icon={resource.icon}
                         width="24"
-                        class="text-black"
+                        class="text-dgen-aqua"
                       ></iconify-icon>
                     </div>
                     <div class="flex-1 flex flex-col">

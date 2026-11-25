@@ -1,0 +1,358 @@
+/*
+ * Landing page restyle (home page "/" only).
+ *
+ * Every rule is scoped under .dg-landing, which wraps the home page in
+ * src/routes/+page.svelte. Nothing here can affect wallet screens, login,
+ * register or any other route. Look only: no wording, links or handlers change.
+ */
+
+.dg-landing {
+  --dg-bg: #0d0f14;
+  --dg-ink: #f5f7fa;
+  --dg-teal: #7de3cf;
+  --dg-lav: #a79ce6;
+  position: relative;
+  background: var(--dg-bg);
+  color: var(--dg-ink);
+  font-family: Inter, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+
+/* ---------- Headings: Inter, tight tracking, soft white gradient ---------- */
+.dg-landing .heading-condensed {
+  font-family: Inter, "Helvetica Neue", Arial, sans-serif !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.04em !important;
+  line-height: 1.05 !important;
+}
+.dg-landing .heading-condensed > span,
+.dg-landing .heading-condensed .holographic,
+.dg-landing .holographic {
+  background-image: linear-gradient(
+    180deg,
+    #ffffff 35%,
+    rgba(255, 255, 255, 0.6)
+  ) !important;
+  background-size: auto !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  color: transparent !important;
+  animation: none !important;
+}
+
+/* ---------- Floating pill nav (desktop) ---------- */
+.dg-nav-links {
+  gap: 4px;
+}
+.dg-landing .dg-nav-logo {
+  height: 26px;
+  width: auto;
+}
+.dg-nav-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(245, 247, 250, 0.78);
+  transition:
+    color 0.2s,
+    background 0.2s;
+}
+.dg-nav-link:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+.dg-landing .dg-btn-primary {
+  min-height: 44px;
+  height: 44px;
+  margin-left: 6px;
+  font-family: "Plus Jakarta Sans", Inter, sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: #0d0f14 !important;
+  background-image: linear-gradient(90deg, #8fe6d3, #b3a9ea) !important;
+}
+.dg-landing .dg-btn-primary:hover {
+  filter: brightness(1.1);
+  transform: none;
+  box-shadow: none;
+}
+.dg-landing .dg-btn-ghost {
+  min-height: 44px;
+  height: 44px;
+  font-family: "Plus Jakarta Sans", Inter, sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--dg-ink);
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  background: transparent;
+}
+.dg-landing .dg-btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+@media (min-width: 1024px) {
+  .dg-landing .dg-nav {
+    box-sizing: border-box;
+    padding: 8px 10px 8px 22px;
+    border-radius: 999px;
+    background: rgba(20, 23, 30, 0.62);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    -webkit-backdrop-filter: blur(22px);
+    backdrop-filter: blur(22px);
+    box-shadow:
+      0 12px 40px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  }
+}
+
+/* ---------- Hero ---------- */
+.dg-landing .dg-chip {
+  padding: 10px 18px;
+  border-radius: 999px;
+  color: #e8c26e;
+  background: rgba(232, 194, 110, 0.07);
+  border: 1px solid rgba(232, 194, 110, 0.22);
+}
+.dg-landing .dg-hero-title {
+  max-width: 1120px;
+  margin-left: auto;
+  margin-right: auto;
+  font-family: Inter, "Helvetica Neue", Arial, sans-serif;
+  font-weight: 500;
+  font-size: clamp(36px, 6vw, 84px);
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  text-wrap: balance;
+  background: linear-gradient(180deg, #ffffff 35%, rgba(255, 255, 255, 0.55));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  filter: drop-shadow(0 0 26px rgba(125, 227, 207, 0.32))
+    drop-shadow(0 0 64px rgba(167, 156, 230, 0.2));
+}
+.dg-landing .dg-cta-primary,
+.dg-landing .dg-cta-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 56px;
+  border-radius: 999px;
+  font-family: "Plus Jakarta Sans", Inter, sans-serif;
+  font-weight: 700;
+  font-size: 16px !important;
+  padding-left: 34px !important;
+  padding-right: 34px !important;
+}
+.dg-landing .dg-cta-primary {
+  color: #0d0f14;
+  background: linear-gradient(90deg, #8fe6d3, #b3a9ea);
+  box-shadow:
+    0 10px 40px rgba(125, 227, 207, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.dg-landing .dg-cta-primary:hover {
+  filter: brightness(1.08);
+}
+.dg-landing .dg-cta-ghost {
+  color: var(--dg-ink);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.dg-landing .dg-cta-ghost:hover {
+  background: rgba(255, 255, 255, 0.09);
+}
+.dg-landing .dg-tagline {
+  color: rgba(245, 247, 250, 0.72);
+}
+
+/* Hero logo: calm glow, no bobbing */
+.dg-landing .floating {
+  animation: none !important;
+}
+
+/* ---------- Liquid light network background ---------- */
+.dg-hero-bg {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -84px;
+  bottom: -60px;
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    #000 0%,
+    #000 70%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(180deg, #000 0%, #000 70%, transparent 100%);
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.dg-hero-mask {
+  position: absolute;
+  inset: 0;
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    #000 0%,
+    #000 55%,
+    transparent 92%
+  );
+  mask-image: linear-gradient(180deg, #000 0%, #000 55%, transparent 92%);
+}
+.dg-hero-float {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -20px;
+  bottom: -20px;
+  will-change: transform;
+}
+.dg-wave {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 200%;
+  height: 260px;
+  will-change: transform;
+}
+.dg-wave-2 {
+  bottom: -18px;
+}
+@keyframes dg-drift {
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+@keyframes dg-float {
+  to {
+    transform: translate3d(0, 14px, 0);
+  }
+}
+.dg-w1 {
+  animation: dg-drift 100s linear infinite;
+}
+.dg-w2 {
+  animation: dg-drift 160s linear infinite reverse;
+}
+.dg-fl {
+  animation: dg-float 28s ease-in-out infinite alternate;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dg-w1,
+  .dg-w2,
+  .dg-fl {
+    animation: none !important;
+  }
+}
+.reduceFx .dg-w1,
+.reduceFx .dg-w2,
+.reduceFx .dg-fl {
+  animation: none !important;
+}
+
+/* ---------- Cards: quiet glass instead of loud gradients ---------- */
+.dg-landing .premium-card {
+  background: rgba(255, 255, 255, 0.035) !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  border-radius: 28px !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+.dg-landing .premium-card::before {
+  display: none !important;
+}
+.dg-landing .premium-card:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+}
+.dg-landing .glass {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: none;
+}
+
+/* Gradient accents use the toned-down teal and lavender */
+.dg-landing .bg-gradient-primary {
+  background-image: linear-gradient(90deg, #8fe6d3, #b3a9ea) !important;
+}
+/* Step "Next" button: quiet glass pill */
+.dg-landing .btn-liquid {
+  color: var(--dg-ink) !important;
+  background-image: linear-gradient(
+    135deg,
+    rgba(125, 227, 207, 0.18),
+    rgba(167, 156, 230, 0.24)
+  ) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  border-radius: 999px !important;
+  min-height: 52px;
+  font-family: "Plus Jakarta Sans", Inter, sans-serif;
+  font-weight: 700;
+  transform: none !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+.dg-landing .btn-liquid:hover {
+  filter: brightness(1.15);
+}
+.dg-landing .btn-liquid::before {
+  display: none !important;
+}
+.dg-landing .gradient-text {
+  background-image: linear-gradient(90deg, #8fe6d3, #b3a9ea) !important;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ---------- Footer ---------- */
+.dg-landing footer .text-center.space-y-2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 36px;
+}
+.dg-landing footer .text-center.space-y-2 > * {
+  margin-top: 0 !important;
+}
+.dg-landing footer .text-5xl {
+  font-size: 2.25rem;
+  line-height: 2.5rem;
+}
+.dg-landing footer {
+  background: transparent !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Active "Built Different" row: soft tint in that feature's accent colour */
+.dg-landing .premium-card.dg-accent {
+  background: rgba(var(--accent), 0.08) !important;
+  border-color: rgba(var(--accent), 0.38) !important;
+}
+
+/* Partner names: consistent weight */
+.dg-landing #partners h3 {
+  font-family: Inter, "Helvetica Neue", Arial, sans-serif !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.02em !important;
+}
+
+/* Old decorative layers are retired on the home page (same effect the old pro-mode overrides had) */
+.dg-landing .aurora-bg,
+.dg-landing .blob,
+.dg-landing .cyber-grid,
+.dg-landing .particles {
+  display: none !important;
+}

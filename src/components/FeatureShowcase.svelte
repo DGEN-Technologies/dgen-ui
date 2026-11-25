@@ -62,19 +62,31 @@
     // return () => clearInterval(interval);
   });
 
+  // Muted accent palette. Keep exactly 5 space-separated tokens per entry:
+  // [0] from, [1] to, [2] border, [3] hover border, [4] text.
   const getColorClasses = (color) => {
     const colors = {
       yellow:
-        "from-yellow-400 to-orange-500 border-yellow-500/20 hover:border-yellow-500/60 text-yellow-400",
+        "from-[#E8B64A]/25 to-[#E8B64A]/10 border-[#E8B64A]/25 hover:border-[#E8B64A]/45 text-[#E8B64A]",
       green:
-        "from-green-400 to-emerald-500 border-green-500/20 hover:border-green-500/60 text-green-400",
+        "from-[#5FC48B]/25 to-[#5FC48B]/10 border-[#5FC48B]/25 hover:border-[#5FC48B]/45 text-[#5FC48B]",
       purple:
-        "from-purple-400 to-pink-500 border-purple-500/20 hover:border-purple-500/60 text-purple-400",
-      blue: "from-blue-400 to-cyan-500 border-blue-500/20 hover:border-blue-500/60 text-blue-400",
-      cyan: "from-cyan-400 to-teal-500 border-cyan-500/20 hover:border-cyan-500/60 text-cyan-400",
+        "from-[#A98BE0]/25 to-[#A98BE0]/10 border-[#A98BE0]/25 hover:border-[#A98BE0]/45 text-[#A98BE0]",
+      blue: "from-[#5BB8F0]/25 to-[#5BB8F0]/10 border-[#5BB8F0]/25 hover:border-[#5BB8F0]/45 text-[#5BB8F0]",
+      cyan: "from-[#5FD0C8]/25 to-[#5FD0C8]/10 border-[#5FD0C8]/25 hover:border-[#5FD0C8]/45 text-[#5FD0C8]",
     };
     return colors[color];
   };
+
+  // RGB triples for the active-row tint (see landing-restyle.css .dg-accent)
+  const getAccent = (color) =>
+    ({
+      yellow: "232,182,74",
+      green: "95,196,139",
+      purple: "169,139,224",
+      blue: "91,184,240",
+      cyan: "95,208,200",
+    })[color] ?? "125,227,207";
 </script>
 
 {#if mounted}
@@ -105,7 +117,10 @@
                     <div
                       class="premium-card min-h-[400px] border-2 {getColorClasses(
                         feature.color,
-                      )} relative overflow-hidden"
+                      )
+                        .split(' ')
+                        .slice(2, 4)
+                        .join(' ')} relative overflow-hidden"
                     >
                       <!-- Floating visual -->
                       <div
@@ -134,13 +149,15 @@
                         </div>
 
                         <h3
-                          class="text-2xl sm:text-2xl font-bold mb-1 {getColorClasses(
-                            feature.color,
-                          ).split(' ')[4]}"
+                          class="text-2xl sm:text-2xl font-bold mb-1 text-white"
                         >
                           {feature.title}
                         </h3>
-                        <p class="text-lg sm:text-lg opacity-80 mb-2">
+                        <p
+                          class="text-lg sm:text-lg mb-2 {getColorClasses(
+                            feature.color,
+                          ).split(' ')[4]}"
+                        >
                           {feature.subtitle}
                         </p>
                         <p
@@ -166,19 +183,6 @@
                           {/each}
                         </div>
                       </div>
-
-                      <!-- Animated particles -->
-                      <div class="absolute inset-0 pointer-events-none">
-                        {#each Array(5) as _, j}
-                          <div
-                            class="absolute w-1 h-1 bg-white rounded-full opacity-30 animate-float"
-                            style="left: {20 + j * 15}%; top: {Math.random() *
-                              100}%; animation-delay: {j *
-                              0.5}s; animation-duration: {3 +
-                              Math.random() * 2}s"
-                          ></div>
-                        {/each}
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -192,8 +196,9 @@
               <button
                 class="w-full text-left premium-card border-2 transition-all duration-500 {i ===
                 activeFeature
-                  ? getColorClasses(feature.color) + ' scale-105'
+                  ? getColorClasses(feature.color) + ' dg-accent'
                   : 'border-white/10 hover:border-white/30'}"
+                style="--accent: {getAccent(feature.color)}"
                 onclick={() => (activeFeature = i)}
               >
                 <div class="flex items-center gap-2">
@@ -234,11 +239,9 @@
                     class="mt-2 h-1 bg-black/30 rounded-full overflow-hidden"
                   >
                     <div
-                      class="h-full bg-gradient-to-r {getColorClasses(
+                      class="h-full bg-current {getColorClasses(
                         feature.color,
-                      ).split(' ')[0]} {getColorClasses(feature.color).split(
-                        ' ',
-                      )[1]} rounded-full"
+                      ).split(' ')[4]} rounded-full"
                       style="animation: progress 5s linear infinite;"
                     ></div>
                   </div>
@@ -254,8 +257,9 @@
             <button
               class="w-full text-left premium-card border-2 transition-all duration-500 {i ===
               activeFeature
-                ? getColorClasses(feature.color)
+                ? getColorClasses(feature.color) + ' dg-accent'
                 : 'border-white/10 hover:border-white/30'}"
+              style="--accent: {getAccent(feature.color)}"
               onclick={() => (activeFeature = activeFeature === i ? -1 : i)}
             >
               <div class="flex items-center gap-2">

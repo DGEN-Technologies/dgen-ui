@@ -23,37 +23,204 @@
 </script>
 
 <div class="relative sm:min-h-screen" class:reduceFx>
-  <!-- Animated background mesh with aurora effect -->
-  <div class="absolute inset-0">
-    <div class="absolute inset-0 aurora-bg opacity-5"></div>
-    <div
-      class="absolute top-0 left-4 w-72 sm:w-96 h-96 bg-dgen-aqua rounded-full mix-blend-screen filter blur-3xl opacity-20 blob"
-    ></div>
-    <div
-      class="absolute top-0 right-4 w-72 sm:w-96 h-96 bg-dgen-cyan rounded-full mix-blend-screen filter blur-3xl opacity-20 blob"
-      style="animation-delay: 2s;"
-    ></div>
-    <div
-      class="absolute -bottom-8 left-20 w-52 sm:w-96 h-96 bg-dgen-teal rounded-full mix-blend-screen filter blur-3xl opacity-20 blob"
-      style="animation-delay: 4s;"
-    ></div>
-    <div
-      class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-[800px] bg-gradient-to-r from-dgen-aqua/10 via-dgen-cyan/10 to-dgen-purple/10 rounded-full filter blur-3xl animate-pulse pointer-events-none"
-    ></div>
-  </div>
-
-  <!-- Cyber Grid overlay -->
-  <div class="absolute inset-0 cyber-grid opacity-30"></div>
-
-  <!-- Particle System -->
-  <div class="particles hidden">
-    {#each Array(20) as _, i}
-      <div
-        class="particle"
-        style="left: {Math.random() * 100}%; animation-delay: {Math.random() *
-          20}s; animation-duration: {15 + Math.random() * 10}s"
-      ></div>
-    {/each}
+  <!-- Liquid light network background (pure SVG + CSS, no JS, decorative only) -->
+  <div class="dg-hero-bg" aria-hidden="true">
+    <div class="dg-hero-mask">
+      <div class="dg-fl dg-hero-float">
+        <svg
+          viewBox="0 0 1440 1000"
+          preserveAspectRatio="xMidYMid slice"
+          width="100%"
+          height="100%"
+          fill="none"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <defs>
+            <linearGradient
+              id="dgLine"
+              gradientUnits="userSpaceOnUse"
+              x1="0"
+              y1="0"
+              x2="1440"
+              y2="0"
+              ><stop offset="0" stop-color="#7DE3CF" /><stop
+                offset=".5"
+                stop-color="#A79CE6"
+              /><stop offset="1" stop-color="#7DE3CF" /></linearGradient
+            >
+            <radialGradient id="dgGlow"
+              ><stop offset="0" stop-color="#7DE3CF" stop-opacity=".45" /><stop
+                offset="1"
+                stop-color="#7DE3CF"
+                stop-opacity="0"
+              /></radialGradient
+            >
+          </defs>
+          <g
+            fill="#FFFFFF"
+            fill-opacity=".05"
+            font-family="Inter,sans-serif"
+            font-weight="600"
+            font-size="190"
+            ><text x="40" y="790">₿</text><text x="1180" y="810">₮</text></g
+          >
+          <g
+            stroke="url(#dgLine)"
+            stroke-width="1"
+            stroke-opacity=".34"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M90 180L210 120L330 230L290 400L380 560L220 540L70 470L150 330L90 180M150 330L330 230M150 330L290 400M290 400L220 540"
+            />
+            <path
+              d="M1360 160L1230 110L1110 250L1140 420L1070 580L1230 560L1380 480L1290 330L1360 160M1290 330L1110 250M1290 330L1140 420M1140 420L1230 560"
+            />
+            <path
+              stroke-opacity=".16"
+              d="M210 120L560 70L720 40L880 80L1230 110"
+            />
+          </g>
+          <g fill="url(#dgGlow)"
+            ><circle cx="210" cy="120" r="16" /><circle
+              cx="290"
+              cy="400"
+              r="16"
+            /><circle cx="70" cy="470" r="16" /><circle
+              cx="1230"
+              cy="110"
+              r="16"
+            /><circle cx="1140" cy="420" r="16" /><circle
+              cx="1380"
+              cy="480"
+              r="16"
+            /><circle cx="720" cy="40" r="16" /></g
+          >
+          <g fill="#7DE3CF" fill-opacity=".85"
+            ><circle cx="90" cy="180" r="2.6" /><circle
+              cx="330"
+              cy="230"
+              r="2.6"
+            /><circle cx="290" cy="400" r="2.6" /><circle
+              cx="220"
+              cy="540"
+              r="2.6"
+            /><circle cx="1360" cy="160" r="2.6" /><circle
+              cx="1110"
+              cy="250"
+              r="2.6"
+            /><circle cx="1230" cy="560" r="2.6" /><circle
+              cx="1290"
+              cy="330"
+              r="2.6"
+            /><circle cx="720" cy="40" r="2.6" /></g
+          >
+          <g fill="#A79CE6" fill-opacity=".85"
+            ><circle cx="210" cy="120" r="2.6" /><circle
+              cx="150"
+              cy="330"
+              r="2.6"
+            /><circle cx="70" cy="470" r="2.6" /><circle
+              cx="380"
+              cy="560"
+              r="2.6"
+            /><circle cx="1230" cy="110" r="2.6" /><circle
+              cx="1140"
+              cy="420"
+              r="2.6"
+            /><circle cx="1380" cy="480" r="2.6" /><circle
+              cx="1070"
+              cy="580"
+              r="2.6"
+            /><circle cx="560" cy="70" r="2.6" /><circle
+              cx="880"
+              cy="80"
+              r="2.6"
+            /></g
+          >
+          <g stroke-width="1.2" stroke-linejoin="round">
+            <polygon
+              points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"
+              transform="translate(1190 640) scale(11)"
+              vector-effect="non-scaling-stroke"
+              stroke="#7DE3CF"
+              stroke-opacity=".26"
+            />
+            <polygon
+              points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"
+              transform="translate(70 600) scale(7)"
+              vector-effect="non-scaling-stroke"
+              stroke="#A79CE6"
+              stroke-opacity=".26"
+            />
+          </g>
+        </svg>
+      </div>
+    </div>
+    <div class="dg-w1 dg-wave">
+      <svg
+        viewBox="0 0 2880 260"
+        preserveAspectRatio="none"
+        width="100%"
+        height="100%"
+        fill="none"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <defs
+          ><linearGradient id="dgW1" x1="0" y1="0" x2="0" y2="1"
+            ><stop offset="0" stop-color="#7DE3CF" stop-opacity=".16" /><stop
+              offset="1"
+              stop-color="#7DE3CF"
+              stop-opacity="0"
+            /></linearGradient
+          ></defs
+        >
+        <path
+          d="M0 70C180 10 540 130 720 70C900 10 1260 130 1440 70C1620 10 1980 130 2160 70C2340 10 2700 130 2880 70V260H0Z"
+          fill="url(#dgW1)"
+        />
+        <path
+          d="M0 70C180 10 540 130 720 70C900 10 1260 130 1440 70C1620 10 1980 130 2160 70C2340 10 2700 130 2880 70"
+          stroke="#7DE3CF"
+          stroke-opacity=".3"
+          vector-effect="non-scaling-stroke"
+        />
+      </svg>
+    </div>
+    <div class="dg-w2 dg-wave dg-wave-2">
+      <svg
+        viewBox="0 0 2880 260"
+        preserveAspectRatio="none"
+        width="100%"
+        height="100%"
+        fill="none"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <defs
+          ><linearGradient id="dgW2" x1="0" y1="0" x2="0" y2="1"
+            ><stop offset="0" stop-color="#A79CE6" stop-opacity=".14" /><stop
+              offset="1"
+              stop-color="#A79CE6"
+              stop-opacity="0"
+            /></linearGradient
+          ></defs
+        >
+        <path
+          d="M0 110C240 50 480 170 720 110C960 50 1200 170 1440 110C1680 50 1920 170 2160 110C2400 50 2640 170 2880 110V260H0Z"
+          fill="url(#dgW2)"
+        />
+        <path
+          d="M0 110C240 50 480 170 720 110C960 50 1200 170 1440 110C1680 50 1920 170 2160 110C2400 50 2640 170 2880 110"
+          stroke="#A79CE6"
+          stroke-opacity=".26"
+          vector-effect="non-scaling-stroke"
+        />
+      </svg>
+    </div>
   </div>
 
   <!-- Content -->
@@ -63,10 +230,8 @@
       class="text-center px-4 mt-24 sm:mt-28"
       in:fly={{ y: 20, duration: 800, delay: 900 }}
     >
-      <div
-        class="glass px-4 py-3 sm:px-6 rounded-full border border-white/60 bg-white/10 inline-block"
-      >
-        <p class="font-semibold text-sm sm:text-base text-yellow-400/90">
+      <div class="dg-chip inline-block">
+        <p class="font-medium text-sm sm:text-base">
           ⚠️ This website/app is in Beta and not finalized. Use at your own
           risk.
         </p>
@@ -106,17 +271,13 @@
         </div>
       </div>
 
-      <!-- Bitcoin Lightning Wallet text below logo -->
-      <div
-        class="text-3xl sm:text-4xl md:text-6xl font-bold mb-8 px-2 w-full heading-condensed"
+      <!-- Headline -->
+      <h1
+        class="dg-hero-title mb-8 px-2 w-full text-center"
         in:fly={{ y: 30, duration: 800, delay: 400 }}
       >
-        <div class="text-center">
-          <span class="gradient-text font-roboto-condensed">
-            FUTURE OF MONEY
-          </span>
-        </div>
-      </div>
+        Fintech For A New Generation
+      </h1>
 
       <!-- Epic CTA Buttons -->
       <div
@@ -125,7 +286,7 @@
       >
         <a href="/register" class="group">
           <button
-            class="btn-liquid text-white border-0 px-2 py-1 sm:px-8 sm:py-3 text-xs sm:text-lg font-semibold sm:font-bold relative overflow-hidden transform hover:scale-105 sm:hover:scale-110 transition-all duration-300 hover:shadow-lg sm:hover:shadow-2xl hover:shadow-purple-500/50 rounded-xl sm:rounded-3xl w-full sm:w-auto"
+            class="dg-cta-primary px-2 py-1 sm:px-8 sm:py-3 text-xs sm:text-lg font-bold relative overflow-hidden transition-all duration-300 w-full sm:w-auto"
           >
             <span class="relative z-10 flex items-center gap-1 sm:gap-3">
               <iconify-icon
@@ -144,7 +305,7 @@
         </a>
         <a href="/login" class="group">
           <button
-            class="glass border-2 border-white/30 px-2 py-1 sm:px-8 sm:py-3 text-xs sm:text-lg font-semibold sm:font-bold hover:border-white/60 transition-all duration-300 rounded-xl sm:rounded-3xl hover:scale-105 sm:hover:scale-110 hover:shadow-lg sm:hover:shadow-2xl w-full sm:w-auto"
+            class="dg-cta-ghost px-2 py-1 sm:px-8 sm:py-3 text-xs sm:text-lg font-bold transition-all duration-300 w-full sm:w-auto"
           >
             <span class="flex items-center gap-1 sm:gap-3 whitespace-nowrap">
               <iconify-icon
@@ -172,10 +333,10 @@
           class="px-5 sm:px-7 py-4 sm:py-5 flex items-center min-h-[3.5rem] flex flex-col"
         >
           <span
-            class="text-dgen-cyan font-bold text-base sm:text-xl whitespace-nowrap"
+            class="dg-tagline font-medium text-base sm:text-xl whitespace-nowrap"
             >💎 Create Account In Seconds</span
           >
-          <span class="text-dgen-cyan font-bold text-base sm:text-xl"
+          <span class="dg-tagline font-medium text-base sm:text-xl"
             >(Literally)</span
           >
         </div>
