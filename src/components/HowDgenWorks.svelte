@@ -141,7 +141,7 @@
             class="absolute left-0 right-0 top-1/2 h-1 bg-white/10 rounded-full"
           ></div>
           <div
-            class="absolute left-0 top-1/2 h-1 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full transition-all duration-1000"
+            class="absolute left-0 top-1/2 h-1 bg-gradient-to-r from-[#8FE6D3] to-[#B3A9EA] rounded-full transition-all duration-1000"
             style="width: {(activeStep / (steps.length - 1)) * 100}%"
           ></div>
 
@@ -433,7 +433,7 @@
                       {step.number}
                     </div>
                     <div
-                      class="w-10 h-10 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center"
+                      class="w-10 h-10 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-[#A79CE6]/15 border border-[#A79CE6]/30 flex items-center justify-center"
                     >
                       <iconify-icon
                         icon={step.icon}
