@@ -1,5 +1,41 @@
-import { expect, type Page, type BrowserContext } from "@playwright/test";
+import {
+  test as base,
+  expect,
+  type Page,
+  type BrowserContext,
+} from "@playwright/test";
 import { randomBytes } from "node:crypto";
+
+/** Netlify deploy previews add a feedback toolbar over the bottom of every page,
+ * which covers buttons like "Save settings". Real visitors never see it, so
+ * hide it in every page the tests open. */
+const HIDE_NETLIFY_DRAWER = `
+  (() => {
+    const css = '[data-netlify-deploy-id], iframe[title="Netlify Drawer"], netlify-drawer { display: none !important; pointer-events: none !important; }';
+    const add = () => {
+      if (document.getElementById("e2e-hide-netlify")) return;
+      const s = document.createElement("style");
+      s.id = "e2e-hide-netlify";
+      s.textContent = css;
+      (document.head || document.documentElement).appendChild(s);
+    };
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", add);
+    else add();
+  })();
+`;
+
+export const test = base.extend({
+  context: async ({ context }, use) => {
+    await context.addInitScript(HIDE_NETLIFY_DRAWER);
+    await use(context);
+  },
+});
+
+/** For contexts the tests create themselves with browser.newContext(). */
+export const prepContext = async (ctx: BrowserContext) => {
+  await ctx.addInitScript(HIDE_NETLIFY_DRAWER);
+  return ctx;
+};
 
 export const MODE = process.env.E2E_MODE || "full"; // "full" (dev) or "smoke" (live)
 export const isFull = MODE === "full";
@@ -103,7 +139,3 @@ export const balanceSats = async (page: Page, username: string) => {
   const m = text.match(/([\d,]+)\s*\n?\s*sats/i) || text.match(/⚡\s*([\d,]+)/);
   return m ? parseInt(m[1].replace(/,/g, ""), 10) : NaN;
 };
-
-export const newContext = async (browser: {
-  newContext: () => Promise<BrowserContext>;
-}) => browser.newContext();

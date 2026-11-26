@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 import { writeFileSync } from "node:fs";
 import {
   balanceSats,
@@ -6,6 +6,8 @@ import {
   gotoApp,
   importSeed,
   login,
+  prepContext,
+  test,
 } from "./helpers";
 
 // Real tiny payments between two test wallets that Cole funds.
@@ -49,8 +51,8 @@ const pay = async (from: Page, to: Page, toUser: string) => {
 };
 
 test.beforeAll(async ({ browser }) => {
-  pa = await (await browser.newContext()).newPage();
-  pb = await (await browser.newContext()).newPage();
+  pa = await (await prepContext(await browser.newContext())).newPage();
+  pb = await (await prepContext(await browser.newContext())).newPage();
   await login(pa, A);
   await importSeed(pa, A.seed);
   await login(pb, B);

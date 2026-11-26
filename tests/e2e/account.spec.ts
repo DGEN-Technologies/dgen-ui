@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect } from "@playwright/test";
 import {
   gotoApp,
   importSeed,
@@ -6,6 +6,8 @@ import {
   login,
   register,
   watchErrors,
+  prepContext,
+  test,
 } from "./helpers";
 
 // Dev site only: creates throwaway accounts with random names and passwords.
@@ -39,14 +41,14 @@ test("register, log out, log back in", async ({ page }) => {
 test("recovery phrase shows 12 words and restores on another account", async ({
   browser,
 }) => {
-  const a = await browser.newContext();
+  const a = await prepContext(await browser.newContext());
   const pa = await a.newPage();
   await register(pa);
   const words = await readPhrase(pa);
   expect(words).toHaveLength(12);
   await a.close();
 
-  const b = await browser.newContext();
+  const b = await prepContext(await browser.newContext());
   const pb = await b.newPage();
   await register(pb);
   await importSeed(pb, words.join(" "));

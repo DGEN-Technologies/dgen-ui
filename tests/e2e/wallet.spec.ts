@@ -1,10 +1,12 @@
-import { test, expect, type Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 import {
   createInvoice,
   gotoApp,
   isFull,
   register,
   watchErrors,
+  prepContext,
+  test,
 } from "./helpers";
 
 // Every main wallet screen, logged in with one fresh throwaway account.
@@ -16,7 +18,7 @@ let username = "";
 let errors: string[] = [];
 
 test.beforeAll(async ({ browser }) => {
-  page = await (await browser.newContext()).newPage();
+  page = await (await prepContext(await browser.newContext())).newPage();
   errors = watchErrors(page);
   username = (await register(page)).username;
 });

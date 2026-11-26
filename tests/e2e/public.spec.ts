@@ -1,6 +1,5 @@
-import { test, expect } from "@playwright/test";
-import { isFull, watchErrors } from "./helpers";
-import type { Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
+import { isFull, watchErrors, prepContext, test } from "./helpers";
 
 /** Open a page and wait until it is interactive (scripts loaded). */
 const open = async (page: Page, path: string) => {
