@@ -1,0 +1,198 @@
+name: Wallet test robot
+
+# Clicks through every DGEN Wallet feature in a real browser.
+# Runs on every pull request, Tuesday and Friday, or by hand (Actions tab).
+# Failures open (or update) a GitHub issue assigned to dgentech, which emails
+# the account. Low test-wallet balance opens a "Top up test wallet" issue.
+on:
+  pull_request:
+    branches: [dev, main]
+  schedule:
+    - cron: "17 2 * * 2,5" # Tue and Fri, 10:17 Perth time (02:17 UTC)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dev:
+    name: Full test (dev site)
+    runs-on: ubuntu-24.04 # Playwright 1.57 does not support ubuntu-latest (26.04) yet
+    timeout-minutes: 60
+    outputs:
+      issue: ${{ steps.issue.outputs.number }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pick the site to test
+        id: target
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ github.base_ref }}" = "dev" ]; then
+            echo "url=https://deploy-preview-${{ github.event.number }}--dgentech-dev.netlify.app" >> "$GITHUB_OUTPUT"
+          else
+            echo "url=https://dgentech-dev.netlify.app" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Wait for the site to be up
+        run: |
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "${{ steps.target.outputs.url }}/" || true)
+            [ "$code" = "200" ] && exit 0
+            sleep 15
+          done
+          echo "Site never came up" && exit 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install test robot
+        working-directory: tests/e2e
+        run: npm install --no-audit --no-fund && npx playwright install --with-deps chromium
+
+      - name: Run tests
+        working-directory: tests/e2e
+        env:
+          E2E_BASE_URL: ${{ steps.target.outputs.url }}
+          E2E_MODE: full
+          # Payment wallets only on scheduled or manual runs, never on PRs.
+          E2E_WALLET_A_USER: ${{ github.event_name != 'pull_request' && secrets.E2E_WALLET_A_USER || '' }}
+          E2E_WALLET_A_PASS: ${{ github.event_name != 'pull_request' && secrets.E2E_WALLET_A_PASS || '' }}
+          E2E_WALLET_A_SEED: ${{ github.event_name != 'pull_request' && secrets.E2E_WALLET_A_SEED || '' }}
+          E2E_WALLET_B_USER: ${{ github.event_name != 'pull_request' && secrets.E2E_WALLET_B_USER || '' }}
+          E2E_WALLET_B_PASS: ${{ github.event_name != 'pull_request' && secrets.E2E_WALLET_B_PASS || '' }}
+          E2E_WALLET_B_SEED: ${{ github.event_name != 'pull_request' && secrets.E2E_WALLET_B_SEED || '' }}
+        run: npx playwright test
+
+      - name: Save test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dev-report
+          path: |
+            tests/e2e/report
+            tests/e2e/artifacts
+          retention-days: 14
+
+      - name: Ask for a wallet top-up
+        if: always() && hashFiles('tests/e2e/low-balance.json') != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("fs");
+            const b = JSON.parse(fs.readFileSync("tests/e2e/low-balance.json", "utf8"));
+            const title = "Top up test wallet";
+            const { data: open } = await github.rest.issues.listForRepo({ ...context.repo, state: "open", labels: "top-up" });
+            const body = `The payment test wallets are low.\n\n- Wallet A (${b.a}): ${b.A} sats\n- Wallet B (${b.b}): ${b.B} sats\n- Minimum: ${b.min} sats\n\nSend about $5 CAD in sats to each wallet's Lightning address, then close this issue.\n\nRun: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            if (open.find((i) => i.title === title)) return;
+            await github.rest.issues.create({ ...context.repo, title, body, labels: ["top-up"], assignees: ["dgentech"] });
+
+      - name: Log failure as an issue (robot memory)
+        id: issue
+        if: failure() && github.event_name != 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("fs");
+            let failed = [];
+            try {
+              const r = JSON.parse(fs.readFileSync("tests/e2e/results.json", "utf8"));
+              const walk = (s) => { for (const x of s.suites || []) walk(x); for (const sp of s.specs || []) for (const t of sp.tests) for (const res of t.results) if (res.status === "failed" || res.status === "timedOut") failed.push(`- **${sp.title}** (${sp.file}): ${(res.error?.message || "").split("\n")[0].replace(/\u001b\[[0-9;]*m/g, "").slice(0, 300)}`); };
+              walk(r);
+            } catch (e) { failed.push("- Could not read results: " + e.message); }
+            failed = [...new Set(failed)];
+            const run = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = `**Failed tests (dev site)**\n\n${failed.join("\n") || "- See the run log"}\n\nRun and screenshots: ${run}`;
+            const { data: open } = await github.rest.issues.listForRepo({ ...context.repo, state: "open", labels: "e2e-failure" });
+            const same = open.find((i) => i.title.startsWith("Test robot: dev site"));
+            if (same) {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: same.number, body: "Failed again.\n\n" + body });
+              core.setOutput("number", same.number);
+            } else {
+              const { data } = await github.rest.issues.create({ ...context.repo, title: "Test robot: dev site failing", body, labels: ["e2e-failure"], assignees: ["dgentech"] });
+              core.setOutput("number", data.number);
+            }
+
+  live:
+    name: Live site check (read-only)
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04 # Playwright 1.57 does not support ubuntu-latest (26.04) yet
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install test robot
+        working-directory: tests/e2e
+        run: npm install --no-audit --no-fund && npx playwright install --with-deps chromium
+      - name: Run read-only checks on wallet.dgentech.io
+        working-directory: tests/e2e
+        env:
+          E2E_BASE_URL: https://wallet.dgentech.io
+          E2E_MODE: smoke
+        run: npx playwright test --grep @smoke
+      - name: Save test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-report
+          path: tests/e2e/report
+          retention-days: 14
+      - name: Log failure as an issue
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const run = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const { data: open } = await github.rest.issues.listForRepo({ ...context.repo, state: "open", labels: "e2e-failure" });
+            const same = open.find((i) => i.title.startsWith("Test robot: LIVE site"));
+            const body = `The read-only check of wallet.dgentech.io failed. Real users may be affected.\n\nRun and screenshots: ${run}`;
+            if (same) await github.rest.issues.createComment({ ...context.repo, issue_number: same.number, body: "Failed again.\n\n" + body });
+            else await github.rest.issues.create({ ...context.repo, title: "Test robot: LIVE site failing", body, labels: ["e2e-failure"], assignees: ["dgentech"] });
+
+  autofix:
+    name: Auto-fix (Claude)
+    needs: dev
+    if: failure() && github.event_name != 'pull_request' && needs.dev.outputs.issue != ''
+    runs-on: ubuntu-24.04 # Playwright 1.57 does not support ubuntu-latest (26.04) yet
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+      - name: Skip if no API key is set
+        id: key
+        run: echo "ok=${{ secrets.ANTHROPIC_API_KEY != '' }}" >> "$GITHUB_OUTPUT"
+      - uses: anthropics/claude-code-action@v1
+        if: steps.key.outputs.ok == 'true'
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            The DGEN Wallet test robot failed. Read GitHub issue #${{ needs.dev.outputs.issue }}
+            in ${{ github.repository }} (including all comments: they are the history of past
+            failures and fixes) and the failing tests in tests/e2e.
+
+            1. Reproduce: cd tests/e2e && npm install && npx playwright install chromium &&
+               E2E_BASE_URL=https://dgentech-dev.netlify.app npx playwright test
+            2. Decide whether the app is broken or the test is out of date.
+            3. Make the smallest correct fix on a new branch off dev, run the tests again,
+               and open a pull request into dev that says "Fixes #${{ needs.dev.outputs.issue }}".
+            4. Comment on the issue with what broke, what you changed and the PR link.
+
+            Rules: never merge anything, never push to dev or main directly, never weaken
+            security (CSP, auth, rate limits, seed handling), never touch secrets, and never
+            change tests just to make them pass when the app is really broken. If you cannot
+            fix it safely, explain why in an issue comment instead.
+          claude_args: "--max-turns 60"

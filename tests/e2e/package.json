@@ -1,0 +1,12 @@
+{
+  "name": "dgen-e2e",
+  "private": true,
+  "description": "Automated end-to-end tests for the DGEN Wallet. Runs on GitHub Actions; see README.md.",
+  "scripts": {
+    "test": "playwright test",
+    "test:smoke": "E2E_MODE=smoke playwright test --grep @smoke"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.57.0"
+  }
+}
