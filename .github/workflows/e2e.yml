@@ -22,7 +22,7 @@ concurrency:
 jobs:
   dev:
     name: Full test (dev site)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # Playwright 1.57 does not support ubuntu-latest (26.04) yet
     timeout-minutes: 60
     outputs:
       issue: ${{ steps.issue.outputs.number }}
@@ -121,7 +121,7 @@ jobs:
   live:
     name: Live site check (read-only)
     if: github.event_name != 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # Playwright 1.57 does not support ubuntu-latest (26.04) yet
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
@@ -160,7 +160,7 @@ jobs:
     name: Auto-fix (Claude)
     needs: dev
     if: failure() && github.event_name != 'pull_request' && needs.dev.outputs.issue != ''
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # Playwright 1.57 does not support ubuntu-latest (26.04) yet
     timeout-minutes: 60
     permissions:
       contents: write
