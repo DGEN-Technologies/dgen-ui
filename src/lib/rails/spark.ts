@@ -86,8 +86,7 @@ function buildConfig(): sparkSdk.Config {
   // deposits unclaimed whenever fees rise (spec 7). Use the recommended
   // rate at claim time instead; anything above it goes to manual claim.
   config.maxDepositClaimFee = {
-    type: "networkRecommended",
-    leewaySatPerVbyte: 2,
+    onchain: { type: "networkRecommended", leewaySatPerVbyte: 2 },
   };
 
   return config;
@@ -333,7 +332,10 @@ export async function buyBitcoinWithMoonpay(
   if (!sdk) throw new Error("Wallet is still connecting. Try again in a moment.");
   const res = await sdk.buyBitcoin({
     type: "moonpay",
-    ...(lockedAmountSat ? { lockedAmountSat } : {}),
+    delivery: {
+      type: "bitcoin",
+      ...(lockedAmountSat ? { amountSat: lockedAmountSat } : {}),
+    },
     ...(redirectUrl ? { redirectUrl } : {}),
   });
   if (!res?.url) throw new Error("MoonPay did not return a checkout link");
@@ -463,6 +465,6 @@ export async function claimDeposit(
   await sdk.claimDeposit({
     txid,
     vout,
-    maxFee: { type: "fixed", amount: maxFeeSat },
+    maxFee: { onchain: { type: "fixed", amount: maxFeeSat } },
   });
 }

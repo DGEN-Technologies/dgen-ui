@@ -88,7 +88,7 @@
   },
   "dependencies": {
     "@breeztech/breez-sdk-liquid": "^0.11.7",
-    "@breeztech/breez-sdk-spark": "0.23.0",
+    "@breeztech/breez-sdk-spark": "0.29.0",
     "@capacitor/status-bar": "^7.0.3",
     "@sveltejs/adapter-netlify": "^5.2.4",
     "bip39": "^3.1.0",
