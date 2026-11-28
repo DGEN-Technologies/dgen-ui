@@ -3,13 +3,19 @@ name: Wallet test robot
 # Clicks through every DGEN Wallet feature in a real browser.
 # Runs on every pull request, Tuesday and Friday, or by hand (Actions tab).
 # Failures open (or update) a GitHub issue assigned to dgentech, which emails
-# the account. Low test-wallet balance opens a "Top up test wallet" issue.
+# the account. ORBIT_SENTRY then proposes a fix as a pull request.
+# Low test-wallet balance opens a "Top up test wallet" issue.
 on:
   pull_request:
     branches: [dev, main]
   schedule:
     - cron: "17 2 * * 2,5" # Tue and Fri, 10:17 Perth time (02:17 UTC)
   workflow_dispatch:
+    inputs:
+      target_url:
+        description: "Site to test (leave empty for the dev site)"
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -32,7 +38,9 @@ jobs:
       - name: Pick the site to test
         id: target
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ github.base_ref }}" = "dev" ]; then
+          if [ -n "${{ inputs.target_url }}" ]; then
+            echo "url=${{ inputs.target_url }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ github.base_ref }}" = "dev" ]; then
             echo "url=https://deploy-preview-${{ github.event.number }}--dgentech-dev.netlify.app" >> "$GITHUB_OUTPUT"
           else
             echo "url=https://dgentech-dev.netlify.app" >> "$GITHUB_OUTPUT"
@@ -61,12 +69,12 @@ jobs:
           E2E_BASE_URL: ${{ steps.target.outputs.url }}
           E2E_MODE: full
           # Payment wallets only on scheduled or manual runs, never on PRs.
-          E2E_WALLET_A_USER: ${{ github.event_name != 'pull_request' && secrets.E2E_WALLET_A_USER || '' }}
-          E2E_WALLET_A_PASS: ${{ github.event_name != 'pull_request' && secrets.E2E_WALLET_A_PASS || '' }}
-          E2E_WALLET_A_SEED: ${{ github.event_name != 'pull_request' && secrets.E2E_WALLET_A_SEED || '' }}
-          E2E_WALLET_B_USER: ${{ github.event_name != 'pull_request' && secrets.E2E_WALLET_B_USER || '' }}
-          E2E_WALLET_B_PASS: ${{ github.event_name != 'pull_request' && secrets.E2E_WALLET_B_PASS || '' }}
-          E2E_WALLET_B_SEED: ${{ github.event_name != 'pull_request' && secrets.E2E_WALLET_B_SEED || '' }}
+          E2E_WALLET_A_USER: ${{ github.event_name != 'pull_request' && !inputs.target_url && secrets.E2E_WALLET_A_USER || '' }}
+          E2E_WALLET_A_PASS: ${{ github.event_name != 'pull_request' && !inputs.target_url && secrets.E2E_WALLET_A_PASS || '' }}
+          E2E_WALLET_A_SEED: ${{ github.event_name != 'pull_request' && !inputs.target_url && secrets.E2E_WALLET_A_SEED || '' }}
+          E2E_WALLET_B_USER: ${{ github.event_name != 'pull_request' && !inputs.target_url && secrets.E2E_WALLET_B_USER || '' }}
+          E2E_WALLET_B_PASS: ${{ github.event_name != 'pull_request' && !inputs.target_url && secrets.E2E_WALLET_B_PASS || '' }}
+          E2E_WALLET_B_SEED: ${{ github.event_name != 'pull_request' && !inputs.target_url && secrets.E2E_WALLET_B_SEED || '' }}
         run: npx playwright test
 
       - name: Save test report
@@ -94,7 +102,7 @@ jobs:
 
       - name: Log failure as an issue (robot memory)
         id: issue
-        if: failure() && github.event_name != 'pull_request'
+        if: failure() && github.event_name != 'pull_request' && !inputs.target_url
         uses: actions/github-script@v7
         with:
           script: |
@@ -120,7 +128,7 @@ jobs:
 
   live:
     name: Live site check (read-only)
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && !inputs.target_url
     runs-on: ubuntu-24.04 # Playwright 1.57 does not support ubuntu-latest (26.04) yet
     timeout-minutes: 20
     steps:
@@ -156,10 +164,10 @@ jobs:
             if (same) await github.rest.issues.createComment({ ...context.repo, issue_number: same.number, body: "Failed again.\n\n" + body });
             else await github.rest.issues.create({ ...context.repo, title: "Test robot: LIVE site failing", body, labels: ["e2e-failure"], assignees: ["dgentech"] });
 
-  autofix:
-    name: Auto-fix (Claude)
+  orbit_sentry:
+    name: ORBIT_SENTRY
     needs: dev
-    if: failure() && github.event_name != 'pull_request' && needs.dev.outputs.issue != ''
+    if: failure() && github.event_name != 'pull_request' && !inputs.target_url && needs.dev.outputs.issue != ''
     runs-on: ubuntu-24.04 # Playwright 1.57 does not support ubuntu-latest (26.04) yet
     timeout-minutes: 60
     permissions:
@@ -172,13 +180,15 @@ jobs:
         with:
           ref: dev
           fetch-depth: 0
-      - name: Skip if no API key is set
+      - name: Skip if ORBIT_SENTRY_KEY is not set
         id: key
-        run: echo "ok=${{ secrets.ANTHROPIC_API_KEY != '' }}" >> "$GITHUB_OUTPUT"
+        run: echo "ok=${{ secrets.ORBIT_SENTRY_KEY != '' }}" >> "$GITHUB_OUTPUT"
       - uses: anthropics/claude-code-action@v1
         if: steps.key.outputs.ok == 'true'
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          anthropic_api_key: ${{ secrets.ORBIT_SENTRY_KEY }}
+          # Post as the repo's own Actions bot, not a third-party app account
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           prompt: |
             The DGEN Wallet test robot failed. Read GitHub issue #${{ needs.dev.outputs.issue }}
             in ${{ github.repository }} (including all comments: they are the history of past
@@ -190,6 +200,11 @@ jobs:
             3. Make the smallest correct fix on a new branch off dev, run the tests again,
                and open a pull request into dev that says "Fixes #${{ needs.dev.outputs.issue }}".
             4. Comment on the issue with what broke, what you changed and the PR link.
+
+            Write every commit message, branch name, pull request and comment in
+            plain technical language as the DGEN team. Do not mention any AI,
+            assistant, bot or tool name anywhere, and add no co-author or
+            "generated by" lines.
 
             Rules: never merge anything, never push to dev or main directly, never weaken
             security (CSP, auth, rate limits, seed handling), never touch secrets, and never

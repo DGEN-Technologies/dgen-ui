@@ -25,6 +25,7 @@
 
   let newPassword = $state("");
   let confirmPassword = $state("");
+  let currentPassword = $state("");
   let showConfirmPassword = $state(false);
   let showFinalConfirm = $state(false);
   let pendingBody = $state(null);
@@ -65,6 +66,7 @@
   const clearPasswordState = () => {
     newPassword = "";
     confirmPassword = "";
+    currentPassword = "";
     showConfirmPassword = false;
     showFinalConfirm = false;
     pendingBody = null;
@@ -224,6 +226,7 @@
       if (body.get("password")) $password = body.get("password");
       newPassword = "";
       confirmPassword = "";
+      currentPassword = "";
       showConfirmPassword = false;
       showFinalConfirm = false;
     }
@@ -300,8 +303,16 @@
 
       <input
         type="password"
+        class="input w-full mb-3"
+        placeholder="Current password"
+        autocomplete="current-password"
+        bind:value={currentPassword}
+      />
+      <input
+        type="password"
         class="input w-full mb-4"
-        placeholder="Confirm password"
+        placeholder="Confirm new password"
+        autocomplete="new-password"
         bind:value={confirmPassword}
       />
       <div class="flex gap-3 sm:gap-4">
@@ -311,6 +322,7 @@
             showConfirmPassword = false;
             showFinalConfirm = false;
             confirmPassword = "";
+            currentPassword = "";
             newPassword = "";
             pendingBody = null;
           }}
@@ -325,9 +337,12 @@
               fail("Passwords do not match");
               return;
             }
+            // The server needs the current password to allow a change
+            pendingBody?.set("currentPassword", currentPassword);
             showConfirmPassword = false;
             showFinalConfirm = true;
             confirmPassword = "";
+            currentPassword = "";
           }}
         >
           Confirm

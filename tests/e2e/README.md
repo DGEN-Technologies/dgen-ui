@@ -12,7 +12,8 @@ Clicks through every DGEN Wallet feature in a real browser, on GitHub's servers.
   scheduled runs. Needs the `E2E_WALLET_*` secrets; skipped if they are missing.
 - **When something breaks:** a GitHub issue is opened (or updated) and assigned to
   `dgentech`, which emails the account. The issue history is the robot's memory.
-- **Auto-fix:** if the `ANTHROPIC_API_KEY` secret is set, Claude reads the issue,
-  fixes the code and opens a pull request into `dev`. Nothing goes live without a merge.
+- **ORBIT_SENTRY (auto-fix):** if the `ORBIT_SENTRY_KEY` secret is set, ORBIT_SENTRY
+  reads the issue, fixes the code and opens a pull request into `dev`. Nothing goes
+  live without a merge.
 
 Run locally: `cd tests/e2e && npm install && npx playwright install chromium && npx playwright test`
