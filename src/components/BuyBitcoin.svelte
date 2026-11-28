@@ -127,6 +127,20 @@
     preparedFees = null;
 
     try {
+      // Preferred path: MoonPay straight into the Spark balance (no swap).
+      // MoonPay shows its own fees on its checkout page.
+      const spark = await import("$lib/rails/spark");
+      if (spark.getSparkSdk()) {
+        if (amount <= 0) throw new Error("Enter a valid amount.");
+        const url = await spark.buyBitcoinWithMoonpay(
+          amount,
+          `${window.location.origin}/${window.location.pathname.split("/")[1] || ""}`,
+        );
+        window.location.href = url;
+        return;
+      }
+
+      // Fallback: Liquid wallet MoonPay flow (BTC is swapped into L-BTC).
       const walletService = await import("$lib/walletService");
 
       // Ensure amount is a multiple of 1000 (required by Moonpay API)
@@ -224,8 +238,7 @@
         <div class="text-gray-300">Purchase Bitcoin with fiat currency</div>
         {#if step === "input"}
           <div class="text-sm text-yellow-400 mt-2">
-            ⚠️ Enable popups on your web browser to complete purchase via
-            Moonpay
+            You'll be taken to MoonPay to pay by card, Apple Pay or bank. Your Bitcoin arrives in this wallet.
           </div>
         {/if}
       </div>
