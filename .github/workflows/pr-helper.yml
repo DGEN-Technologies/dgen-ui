@@ -1,0 +1,48 @@
+name: PR helper
+
+# Pushing a branch named ready/<something> opens (or updates) a pull request
+# into dev, then runs the wallet test robot against that PR's preview site.
+on:
+  push:
+    branches: ["ready/**"]
+
+permissions:
+  contents: read
+  pull-requests: write
+  actions: write
+
+jobs:
+  open:
+    name: Open pull request
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Open or update the pull request into dev
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          git fetch -q origin dev
+          TITLE="$(git log --reverse --format=%s origin/dev..HEAD | head -1)"
+          COUNT="$(git rev-list --count origin/dev..HEAD)"
+          [ "$COUNT" -gt 1 ] && TITLE="$TITLE (+$((COUNT - 1)) more)"
+          git log --reverse --format='### %s%n%n%b' origin/dev..HEAD > /tmp/body.md
+          NUM="$(gh pr list --head "$BRANCH" --base dev --state open --json number --jq '.[0].number')"
+          if [ -z "$NUM" ]; then
+            gh pr create --base dev --head "$BRANCH" --title "$TITLE" --body-file /tmp/body.md
+            NUM="$(gh pr list --head "$BRANCH" --base dev --state open --json number --jq '.[0].number')"
+          else
+            gh pr edit "$NUM" --title "$TITLE" --body-file /tmp/body.md
+          fi
+          echo "PR #$NUM"
+          echo "NUM=$NUM" >> "$GITHUB_ENV"
+
+      - name: Run the wallet test robot on the PR preview
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run e2e.yml --ref "${{ github.ref_name }}" \
+            -f target_url="https://deploy-preview-${NUM}--dgentech-dev.netlify.app"
