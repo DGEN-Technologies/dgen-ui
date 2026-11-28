@@ -140,7 +140,10 @@
           window.location.href = url;
           return;
         } catch (sparkErr) {
-          console.warn("[BuyBitcoin] Spark MoonPay unavailable, using Liquid:", sparkErr);
+          console.warn(
+            "[BuyBitcoin] Spark MoonPay unavailable, using Liquid:",
+            sparkErr,
+          );
         }
       }
 
@@ -242,7 +245,8 @@
         <div class="text-gray-300">Purchase Bitcoin with fiat currency</div>
         {#if step === "input"}
           <div class="text-sm text-yellow-400 mt-2">
-            You'll be taken to MoonPay to pay by card, Apple Pay or bank. Your Bitcoin arrives in this wallet.
+            You'll be taken to MoonPay to pay by card, Apple Pay or bank. Your
+            Bitcoin arrives in this wallet.
           </div>
         {/if}
       </div>
