@@ -367,8 +367,9 @@
             </span>
           </button>
         {/if}
-        <!-- Buy Bitcoin button commented out -->
-        <!-- <button
+        <!-- Buy Bitcoin with MoonPay -->
+        <button
+          aria-label="Buy Bitcoin"
           class="glass rounded-xl py-4 sm:py-3 px-3 sm:px-2 font-bold hover:bg-white/10 transition-all duration-300 hover:scale-105 border border-white/20 hover:border-white/40 min-w-0 flex-1 max-w-[150px]"
           onclick={(e) => {
             e.stopPropagation();
@@ -377,9 +378,9 @@
         >
           <span class="flex flex-col items-center justify-center gap-1.5 sm:gap-1">
             <iconify-icon icon="cryptocurrency:btc" width="22" class="flex-shrink-0"></iconify-icon>
-            <span class="text-xs sm:text-xs truncate w-full hidden sm:block">Buy</span>
+            <span class="text-[11px] sm:text-xs sm:truncate sm:w-full hidden sm:block">Buy</span>
           </span>
-        </button> -->
+        </button>
         <button
           class="glass rounded-xl py-4 sm:py-3 px-3 sm:px-2 font-bold hover:bg-white/10 transition-all duration-300 hover:scale-105 border border-white/20 hover:border-white/40 min-w-0 flex-1 max-w-[150px]"
           onclick={(e) => {
