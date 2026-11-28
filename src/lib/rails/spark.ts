@@ -329,7 +329,8 @@ export async function buyBitcoinWithMoonpay(
   lockedAmountSat?: number,
   redirectUrl?: string,
 ): Promise<string> {
-  if (!sdk) throw new Error("Wallet is still connecting. Try again in a moment.");
+  if (!sdk)
+    throw new Error("Wallet is still connecting. Try again in a moment.");
   const res = await sdk.buyBitcoin({
     type: "moonpay",
     delivery: {

@@ -376,9 +376,18 @@
             showBuyBitcoin = true;
           }}
         >
-          <span class="flex flex-col items-center justify-center gap-1.5 sm:gap-1">
-            <iconify-icon icon="cryptocurrency:btc" width="22" class="flex-shrink-0"></iconify-icon>
-            <span class="text-[11px] sm:text-xs sm:truncate sm:w-full hidden sm:block">Buy</span>
+          <span
+            class="flex flex-col items-center justify-center gap-1.5 sm:gap-1"
+          >
+            <iconify-icon
+              icon="cryptocurrency:btc"
+              width="22"
+              class="flex-shrink-0"
+            ></iconify-icon>
+            <span
+              class="text-[11px] sm:text-xs sm:truncate sm:w-full hidden sm:block"
+              >Buy</span
+            >
           </span>
         </button>
         <button
