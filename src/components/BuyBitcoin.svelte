@@ -132,12 +132,16 @@
       const spark = await import("$lib/rails/spark");
       if (spark.getSparkSdk()) {
         if (amount <= 0) throw new Error("Enter a valid amount.");
-        const url = await spark.buyBitcoinWithMoonpay(
-          amount,
-          `${window.location.origin}/${window.location.pathname.split("/")[1] || ""}`,
-        );
-        window.location.href = url;
-        return;
+        try {
+          const url = await spark.buyBitcoinWithMoonpay(
+            amount,
+            `${window.location.origin}/${window.location.pathname.split("/")[1] || ""}`,
+          );
+          window.location.href = url;
+          return;
+        } catch (sparkErr) {
+          console.warn("[BuyBitcoin] Spark MoonPay unavailable, using Liquid:", sparkErr);
+        }
       }
 
       // Fallback: Liquid wallet MoonPay flow (BTC is swapped into L-BTC).
