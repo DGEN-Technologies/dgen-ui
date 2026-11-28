@@ -151,6 +151,16 @@ test("swap: provider can be shown inside the app", async ({ request }) => {
   ).not.toMatch(/sameorigin|deny/);
 });
 
+test("buy: opens MoonPay checkout for this wallet", async () => {
+  await gotoApp(page, `/${username}`);
+  await page.getByRole("button", { name: "Buy Bitcoin" }).click();
+  await page.getByRole("button", { name: "Continue" }).click();
+  await page.waitForURL(/moonpay\.com/, { timeout: 60_000 });
+  const url = new URL(page.url());
+  // MoonPay must be told where to send the Bitcoin.
+  expect(url.searchParams.get("walletAddress") || "").toMatch(/^(bc1|lq1|tb1)/);
+});
+
 test("scan page opens", async () => {
   const res = await page.goto("/scan");
   expect(res?.status()).toBeLessThan(400);

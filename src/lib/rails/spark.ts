@@ -86,8 +86,7 @@ function buildConfig(): sparkSdk.Config {
   // deposits unclaimed whenever fees rise (spec 7). Use the recommended
   // rate at claim time instead; anything above it goes to manual claim.
   config.maxDepositClaimFee = {
-    type: "networkRecommended",
-    leewaySatPerVbyte: 2,
+    onchain: { type: "networkRecommended", leewaySatPerVbyte: 2 },
   };
 
   return config;
@@ -322,6 +321,29 @@ export function getSparkSdk(): sparkSdk.BreezSdk | null {
 }
 
 /**
+ * Start a MoonPay purchase that lands directly in the Spark balance.
+ * Returns the MoonPay checkout URL. `lockedAmountSat` pre-fills and locks the
+ * amount on MoonPay's page; `redirectUrl` is where MoonPay sends the user back.
+ */
+export async function buyBitcoinWithMoonpay(
+  lockedAmountSat?: number,
+  redirectUrl?: string,
+): Promise<string> {
+  if (!sdk)
+    throw new Error("Wallet is still connecting. Try again in a moment.");
+  const res = await sdk.buyBitcoin({
+    type: "moonpay",
+    delivery: {
+      type: "bitcoin",
+      ...(lockedAmountSat ? { amountSat: lockedAmountSat } : {}),
+    },
+    ...(redirectUrl ? { redirectUrl } : {}),
+  });
+  if (!res?.url) throw new Error("MoonPay did not return a checkout link");
+  return res.url;
+}
+
+/**
  * A registered Lightning address, shaped for this app's existing consumers.
  *
  * Spark returns `lnurl` as `{ url, bech32 }`, but `lnAddressStore.setSuccess`
@@ -444,6 +466,6 @@ export async function claimDeposit(
   await sdk.claimDeposit({
     txid,
     vout,
-    maxFee: { type: "fixed", amount: maxFeeSat },
+    maxFee: { onchain: { type: "fixed", amount: maxFeeSat } },
   });
 }
